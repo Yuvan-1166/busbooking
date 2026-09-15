@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { api } from "./api";
 import { enrichTripsData } from "./utils/tripEnricher";
+import { parseApiError, getErrorMessage } from "./utils/errorHandler";
 import AccessDenied from "./auth/AccessDenied";
 import { useAuth } from "./auth/AuthContext";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 import BookingPanel from "./components/booking/BookingPanel";
 import Bookings from "./components/booking/Bookings";
 import Footer from "./components/layout/Footer";
@@ -68,7 +70,9 @@ function App() {
     try {
       setTickets(await api.getTickets());
     } catch (ticketError) {
-      setError(ticketError.message);
+      const appError = parseApiError(ticketError);
+      setError(getErrorMessage(appError));
+      console.error("Failed to load tickets:", appError);
     } finally {
       setTicketsLoading(false);
     }
@@ -100,15 +104,19 @@ function App() {
             .filter((result) => result.status === "fulfilled")
             .flatMap((result) => result.value),
         );
-        if (failedStops.length)
-          setError(
-            `${failedStops.length} route stop request(s) failed. Check the backend response.`,
-          );
+        if (failedStops.length) {
+          const errorMsg = `${failedStops.length} route(s) failed to load. Some routes may be unavailable.`;
+          setError(errorMsg);
+          console.warn(errorMsg);
+        }
       })
-      .catch((loadError) => setError(loadError.message))
+      .catch((loadError) => {
+        const appError = parseApiError(loadError);
+        setError(getErrorMessage(appError));
+        console.error("Failed to load search data:", appError);
+      })
       .finally(() => setLoading(false));
-  }, [session?.roles?.join(",")]);
-
+  }, [session?.roles?.join(","), hasRole]);
   const availableLocations = useMemo(() => {
     const ids = new Set(routeStops.map((stop) => stop.locationId));
     return locations.filter((location) => ids.has(location.id));
@@ -170,7 +178,9 @@ function App() {
       setTrips(enrichedTrips);
       navigate("/search");
     } catch (searchError) {
-      setError(searchError.message);
+      const appError = parseApiError(searchError);
+      setError(getErrorMessage(appError));
+      console.error("Failed to search trips:", appError);
     } finally {
       setSearching(false);
     }
@@ -188,7 +198,9 @@ function App() {
       setSelectedTrip(trip);
       return true;
     } catch (seatError) {
-      setError(seatError.message);
+      const appError = parseApiError(seatError);
+      setError(getErrorMessage(appError));
+      console.error("Failed to load seats:", appError);
       return false;
     }
   };
@@ -215,7 +227,6 @@ function App() {
     )) return setError("Complete passenger details for every selected seat.");
     setBookingInProgress(true);
     try {
-      // Build per-seat hold items pairing each trip seat ID with the passenger's gender
       const holdItems = passengers.map((passenger) => ({
         tripSeatId: passenger.tripSeatId,
         gender: passenger.gender,
@@ -227,10 +238,11 @@ function App() {
         dropLocationId: Number(to),
         passengers,
       });
-      // Navigate to the dedicated payment page — payment happens there
       navigate(`/pay/${created.id}`);
     } catch (bookingError) {
-      setError(bookingError.message);
+      const appError = parseApiError(bookingError);
+      setError(getErrorMessage(appError));
+      console.error("Booking failed:", appError);
     } finally {
       setBookingInProgress(false);
     }
@@ -250,18 +262,21 @@ function App() {
       await loadTickets();
       return response;
     } catch (cancellationError) {
-      setError(cancellationError.message);
-      throw cancellationError;
+      const appError = parseApiError(cancellationError);
+      setError(getErrorMessage(appError));
+      console.error("Cancellation failed:", appError);
+      throw appError;
     }
   };
 
   return (
-    <div className="app-shell">
-      <Header
-        email={session.email}
-        roles={session.roles}
-        onLogout={handleLogout}
-      />
+    <ErrorBoundary>
+      <div className="app-shell">
+        <Header
+          email={session.email}
+          roles={session.roles}
+          onLogout={handleLogout}
+        />
       {error && (
         <div className="mx-auto mt-4 max-w-[1168px] border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]" role="alert">
           {error}
@@ -414,8 +429,9 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <Footer />
-    </div>
+        <Footer />
+      </div>
+    </ErrorBoundary>
   );
 }
 

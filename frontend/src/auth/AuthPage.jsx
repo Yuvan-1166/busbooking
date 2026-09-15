@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { api } from "../api";
 import { rememberRegisteredUser } from "./authStorage";
+import { parseApiError, getErrorMessage } from "../utils/errorHandler";
 import ForgotPassword from "../components/auth/ForgotPassword";
 
 const initialForms = {
@@ -92,21 +93,35 @@ export default function AuthPage() {
         );
       }
     } catch (submitError) {
-      // If login fails because the account isn't verified yet, go straight to
-      // the verify screen so the user can complete verification without re-registering.
-      if (
+      const appError = parseApiError(submitError);
+      let userMessage = getErrorMessage(appError);
+
+      // Handle specific auth errors
+      if (appError.statusCode === 409 || submitError.response?.status === 409) {
+        userMessage = `This email is already registered as a ${registrationType}. Please sign in or use a different email.`;
+      } else if (appError.statusCode === 403 && mode === "register") {
+        userMessage = "Registration is currently unavailable. Please try again later.";
+      } else if (
         mode === "login" &&
         submitError.message?.toLowerCase().includes("email not verified")
       ) {
+        // Account not verified → go to verify screen
         setPendingEmail(form.email);
         setOtp("");
         setMode("verify");
         setMessage(
           "Your email is not verified yet. Enter the code we sent you, or request a new one.",
         );
+        setSubmitting(false);
         return;
+      } else if (appError.statusCode === 401 && mode === "login") {
+        userMessage = "Invalid email or password. Please try again.";
+      } else if (appError.statusCode === 400) {
+        userMessage = "Please check your input and try again.";
       }
-      setError(submitError.message);
+
+      setError(userMessage);
+      console.error("Auth error:", appError);
     } finally {
       setSubmitting(false);
     }
@@ -126,7 +141,19 @@ export default function AuthPage() {
       setMessage("Email verified! You can now sign in.");
       setOtp("");
     } catch (otpError) {
-      setError(otpError.message);
+      const appError = parseApiError(otpError);
+      let userMessage = getErrorMessage(appError);
+
+      if (appError.statusCode === 400 || otpError.response?.status === 400) {
+        userMessage = "Invalid verification code. Please try again.";
+      } else if (appError.statusCode === 404 || otpError.response?.status === 404) {
+        userMessage = "Verification code expired or not found. Please request a new one.";
+      } else if (appError.statusCode === 429 || otpError.response?.status === 429) {
+        userMessage = "Too many verification attempts. Please wait before trying again.";
+      }
+
+      setError(userMessage);
+      console.error("OTP verification error:", appError);
     } finally {
       setSubmitting(false);
     }
@@ -142,7 +169,17 @@ export default function AuthPage() {
       setMessage("A new code has been sent to " + pendingEmail);
       setOtp("");
     } catch (resendError) {
-      setError(resendError.message);
+      const appError = parseApiError(resendError);
+      let userMessage = getErrorMessage(appError);
+
+      if (appError.statusCode === 429 || resendError.response?.status === 429) {
+        userMessage = "Too many requests. Please wait a few minutes before requesting another code.";
+      } else if (appError.statusCode === 404 || resendError.response?.status === 404) {
+        userMessage = "Email not found. Please register first.";
+      }
+
+      setError(userMessage);
+      console.error("Resend OTP error:", appError);
     } finally {
       setResending(false);
     }
