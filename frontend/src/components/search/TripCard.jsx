@@ -1,56 +1,90 @@
+import { useEffect, useState } from "react";
+import { api } from "../../api";
+
 export default function TripCard({ trip, onSelect }) {
+  const [busDetails, setBusDetails] = useState(null);
+  const [operatorDetails, setOperatorDetails] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDetails = async () => {
+      try {
+        const bus = await api.getBus(trip.busId);
+        setBusDetails(bus);
+
+        if (bus.operatorId) {
+          const operator = await api.getOperator(bus.operatorId);
+          setOperatorDetails(operator);
+        }
+      } catch (error) {
+        console.error("Error fetching trip details:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDetails();
+  }, [trip.busId]);
+
+  const getBusTypeLabel = (busType) => {
+    const typeMap = {
+      SLEEPER: "Sleeper",
+      SEMI_SLEEPER: "Semi-Sleeper",
+      COACH: "Coach",
+      LUXURY: "Luxury",
+      AC_SLEEPER: "AC Sleeper",
+      AC_SEMI_SLEEPER: "AC Semi-Sleeper",
+    };
+    return typeMap[busType] || busType;
+  };
+
   return (
-    <article className="grid min-h-[126px] grid-cols-[48px_1fr_145px] items-center gap-4 border border-[#e7e5dc] bg-paper px-[21px] py-[17px] max-[600px]:grid-cols-[38px_1fr] max-[600px]:gap-3 max-[600px]:p-4">
-      <div className="grid h-[45px] w-[45px] place-items-center rounded-full font-display text-[13px] max-[600px]:h-[38px] max-[600px]:w-[38px]">
-        #{trip.id}
-      </div>
-      <div>
-        <div className="mb-[13px] flex items-center gap-[11px] text-[13px] max-[600px]:mb-2">
-          <strong>Trip #{trip.id}</strong>
-          <span className="font-mono text-[10px] text-muted">
-            Route #{trip.routeId}
-          </span>
+    <article className="grid grid-cols-[auto_1fr_auto_auto_auto] items-center gap-4 border border-[#e7e5dc] bg-white px-4 py-7 hover:bg-[#fafaf8] transition-colors max-[900px]:grid-cols-[auto_1fr_auto_auto] max-[600px]:grid-cols-[1fr_auto] max-[600px]:gap-3">
+      {/* Departure Time */}
+      <div className="text-center max-[600px]:col-span-2 max-[600px]:text-left">
+        <div className="font-mono text-[13px] font-bold text-ink">
+          {trip.departureTime || "—"}
         </div>
-        <div className="grid grid-cols-[55px_1fr_55px] items-center gap-2.5 max-[600px]:grid-cols-[45px_1fr_45px]">
-          <div>
-            <strong className="block font-mono text-xl max-[600px]:text-base">
-              {trip.departureTime || "—"}
-            </strong>
-            <small className="mt-1 block text-[10px] text-muted">
-              {trip.tripDate}
-            </small>
-          </div>
-          <div className="flex items-center gap-1.5 text-[#a8aba2]">
-            <span className="h-px flex-1 bg-[#c8cdc3]"></span>
-            <small className="whitespace-nowrap font-mono text-[9px]">
-              Published trip
-            </small>
-            <span className="h-px flex-1 bg-[#c8cdc3]"></span>
-          </div>
-          <div className="text-right">
-            <strong className="block font-mono text-xl max-[600px]:text-base">
-              Bus {trip.busId || "—"}
-            </strong>
-            <small className="mt-1 block text-[10px] text-muted">
-              Schedule {trip.scheduleId || "—"}
-            </small>
-          </div>
+        <div className="font-mono text-[10px] text-muted">{trip.tripDate}</div>
+      </div>
+
+      {/* Operator & Bus Details */}
+      <div className="min-w-0 max-[600px]:col-span-1">
+        <div className="font-semibold text-[12px] text-ink truncate">
+          {operatorDetails?.name || (loading ? "Loading..." : "—")}
+        </div>
+        <div className="font-mono text-[10px] text-muted">
+          {busDetails ? getBusTypeLabel(busDetails.busType) : "—"}
+        </div>
+        <div className="font-mono text-[9px] text-muted mt-0.5">
+          Reg: {busDetails?.registrationNumber || "—"}
         </div>
       </div>
-      <div className="text-right max-[600px]:col-start-2 max-[600px]:flex max-[600px]:items-center max-[600px]:gap-3 max-[600px]:text-left">
-        <span className="mb-1 block font-mono text-[9px] uppercase text-muted max-[600px]:mb-0">
-          Starting from
-        </span>
-        <strong className="mb-2 block font-mono text-lg text-ink max-[600px]:mb-0">
+
+      {/* Route/Duration - Hidden on mobile */}
+      <div className="text-center max-[900px]:hidden">
+        <div className="font-mono text-[9px] text-muted">Duration</div>
+        <div className="font-mono text-[12px] font-semibold text-ink">
+          {trip.duration || "—"}
+        </div>
+      </div>
+
+      {/* Fare */}
+      <div className="text-right">
+        <div className="font-mono text-[10px] text-muted">From</div>
+        <div className="font-mono text-[14px] font-bold text-orange">
           {formatCurrency(trip.startingFare)}
-        </strong>
-        <button
-          className="border-0 border-b border-orange bg-transparent p-0 text-[11px] text-orange max-[600px]:ml-auto"
-          onClick={onSelect}
-        >
-          View seats <span className="ml-1.5 text-[15px]">→</span>
-        </button>
+        </div>
       </div>
+
+      {/* CTA Button */}
+      <button
+        onClick={onSelect}
+        disabled={loading}
+        className="whitespace-nowrap rounded-md bg-orange px-3 py-2 font-semibold text-white text-[12px] hover:bg-[#d97e3a] transition-colors disabled:opacity-50 max-[600px]:px-2.5 max-[600px]:py-1.5"
+      >
+        {loading ? "..." : "Book"}
+      </button>
     </article>
   );
 }
