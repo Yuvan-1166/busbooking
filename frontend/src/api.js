@@ -59,6 +59,7 @@ export const api = {
   deleteSchedule: (scheduleId) => request(`/schedules/${scheduleId}`, { method: 'DELETE' }),
   getAllTrips: () => request('/trips'),
   createTrip: (payload) => request('/trips', { method: 'POST', body: JSON.stringify(payload) }),
+  createBulkTrips: (payload) => request('/trips/bulk', { method: 'POST', body: JSON.stringify(payload) }),
   updateTrip: (tripId, payload) => request(`/trips/${tripId}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteTrip: (tripId) => request(`/trips/${tripId}`, { method: 'DELETE' }),
   getUsers: () => request('/users'),

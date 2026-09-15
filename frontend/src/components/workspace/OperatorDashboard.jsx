@@ -2,9 +2,11 @@ import { cloneElement, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api";
 import { parseApiError, getErrorMessage } from "../../utils/errorHandler";
+import { generateTripDates, validateTripGeneration } from "../../utils/tripGeneration";
 import StateMessage from "../common/StateMessage";
 import MetricCard from "./MetricCard";
 import SeatsWorkspace from "./SeatsWorkspace";
+import EnhancedScheduleForm from "./EnhancedScheduleForm";
 
 const emptyBus = {
   registrationNumber: "",
@@ -24,12 +26,21 @@ const emptySchedule = {
   departureTime: "",
   effectiveFrom: "",
   effectiveUntil: "",
-  operatingDays: "MON,TUE,WED,THU,FRI,SAT,SUN",
   baseFare: "",
   pricePerKm: "",
   status: "ACTIVE",
+  operatingDays: {
+    mon: true,
+    tue: true,
+    wed: true,
+    thu: true,
+    fri: true,
+    sat: true,
+    sun: true,
+  },
+  tripGenerationFrom: "",
+  tripGenerationTo: "",
 };
-const emptyTrip = { scheduleId: "", tripDate: "" };
 
 export default function OperatorDashboard() {
   const [buses, setBuses] = useState([]);
@@ -46,8 +57,6 @@ export default function OperatorDashboard() {
   const [seatForm, setSeatForm] = useState(emptySeat);
   const [scheduleForm, setScheduleForm] = useState(emptySchedule);
   const [editingScheduleId, setEditingScheduleId] = useState(null);
-  const [tripForm, setTripForm] = useState(emptyTrip);
-  const [editingTripId, setEditingTripId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState("");
   const [error, setError] = useState("");
@@ -140,29 +149,81 @@ export default function OperatorDashboard() {
     }
   };
 
-  // ── Schedule CRUD Operations ───────────────────────────────────────────────
+  // ── Schedule CRUD Operations with Bulk Trips ──────────────────────────────
   const saveSchedule = async (event) => {
     event.preventDefault();
     setSaving("Schedule");
     setError("");
     setMessage("");
     try {
+      // Validate trip generation
+      const validationErrors = validateTripGeneration(
+        scheduleForm.tripGenerationFrom,
+        scheduleForm.tripGenerationTo,
+        scheduleForm.operatingDays
+      );
+
+      if (validationErrors.length > 0) {
+        setError(validationErrors.join(" "));
+        setSaving("");
+        return;
+      }
+
+      // Generate trip dates
+      const tripDates = generateTripDates(
+        scheduleForm.tripGenerationFrom,
+        scheduleForm.tripGenerationTo,
+        scheduleForm.operatingDays
+      );
+
       const scheduleData = {
-        ...scheduleForm,
         routeId: Number(scheduleForm.routeId),
         busId: Number(scheduleForm.busId),
+        departureTime: scheduleForm.departureTime,
         baseFare: Number(scheduleForm.baseFare),
         pricePerKm: Number(scheduleForm.pricePerKm),
+        effectiveFrom: scheduleForm.effectiveFrom,
+        effectiveUntil: scheduleForm.effectiveUntil,
+        status: scheduleForm.status,
+        // Backend expects comma-separated string
+        operatingDays: Object.keys(scheduleForm.operatingDays)
+          .filter((day) => scheduleForm.operatingDays[day])
+          .map((day) => day.toUpperCase())
+          .join(","),
       };
 
+      let createdSchedule;
       if (editingScheduleId) {
         await api.updateSchedule(editingScheduleId, scheduleData);
-        setMessage("Schedule updated successfully.");
+        setMessage(`Schedule updated. ${tripDates.length} trips ready for publishing.`);
         setEditingScheduleId(null);
       } else {
-        await api.createSchedule(scheduleData);
-        setMessage("Schedule created successfully.");
+        createdSchedule = await api.createSchedule(scheduleData);
+        
+        // Bulk create trips
+        if (tripDates.length > 0) {
+          try {
+            await api.createBulkTrips({
+              scheduleId: createdSchedule.id,
+              tripDates: tripDates,
+            });
+            setMessage(
+              `Schedule created successfully! 🎉 ${tripDates.length} trips published.`
+            );
+          } catch (tripError) {
+            // Schedule created but trip bulk creation failed
+            const appError = parseApiError(tripError);
+            console.error("Bulk trip creation failed:", appError);
+            setMessage(
+              `Schedule created but only ${tripDates.length} trips are pending. Please try publishing them individually.`
+            );
+            setError(getErrorMessage(appError));
+          }
+        } else {
+          setMessage("Schedule created successfully!");
+        }
       }
+
       setScheduleForm(emptySchedule);
       await loadData();
     } catch (saveError) {
@@ -197,6 +258,17 @@ export default function OperatorDashboard() {
     } finally {
       setSaving("");
     }
+  };
+
+  // ── Operating Days Handler ─────────────────────────────────────────────────
+  const handleOperatingDayChange = (day) => {
+    setScheduleForm((prev) => ({
+      ...prev,
+      operatingDays: {
+        ...prev.operatingDays,
+        [day]: !prev.operatingDays[day],
+      },
+    }));
   };
 
   // ── Trip CRUD Operations ───────────────────────────────────────────────────
@@ -398,13 +470,14 @@ export default function OperatorDashboard() {
             />
           )}
           {view === "schedules" && (
-            <SchedulesView
+            <SchedulesViewWithForm
               schedules={schedules}
               routes={routes}
               buses={buses}
               scheduleForm={scheduleForm}
               editingScheduleId={editingScheduleId}
               onScheduleChange={(field, value) => setScheduleForm(prev => ({ ...prev, [field]: value }))}
+              onOperatingDayChange={handleOperatingDayChange}
               onSaveSchedule={saveSchedule}
               onEditSchedule={editSchedule}
               onDeleteSchedule={deleteSchedule}
@@ -416,20 +489,12 @@ export default function OperatorDashboard() {
             />
           )}
           {view === "trips" && (
-            <TripsView
+            <TripsViewReadOnly
               trips={trips}
               schedules={schedules}
-              tripForm={tripForm}
-              editingTripId={editingTripId}
-              onTripChange={(field, value) => setTripForm(prev => ({ ...prev, [field]: value }))}
-              onSaveTrip={saveTrip}
-              onEditTrip={editTrip}
-              onDeleteTrip={deleteTrip}
-              onCancelEdit={() => {
-                setTripForm(emptyTrip);
-                setEditingTripId(null);
-              }}
-              saving={saving === "Trip"}
+              routes={routes}
+              buses={buses}
+              onCreateNew={() => setView("schedules")}
             />
           )}
         </>
@@ -600,271 +665,177 @@ const BusesView = ({
   </section>
 );
 
-// ── Schedules View Component ───────────────────────────────────────────────
-const SchedulesView = ({
+// ── Schedules View with Integrated Form ────────────────────────────────────
+const SchedulesViewWithForm = ({
   schedules,
   routes,
   buses,
   scheduleForm,
   editingScheduleId,
   onScheduleChange,
+  onOperatingDayChange,
   onSaveSchedule,
   onEditSchedule,
   onDeleteSchedule,
   onCancelEdit,
   saving,
 }) => (
-  <section className="grid grid-cols-[350px_1fr] gap-8 py-8 max-[900px]:grid-cols-1">
-    {/* Form */}
-    <form onSubmit={onSaveSchedule} className="space-y-4 rounded-lg border border-[#e7e5dc] bg-white p-6">
-      <h3 className="text-lg font-semibold text-ink">
-        {editingScheduleId ? "Edit Schedule" : "Create Schedule"}
-      </h3>
-      <label className="block">
-        <span className="text-xs font-mono uppercase text-muted">Route</span>
-        <select
-          value={scheduleForm.routeId}
-          onChange={(e) => onScheduleChange("routeId", e.target.value)}
-          required
-          className="w-full mt-1 border-b border-line bg-transparent py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
-        >
-          <option value="">Select Route</option>
-          {routes.map((route) => (
-            <option key={route.id} value={route.id}>
-              {route.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="block">
-        <span className="text-xs font-mono uppercase text-muted">Bus</span>
-        <select
-          value={scheduleForm.busId}
-          onChange={(e) => onScheduleChange("busId", e.target.value)}
-          required
-          className="w-full mt-1 border-b border-line bg-transparent py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
-        >
-          <option value="">Select Bus</option>
-          {buses.map((bus) => (
-            <option key={bus.id} value={bus.id}>
-              {bus.model} ({bus.registrationNumber})
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="block">
-        <span className="text-xs font-mono uppercase text-muted">Departure Time</span>
-        <input
-          type="time"
-          value={scheduleForm.departureTime}
-          onChange={(e) => onScheduleChange("departureTime", e.target.value)}
-          required
-          className="w-full mt-1 border-b border-line bg-transparent py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xs font-mono uppercase text-muted">Base Fare (₹)</span>
-        <input
-          type="number"
-          step="0.01"
-          value={scheduleForm.baseFare}
-          onChange={(e) => onScheduleChange("baseFare", e.target.value)}
-          required
-          className="w-full mt-1 border-b border-line bg-transparent py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xs font-mono uppercase text-muted">Price Per KM (₹)</span>
-        <input
-          type="number"
-          step="0.01"
-          value={scheduleForm.pricePerKm}
-          onChange={(e) => onScheduleChange("pricePerKm", e.target.value)}
-          required
-          className="w-full mt-1 border-b border-line bg-transparent py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xs font-mono uppercase text-muted">Effective From</span>
-        <input
-          type="date"
-          value={scheduleForm.effectiveFrom}
-          onChange={(e) => onScheduleChange("effectiveFrom", e.target.value)}
-          className="w-full mt-1 border-b border-line bg-transparent py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xs font-mono uppercase text-muted">Effective Until</span>
-        <input
-          type="date"
-          value={scheduleForm.effectiveUntil}
-          onChange={(e) => onScheduleChange("effectiveUntil", e.target.value)}
-          className="w-full mt-1 border-b border-line bg-transparent py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
-        />
-      </label>
-      <div className="flex gap-2 pt-4">
-        <button
-          type="submit"
-          disabled={saving}
-          className="flex-1 bg-orange text-white py-2 rounded font-semibold hover:bg-[#d97e3a] disabled:opacity-50"
-        >
-          {saving ? "Saving..." : editingScheduleId ? "Update" : "Create"}
-        </button>
-        {editingScheduleId && (
-          <button
-            type="button"
-            onClick={onCancelEdit}
-            className="flex-1 border border-[#e7e5dc] text-ink py-2 rounded font-semibold hover:bg-[#fafaf8]"
-          >
-            Cancel
-          </button>
-        )}
-      </div>
-    </form>
+  <section className="grid grid-cols-[280px_1fr] gap-6 py-8 max-[900px]:grid-cols-1">
+    {/* Compact Form */}
+    <EnhancedScheduleForm
+      scheduleForm={scheduleForm}
+      onScheduleChange={onScheduleChange}
+      onOperatingDayChange={onOperatingDayChange}
+      onSaveSchedule={onSaveSchedule}
+      onCancelEdit={onCancelEdit}
+      editingScheduleId={editingScheduleId}
+      routes={routes}
+      buses={buses}
+      saving={saving}
+    />
 
-    {/* List */}
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-ink">Schedules ({schedules.length})</h3>
+    {/* Schedule Cards with Info */}
+    <div>
+      <h3 className="text-lg font-semibold text-ink mb-4">Schedules ({schedules.length})</h3>
       {schedules.length === 0 ? (
-        <StateMessage>No schedules yet. Create one to publish trips.</StateMessage>
+        <div className="rounded-lg border border-[#e7e5dc] bg-[#f9f9f7] p-4 text-center text-sm text-muted">
+          No schedules yet. Create one to publish trips in bulk.
+        </div>
       ) : (
-        schedules.map((schedule) => (
-          <div
-            key={schedule.id}
-            className="rounded-lg border border-[#e7e5dc] bg-white p-4"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-semibold text-ink">
-                  {schedule.departureTime} · ₹{schedule.baseFare} + ₹{schedule.pricePerKm}/km
-                </h4>
-                <p className="text-xs text-muted">
-                  {schedule.effectiveFrom && `${schedule.effectiveFrom} to ${schedule.effectiveUntil}`}
-                </p>
+        <div className="grid gap-3">
+          {schedules.map((schedule) => {
+            const route = routes.find((r) => r.id === schedule.routeId);
+            const bus = buses.find((b) => b.id === schedule.busId);
+            return (
+              <div
+                key={schedule.id}
+                className="rounded-lg border border-[#e7e5dc] bg-white p-4 hover:shadow-sm transition-shadow"
+              >
+                {/* Header: Route & Bus */}
+                <div className="mb-3 pb-3 border-b border-[#e7e5dc]">
+                  <h4 className="font-semibold text-ink text-sm mb-1">
+                    {route?.name || "Unknown Route"}
+                  </h4>
+                  <p className="text-xs text-muted">
+                    🚌 {bus?.model || "Unknown Bus"} • Reg: {bus?.registrationNumber || "—"}
+                  </p>
+                </div>
+
+                {/* Details */}
+                <div className="grid grid-cols-2 gap-3 mb-3 text-xs">
+                  <div>
+                    <p className="text-muted font-mono">Departure</p>
+                    <p className="font-semibold text-ink">{schedule.departureTime}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted font-mono">Pricing</p>
+                    <p className="font-semibold text-ink">
+                      ₹{schedule.baseFare} + ₹{schedule.pricePerKm}/km
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted font-mono">Effective</p>
+                    <p className="font-semibold text-ink text-[11px]">
+                      {schedule.effectiveFrom ? `${schedule.effectiveFrom.substring(5)}` : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-muted font-mono">Status</p>
+                    <p className={`font-semibold text-xs ${schedule.status === "ACTIVE" ? "text-green" : "text-muted"}`}>
+                      {schedule.status}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-2 pt-3 border-t border-[#e7e5dc]">
+                  <button
+                    onClick={() => onEditSchedule(schedule)}
+                    className="flex-1 px-2 py-1.5 text-xs font-semibold text-orange hover:bg-[#fff6ee] rounded transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => onDeleteSchedule(schedule.id)}
+                    className="flex-1 px-2 py-1.5 text-xs font-semibold text-[#8c3e2d] hover:bg-[#f7e5df] rounded transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onEditSchedule(schedule)}
-                  className="px-3 py-1 text-xs font-semibold text-orange hover:text-[#d97e3a]"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => onDeleteSchedule(schedule.id)}
-                  className="px-3 py-1 text-xs font-semibold text-[#8c3e2d] hover:text-red-600"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        ))
+            );
+          })}
+        </div>
       )}
     </div>
   </section>
 );
 
-// ── Trips View Component ───────────────────────────────────────────────────
-const TripsView = ({
-  trips,
-  schedules,
-  tripForm,
-  editingTripId,
-  onTripChange,
-  onSaveTrip,
-  onEditTrip,
-  onDeleteTrip,
-  onCancelEdit,
-  saving,
-}) => (
-  <section className="grid grid-cols-[350px_1fr] gap-8 py-8 max-[900px]:grid-cols-1">
-    {/* Form */}
-    <form onSubmit={onSaveTrip} className="space-y-4 rounded-lg border border-[#e7e5dc] bg-white p-6">
-      <h3 className="text-lg font-semibold text-ink">
-        {editingTripId ? "Edit Trip" : "Publish Trip"}
-      </h3>
-      <label className="block">
-        <span className="text-xs font-mono uppercase text-muted">Schedule</span>
-        <select
-          value={tripForm.scheduleId}
-          onChange={(e) => onTripChange("scheduleId", e.target.value)}
-          required
-          className="w-full mt-1 border-b border-line bg-transparent py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
-        >
-          <option value="">Select Schedule</option>
-          {schedules.map((schedule) => (
-            <option key={schedule.id} value={schedule.id}>
-              Schedule #{schedule.id}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className="block">
-        <span className="text-xs font-mono uppercase text-muted">Trip Date</span>
-        <input
-          type="date"
-          value={tripForm.tripDate}
-          onChange={(e) => onTripChange("tripDate", e.target.value)}
-          required
-          className="w-full mt-1 border-b border-line bg-transparent py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
-        />
-      </label>
-      <div className="flex gap-2 pt-4">
-        <button
-          type="submit"
-          disabled={saving}
-          className="flex-1 bg-orange text-white py-2 rounded font-semibold hover:bg-[#d97e3a] disabled:opacity-50"
-        >
-          {saving ? "Saving..." : editingTripId ? "Update" : "Publish"}
-        </button>
-        {editingTripId && (
-          <button
-            type="button"
-            onClick={onCancelEdit}
-            className="flex-1 border border-[#e7e5dc] text-ink py-2 rounded font-semibold hover:bg-[#fafaf8]"
-          >
-            Cancel
-          </button>
-        )}
+// ── Trips View (Read-only) ──────────────────────────────────────────────────
+const TripsViewReadOnly = ({ trips, schedules, routes, buses, onCreateNew }) => (
+  <section className="py-8">
+    <div className="mb-6 flex items-center justify-between max-[600px]:flex-col max-[600px]:gap-3">
+      <div>
+        <h3 className="text-lg font-semibold text-ink mb-2">Published Trips</h3>
+        <p className="text-sm text-muted">
+          {trips.length} trips
+        </p>
       </div>
-    </form>
+      <button
+        onClick={onCreateNew}
+        className="px-4 py-2 bg-orange text-white rounded font-semibold text-sm hover:bg-[#d97e3a] transition-colors"
+      >
+        + Create Schedule
+      </button>
+    </div>
 
-    {/* List */}
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-ink">Published Trips ({trips.length})</h3>
-      {trips.length === 0 ? (
-        <StateMessage>No trips published yet. Create a schedule first.</StateMessage>
-      ) : (
-        trips.map((trip) => (
-          <div
-            key={trip.id}
-            className="rounded-lg border border-[#e7e5dc] bg-white p-4"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-semibold text-ink">Trip #{trip.id}</h4>
-                <p className="text-xs text-muted">
-                  Schedule #{trip.scheduleId} · {trip.tripDate}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onEditTrip(trip)}
-                  className="px-3 py-1 text-xs font-semibold text-orange hover:text-[#d97e3a]"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => onDeleteTrip(trip.id)}
-                  className="px-3 py-1 text-xs font-semibold text-[#8c3e2d] hover:text-red-600"
-                >
-                  Delete
-                </button>
+    {trips.length === 0 ? (
+      <div className="rounded-lg border border-[#e7e5dc] bg-[#f9f9f7] p-4 text-center text-sm text-muted">
+        No trips published yet. Create a schedule to get started.
+      </div>
+    ) : (
+      <div className="grid gap-3">
+        {trips.map((trip) => {
+          const schedule = schedules.find((s) => s.id === trip.scheduleId);
+          const route = routes.find((r) => r.id === schedule?.routeId);
+          const bus = buses.find((b) => b.id === schedule?.busId);
+          return (
+            <div
+              key={trip.id}
+              className="rounded-lg border border-[#e7e5dc] bg-white p-4 hover:shadow-sm transition-shadow"
+            >
+              <div className="grid grid-cols-2 gap-4 items-start max-[600px]:grid-cols-1">
+                {/* Left: Route & Bus */}
+                <div className="pb-3 max-[600px]:pb-0 max-[600px]:border-b border-[#e7e5dc]">
+                  <h4 className="font-semibold text-ink text-sm mb-1">
+                    {route?.name || "Unknown Route"}
+                  </h4>
+                  <p className="text-xs text-muted mb-2">
+                    🚌 {bus?.model || "Unknown Bus"}
+                  </p>
+                  <p className="text-xs text-muted">
+                    Reg: {bus?.registrationNumber || "—"}
+                  </p>
+                </div>
+
+                {/* Right: Trip Details */}
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs text-muted font-mono mb-1">Trip Date</p>
+                    <p className="font-semibold text-ink text-sm">{trip.tripDate}</p>
+                    <p className="text-xs text-muted mt-1">
+                      Departure: {schedule?.departureTime || "—"}
+                    </p>
+                  </div>
+                  <span className="px-2.5 py-1 text-xs font-semibold bg-[#e8f3e0] text-green rounded-full">
+                    Active
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        ))
-      )}
-    </div>
+          );
+        })}
+      </div>
+    )}
   </section>
 );
