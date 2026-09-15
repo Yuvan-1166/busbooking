@@ -1,4 +1,4 @@
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink } from "react-router-dom"
 
 function initials(email) {
   // Derive up to 2 initials from the email local-part  e.g. john.doe@ → JD
@@ -25,7 +25,7 @@ export default function Header({ email, roles, onLogout }) {
       {/* Logo */}
       <Link
         className="flex items-center gap-2.5 text-xl font-bold tracking-[-.04em] text-ink no-underline"
-        to={isPassenger ? '/search' : workspacePath}
+        to={isPassenger ? "/" : isAdmin ? "/admin" : "/operator"}
       >
         <span className="grid h-[31px] w-[31px] rotate-[-8deg] place-items-center rounded-full bg-ink font-display text-base text-[#f9d66d]">
           B
@@ -35,8 +35,8 @@ export default function Header({ email, roles, onLogout }) {
 
       {/* Primary nav */}
       <nav className="ml-auto flex gap-9 max-[600px]:gap-4" aria-label="Main navigation">
-        <NavLink className={navClass} to={isPassenger ? '/search' : workspacePath}>
-          {isPassenger ? 'Find a ride' : 'Workspace'}
+        <NavLink className={navClass} to={isPassenger ? "/" : isAdmin ? "/admin" : "/operator"}>
+          {isPassenger ? 'Find a ride' : isAdmin ? 'Admin' : 'Operator'}
         </NavLink>
         {isPassenger && (
           <NavLink className={navClass} to="/bookings">

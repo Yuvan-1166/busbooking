@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { api } from "../api";
 import { rememberRegisteredUser } from "./authStorage";
@@ -26,6 +27,7 @@ const initialForms = {
 
 export default function AuthPage() {
   const { login, register } = useAuth();
+  const navigate = useNavigate();
 
   // 'login' | 'register' | 'verify' | 'forgot-password'
   const [mode, setMode] = useState("login");
@@ -74,6 +76,7 @@ export default function AuthPage() {
     try {
       if (mode === "login") {
         await login(form);
+        navigate("/", { replace: true });
       } else {
         const response = await register(form, registrationType);
         rememberRegisteredUser({

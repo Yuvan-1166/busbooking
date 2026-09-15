@@ -108,7 +108,7 @@ export default function BookingPanel({
         className="border-0 bg-transparent p-0 text-xs text-muted"
         onClick={onBack}
       >
-        ← Back to rides
+        ← Back to Search
       </button>
       <div className="mb-10 mt-[43px] flex items-end justify-between max-[900px]:flex-col max-[900px]:items-start max-[900px]:gap-6">
         <div>

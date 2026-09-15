@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { api } from "./api";
 import AccessDenied from "./auth/AccessDenied";
 import { useAuth } from "./auth/AuthContext";
@@ -9,9 +9,11 @@ import Footer from "./components/layout/Footer";
 import Header from "./components/layout/Header";
 import PaymentPage from "./components/payment/PaymentPage";
 import ProfilePage from "./components/profile/ProfilePage";
-import SearchPage from "./components/search/SearchPage";
+import HomePage from "./components/search/HomePage";
+import SearchResults from "./components/search/SearchResults";
 import AdminDashboard from "./components/workspace/AdminDashboard";
 import OperatorDashboard from "./components/workspace/OperatorDashboard";
+import AuthPage from "./auth/AuthPage";
 
 function App() {
   const [locations, setLocations] = useState([]);
@@ -33,13 +35,26 @@ function App() {
   const [error, setError] = useState("");
   const [authorizationError, setAuthorizationError] = useState(false);
   const { session, logout, hasRole } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
   const canBook = hasRole("PASSENGER");
   const isOperator = hasRole("OPERATOR");
   const isAdmin = hasRole("ADMIN");
 
+  // Redirect operators and admins to their respective routes when at /
+  useEffect(() => {
+    if (location.pathname === "/") {
+      if (isAdmin) {
+        navigate("/admin", { replace: true });
+      } else if (isOperator) {
+        navigate("/operator", { replace: true });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleLogout = () => {
-    navigate("/", { replace: true });
+    navigate("/login", { replace: true });
     logout();
   };
 
@@ -98,12 +113,6 @@ function App() {
     return locations.filter((location) => ids.has(location.id));
   }, [locations, routeStops]);
 
-  useEffect(() => {
-    if (!from && availableLocations[0])
-      setFrom(String(availableLocations[0].id));
-    if (!to && availableLocations[1]) setTo(String(availableLocations[1].id));
-  }, [availableLocations, from, to]);
-
   const matchingRoute = useMemo(
     () =>
       routes.find((route) => {
@@ -156,6 +165,7 @@ function App() {
     setSearching(true);
     try {
       setTrips(await api.getTrips(matchingRoute.id, date));
+      navigate("/search");
     } catch (searchError) {
       setError(searchError.message);
     } finally {
@@ -256,23 +266,42 @@ function App() {
       )}
       <Routes>
         <Route
+          path="/login"
+          element={<AuthPage />}
+        />
+        <Route
           path="/"
           element={
-            <Navigate
-              to={isAdmin ? "/admin" : isOperator ? "/operator" : "/search"}
-              replace
-            />
+            canBook ? (
+              <HomePage
+                locations={availableLocations}
+                from={from}
+                to={to}
+                date={date}
+                loading={loading}
+                searching={searching}
+                matchingRoute={matchingRoute}
+                onFromChange={setFrom}
+                onToChange={setTo}
+                onDateChange={setDate}
+                onSwap={() => {
+                  setFrom(to);
+                  setTo(from);
+                }}
+                onSubmit={searchTrips}
+              />
+            ) : isAdmin ? (
+              <Navigate to="/admin" replace />
+            ) : (
+              <Navigate to="/operator" replace />
+            )
           }
         />
         <Route
           path="/search"
           element={
-            isAdmin || isOperator ? (
-              <Navigate to={isAdmin ? "/admin" : "/operator"} replace />
-            ) : authorizationError ? (
-              <AccessDenied />
-            ) : (
-              <SearchPage
+            canBook ? (
+              <SearchResults
                 locations={locations}
                 routes={routes}
                 routeStops={routeStops}
@@ -304,6 +333,8 @@ function App() {
                 }}
                 getTripFare={getTripFare}
               />
+            ) : (
+              <Navigate to="/" replace />
             )
           }
         />
@@ -321,11 +352,11 @@ function App() {
                 onConfirm={confirmBooking}
                 bookingInProgress={bookingInProgress}
                 onBack={() => {
-                  navigate("/bookings");
+                  navigate("/search");
                 }}
               />
             ) : (
-              <Navigate to="/search" replace />
+              <Navigate to="/" replace />
             )
           }
         />
@@ -349,7 +380,7 @@ function App() {
               <Bookings
                 tickets={tickets}
                 loading={ticketsLoading}
-                onFind={() => navigate("/search")}
+                onFind={() => navigate("/")}
                 onCancel={cancelBooking}
               />
             ) : (
