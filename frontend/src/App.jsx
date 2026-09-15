@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import { api } from "./api";
+import { enrichTripsData } from "./utils/tripEnricher";
 import AccessDenied from "./auth/AccessDenied";
 import { useAuth } from "./auth/AuthContext";
 import BookingPanel from "./components/booking/BookingPanel";
@@ -164,7 +165,9 @@ function App() {
       return setError("No route connects the selected locations.");
     setSearching(true);
     try {
-      setTrips(await api.getTrips(matchingRoute.id, date));
+      const rawTrips = await api.getTrips(matchingRoute.id, date);
+      const enrichedTrips = await enrichTripsData(rawTrips, api);
+      setTrips(enrichedTrips);
       navigate("/search");
     } catch (searchError) {
       setError(searchError.message);
