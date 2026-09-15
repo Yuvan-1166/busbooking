@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { api } from '../api'
-import { clearStoredSession, createSession, getRememberedUserId, getStoredSession, hasRole, storeSession } from './authStorage'
+import { clearStoredSession, createSession, getStoredSession, hasRole, storeSession } from './authStorage'
 
 const AuthContext = createContext(null)
 
@@ -18,10 +18,7 @@ export function AuthProvider({ children }) {
 
   const login = async (credentials) => {
     const response = await api.login(credentials)
-    const previousSession = getStoredSession()
-    const rememberedUserId = getRememberedUserId(credentials.email)
-    const previousUserId = previousSession?.email === credentials.email ? previousSession.userId : rememberedUserId
-    const nextSession = createSession(response, previousUserId)
+    const nextSession = createSession(response)
     storeSession(nextSession)
     setSession(nextSession)
     return nextSession

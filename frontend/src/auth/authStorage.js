@@ -8,7 +8,7 @@ function decodePayload(token) {
   return JSON.parse(atob(normalized.padEnd(normalized.length + (4 - normalized.length % 4) % 4, '=')))
 }
 
-export function createSession(response, previousUserId = null) {
+export function createSession(response) {
   const claims = decodePayload(response.accessToken)
   const roles = String(claims.roles || '').split(',').map((role) => role.trim()).filter(Boolean)
   return {
@@ -17,7 +17,6 @@ export function createSession(response, previousUserId = null) {
     expiresIn: response.expiresIn,
     email: claims.sub,
     roles,
-    userId: previousUserId,
     expiresAt: claims.exp ? claims.exp * 1000 : Date.now() + response.expiresIn * 1000,
   }
 }
@@ -46,16 +45,6 @@ export function clearStoredSession() {
 
 export function rememberRegisteredUser(user) {
   localStorage.setItem(REGISTERED_USER_KEY, JSON.stringify(user))
-}
-
-export function getRememberedUserId(email) {
-  try {
-    const user = JSON.parse(localStorage.getItem(REGISTERED_USER_KEY))
-    return user?.email === email ? user.userId : null
-  } catch {
-    localStorage.removeItem(REGISTERED_USER_KEY)
-    return null
-  }
 }
 
 export function hasRole(session, role) {

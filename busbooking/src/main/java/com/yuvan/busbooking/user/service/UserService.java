@@ -1,6 +1,7 @@
 package com.yuvan.busbooking.user.service;
 
 import com.yuvan.busbooking.common.exception.ResourceNotFoundException;
+import com.yuvan.busbooking.common.util.SecurityUtils;
 import com.yuvan.busbooking.user.dto.UserRequest;
 import com.yuvan.busbooking.user.dto.UserResponse;
 import com.yuvan.busbooking.user.entity.User;
@@ -79,6 +80,18 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
+    public User findMe() {
+        String email = SecurityUtils.getCurrentUserEmail();
+        User user = userRepository.findByEmail(email)
+                    .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                            "User not found: " + email
+                        )
+                    );
+        return user;
+    }
+
+    @Transactional(readOnly = true)
     public UserResponse findById(Long id) {
 
         User user = userRepository.findById(id)
@@ -126,6 +139,34 @@ public class UserService {
         }
 
         return toResponse(userRepository.save(user));
+    }
+    
+    public UserResponse update(UserRequest request) {
+
+        String email = SecurityUtils.getCurrentUserEmail();
+        User user = userRepository.findByEmail(email)
+                    .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                            "User not found" + email
+                        )
+                    );
+
+        if(!request.email().equals(user.getEmail()) && userRepository.existsByEmail(request.email())) {
+            throw new IllegalArgumentException(
+                "Email already exists"
+            );
+        }
+        
+        user.setEmail(request.email());
+        user.setFirstName(request.firstName());
+        user.setLastName(request.lastName());
+        user.setPhone(request.phone());
+        
+        if(request.status() != null)
+            user.setStatus(request.status());
+
+        return toResponse(user);
+        
     }
 
     public void delete(Long id) {

@@ -2,6 +2,7 @@ package com.yuvan.busbooking.user.controller;
 
 import com.yuvan.busbooking.user.dto.UserRequest;
 import com.yuvan.busbooking.user.dto.UserResponse;
+import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -32,14 +33,14 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<UserResponse>> findAll() {
 
         return ResponseEntity.ok(userService.findAll());
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserResponse> findById(
             @PathVariable Long id) {
 
@@ -65,6 +66,20 @@ public class UserController {
         userService.delete(id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<User> findMe() {
+        return ResponseEntity.ok(userService.findMe());
+    }
+
+    @PutMapping("/me")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserResponse> update(@Valid @RequestBody UserRequest request) {
+        return ResponseEntity.ok(
+            userService.update(request)
+        );
     }
     
 }

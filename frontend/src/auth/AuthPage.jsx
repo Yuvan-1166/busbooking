@@ -78,7 +78,6 @@ export default function AuthPage() {
         const response = await register(form, registrationType);
         rememberRegisteredUser({
           email: response.email,
-          userId: response.userId,
         });
         // Registration succeeded → move to OTP verification step
         setPendingEmail(response.email);

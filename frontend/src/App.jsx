@@ -8,6 +8,7 @@ import Bookings from "./components/booking/Bookings";
 import Footer from "./components/layout/Footer";
 import Header from "./components/layout/Header";
 import PaymentPage from "./components/payment/PaymentPage";
+import ProfilePage from "./components/profile/ProfilePage";
 import SearchPage from "./components/search/SearchPage";
 import AdminDashboard from "./components/workspace/AdminDashboard";
 import OperatorDashboard from "./components/workspace/OperatorDashboard";
@@ -376,6 +377,7 @@ function App() {
           path="/admin/:section"
           element={isAdmin ? <AdminDashboard /> : <AccessDenied />}
         />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Footer />
