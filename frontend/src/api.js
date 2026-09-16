@@ -62,6 +62,7 @@ export const api = {
   createBulkTrips: (payload) => request('/trips/bulk', { method: 'POST', body: JSON.stringify(payload) }),
   updateTrip: (tripId, payload) => request(`/trips/${tripId}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteTrip: (tripId) => request(`/trips/${tripId}`, { method: 'DELETE' }),
+  cancelTrip: (tripId, reason) => request(`/trips/${tripId}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) }),
   getUsers: () => request('/users'),
   getCurrentUser: () => request('/users/me'),
   getUser: (id) => request(`/users/${id}`),

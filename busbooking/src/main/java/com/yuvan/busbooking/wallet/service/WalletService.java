@@ -69,4 +69,19 @@ public class WalletService {
         walletRepository.save(wallet);
         return wallet.getBalance();
     }
+
+    /**
+     * Add (refund) {@code amount} to the wallet of {@code userId}.
+     * Returns the wallet balance after refund.
+     */
+    @Transactional
+    public BigDecimal refund(Long userId, BigDecimal amount) {
+        UserWallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Wallet not found for user: " + userId));
+
+        wallet.setBalance(wallet.getBalance().add(amount));
+        walletRepository.save(wallet);
+        return wallet.getBalance();
+    }
 }

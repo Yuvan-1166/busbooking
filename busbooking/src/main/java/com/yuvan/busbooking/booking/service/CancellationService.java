@@ -17,6 +17,7 @@ import com.yuvan.busbooking.ticket.repository.TicketRepository;
 import com.yuvan.busbooking.trip.entity.Trip;
 import com.yuvan.busbooking.trip.entity.TripSeat;
 import com.yuvan.busbooking.trip.entity.TripSeatStatus;
+import com.yuvan.busbooking.wallet.service.WalletService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,19 +33,22 @@ public class CancellationService {
     private final CancellationRepository cancellationRepository;
     private final RefundService refundService;
     private final TicketRepository ticketRepository;
+    private final WalletService walletService;
 
     public CancellationService(
             BookingRepository bookingRepository,
             BookingPassengerRepository bookingPassengerRepository,
             CancellationRepository cancellationRepository,
             RefundService refundService,
-            TicketRepository ticketRepository
+            TicketRepository ticketRepository,
+            WalletService walletService
     ) {
         this.bookingRepository = bookingRepository;
         this.bookingPassengerRepository = bookingPassengerRepository;
         this.cancellationRepository = cancellationRepository;
         this.refundService = refundService;
         this.ticketRepository = ticketRepository;
+        this.walletService = walletService;
     }
 
     @Transactional
@@ -123,6 +127,9 @@ public class CancellationService {
         cancellation = cancellationRepository.save(cancellation);
 
         refundService.refundBooking(bookingId);
+
+        // 9. Refund to wallet
+        walletService.refund(booking.getUser().getId(), refundAmount);
 
         return toResponse(cancellation);
     }

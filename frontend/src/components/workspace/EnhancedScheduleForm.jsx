@@ -45,12 +45,12 @@ export default function EnhancedScheduleForm({
     if (
       scheduleForm.tripGenerationFrom &&
       scheduleForm.tripGenerationTo &&
-      (Object.values(scheduleForm.operatingDays).some((v) => v))
+      Object.values(scheduleForm.operatingDays).some((v) => v)
     ) {
       return generateTripDates(
         scheduleForm.tripGenerationFrom,
         scheduleForm.tripGenerationTo,
-        scheduleForm.operatingDays
+        scheduleForm.operatingDays,
       );
     }
     return [];
@@ -65,7 +65,7 @@ export default function EnhancedScheduleForm({
     return validateTripGeneration(
       scheduleForm.tripGenerationFrom,
       scheduleForm.tripGenerationTo,
-      scheduleForm.operatingDays
+      scheduleForm.operatingDays,
     );
   }, [
     scheduleForm.tripGenerationFrom,
@@ -77,15 +77,17 @@ export default function EnhancedScheduleForm({
   const dayKeys = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
 
   return (
-    <form onSubmit={onSaveSchedule} className="rounded-lg border border-[#e7e5dc] bg-white p-5 max-h-[90vh] overflow-y-auto">
-      <h3 className="text-base font-semibold text-ink mb-4">
-        {editingScheduleId ? "Edit Schedule" : "Create Schedule & Publish"}
-      </h3>
+    <form
+      onSubmit={onSaveSchedule}
+      className="w-full rounded-lg border border-[#e7e5dc] bg-white p-7 max-h-[90vh]"
+    >
 
       {/* Row 1: Route & Bus */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-2 gap-3 mb-7">
         <label className="block">
-          <span className="text-xs font-mono uppercase text-muted block mb-1">Route *</span>
+          <span className="text-xs font-mono uppercase text-muted block mb-1">
+            Route *
+          </span>
           <select
             value={scheduleForm.routeId}
             onChange={(e) => onScheduleChange("routeId", e.target.value)}
@@ -101,7 +103,9 @@ export default function EnhancedScheduleForm({
           </select>
         </label>
         <label className="block">
-          <span className="text-xs font-mono uppercase text-muted block mb-1">Bus *</span>
+          <span className="text-xs font-mono uppercase text-muted block mb-1">
+            Bus *
+          </span>
           <select
             value={scheduleForm.busId}
             onChange={(e) => onScheduleChange("busId", e.target.value)}
@@ -111,7 +115,7 @@ export default function EnhancedScheduleForm({
             <option value="">Select</option>
             {buses.map((bus) => (
               <option key={bus.id} value={bus.id}>
-                {bus.model.substring(0, 12)}
+                {bus.registrationNumber}
               </option>
             ))}
           </select>
@@ -119,9 +123,11 @@ export default function EnhancedScheduleForm({
       </div>
 
       {/* Row 2: Time & Pricing */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-3 gap-3 mb-7">
         <label className="block">
-          <span className="text-xs font-mono uppercase text-muted block mb-1">Time *</span>
+          <span className="text-xs font-mono uppercase text-muted block mb-1">
+            Time *
+          </span>
           <input
             type="time"
             value={scheduleForm.departureTime}
@@ -131,7 +137,9 @@ export default function EnhancedScheduleForm({
           />
         </label>
         <label className="block">
-          <span className="text-xs font-mono uppercase text-muted block mb-1">Base (₹) *</span>
+          <span className="text-xs font-mono uppercase text-muted block mb-1">
+            Base (₹) *
+          </span>
           <input
             type="number"
             step="0.01"
@@ -142,7 +150,9 @@ export default function EnhancedScheduleForm({
           />
         </label>
         <label className="block">
-          <span className="text-xs font-mono uppercase text-muted block mb-1">/KM (₹) *</span>
+          <span className="text-xs font-mono uppercase text-muted block mb-1">
+            /KM (₹) *
+          </span>
           <input
             type="number"
             step="0.01"
@@ -155,9 +165,11 @@ export default function EnhancedScheduleForm({
       </div>
 
       {/* Row 3: Effective Dates */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-2 gap-5 mb-7">
         <label className="block">
-          <span className="text-xs font-mono uppercase text-muted block mb-1">From</span>
+          <span className="text-xs font-mono uppercase text-muted block mb-1">
+            From
+          </span>
           <input
             type="date"
             value={scheduleForm.effectiveFrom}
@@ -166,7 +178,9 @@ export default function EnhancedScheduleForm({
           />
         </label>
         <label className="block">
-          <span className="text-xs font-mono uppercase text-muted block mb-1">Until</span>
+          <span className="text-xs font-mono uppercase text-muted block mb-1">
+            Until
+          </span>
           <input
             type="date"
             value={scheduleForm.effectiveUntil}
@@ -174,8 +188,12 @@ export default function EnhancedScheduleForm({
             className="w-full border-b border-line bg-transparent py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange"
           />
         </label>
+      </div>
+      <div  className="grid grid-cols-1 gap-3 mb-7">
         <label className="block">
-          <span className="text-xs font-mono uppercase text-muted block mb-1">Status</span>
+          <span className="text-xs font-mono uppercase text-muted block mb-1">
+            Status
+          </span>
           <select
             value={scheduleForm.status}
             onChange={(e) => onScheduleChange("status", e.target.value)}
@@ -188,8 +206,10 @@ export default function EnhancedScheduleForm({
       </div>
 
       {/* Operating Days - Compact */}
-      <div className="mb-4">
-        <p className="text-xs font-mono uppercase text-muted mb-2">Operating Days</p>
+      <div className="mb-7">
+        <p className="text-xs font-mono uppercase text-muted mb-2">
+          Operating Days
+        </p>
         <div className="flex gap-1.5">
           {days.map((day, index) => (
             <button
@@ -206,12 +226,16 @@ export default function EnhancedScheduleForm({
             </button>
           ))}
         </div>
-        <p className="text-xs text-muted mt-1.5">{formatOperatingDays(scheduleForm.operatingDays)}</p>
+        <p className="text-xs text-muted mt-1.5">
+          {formatOperatingDays(scheduleForm.operatingDays)}
+        </p>
       </div>
 
       {/* Trip Generation - Compact */}
-      <div className="mb-4 border-t border-[#e7e5dc] pt-4">
-        <p className="text-xs font-mono uppercase text-muted mb-2">Generate Trips</p>
+      <div className="mb-7 border-t border-[#e7e5dc] pt-4">
+        <p className="text-xs font-mono uppercase text-muted mb-2">
+          Generate Trips
+        </p>
         {validationErrors.length > 0 && (
           <div className="mb-3 text-xs text-[#8c3e2d]">
             {validationErrors.map((err, i) => (
@@ -221,20 +245,28 @@ export default function EnhancedScheduleForm({
         )}
         <div className="grid grid-cols-2 gap-3 mb-2">
           <label className="block">
-            <span className="text-xs font-mono uppercase text-muted block mb-1">From *</span>
+            <span className="text-xs font-mono uppercase text-muted block mb-1">
+              From *
+            </span>
             <input
               type="date"
               value={scheduleForm.tripGenerationFrom}
-              onChange={(e) => onScheduleChange("tripGenerationFrom", e.target.value)}
+              onChange={(e) =>
+                onScheduleChange("tripGenerationFrom", e.target.value)
+              }
               className="w-full border-b border-line bg-transparent py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange"
             />
           </label>
           <label className="block">
-            <span className="text-xs font-mono uppercase text-muted block mb-1">To *</span>
+            <span className="text-xs font-mono uppercase text-muted block mb-1">
+              To *
+            </span>
             <input
               type="date"
               value={scheduleForm.tripGenerationTo}
-              onChange={(e) => onScheduleChange("tripGenerationTo", e.target.value)}
+              onChange={(e) =>
+                onScheduleChange("tripGenerationTo", e.target.value)
+              }
               className="w-full border-b border-line bg-transparent py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange"
             />
           </label>
@@ -242,7 +274,9 @@ export default function EnhancedScheduleForm({
 
         {generatedDates.length > 0 && (
           <div className="flex items-center justify-between text-xs bg-[#e4eee1] border border-[#a5bea0] p-2 rounded mt-2">
-            <span className="text-green font-semibold">✓ {generatedDates.length} trips</span>
+            <span className="text-green font-semibold">
+              ✓ {generatedDates.length} trips
+            </span>
             <button
               type="button"
               onClick={() => setShowPreview(!showPreview)}
@@ -257,12 +291,20 @@ export default function EnhancedScheduleForm({
           <div className="mt-2 rounded-md bg-[#f9f9f7] p-2 max-h-[80px] overflow-y-auto">
             <div className="grid grid-cols-6 gap-1 text-[9px]">
               {generatedDates.slice(0, 12).map((date) => (
-                <div key={date} className="px-1 py-0.5 bg-white border border-[#e7e5dc] rounded text-center">
-                  {new Date(date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                <div
+                  key={date}
+                  className="px-1 py-0.5 bg-white border border-[#e7e5dc] rounded text-center"
+                >
+                  {new Date(date).toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                  })}
                 </div>
               ))}
               {generatedDates.length > 12 && (
-                <div className="px-1 py-0.5 text-muted">+{generatedDates.length - 12} more</div>
+                <div className="px-1 py-0.5 text-muted">
+                  +{generatedDates.length - 12} more
+                </div>
               )}
             </div>
           </div>

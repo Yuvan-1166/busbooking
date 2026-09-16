@@ -39,6 +39,8 @@ public record TicketResponse(
 
         LocalDateTime expiresAt,
 
-        TicketStatus ticketStatus
+        TicketStatus ticketStatus,
+
+        String cancellationReason
 
 ) {}

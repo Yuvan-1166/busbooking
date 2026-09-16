@@ -1,12 +1,13 @@
-import { cloneElement, useEffect, useState } from "react";
+import { cloneElement, useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api";
 import { parseApiError, getErrorMessage } from "../../utils/errorHandler";
 import { generateTripDates, validateTripGeneration } from "../../utils/tripGeneration";
 import StateMessage from "../common/StateMessage";
+import Pagination from "../common/Pagination";
 import MetricCard from "./MetricCard";
 import SeatsWorkspace from "./SeatsWorkspace";
-import EnhancedScheduleForm from "./EnhancedScheduleForm";
+import ScheduleFormModal from "./ScheduleFormModal";
 
 const emptyBus = {
   registrationNumber: "",
@@ -61,6 +62,11 @@ export default function OperatorDashboard() {
   const [saving, setSaving] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [schedulePage, setSchedulePage] = useState(1);
+  const [tripsPage, setTripsPage] = useState(1);
+
+  const ITEMS_PER_PAGE = 8;
 
   const loadData = async () => {
     setLoading(true);
@@ -208,7 +214,7 @@ export default function OperatorDashboard() {
               tripDates: tripDates,
             });
             setMessage(
-              `Schedule created successfully! 🎉 ${tripDates.length} trips published.`
+              `Schedule created successfully! ${tripDates.length} trips published.`
             );
           } catch (tripError) {
             // Schedule created but trip bulk creation failed
@@ -324,6 +330,21 @@ export default function OperatorDashboard() {
       console.error("Trip delete failed:", appError);
     } finally {
       setSaving("");
+    }
+  };
+
+  const cancelTrip = async (tripId, cancellationReason) => {
+    setError("");
+    setMessage("");
+    try {
+      await api.cancelTrip(tripId, cancellationReason);
+      setMessage("Trip cancelled successfully. All passengers have been refunded.");
+      await loadData();
+    } catch (cancelError) {
+      const appError = parseApiError(cancelError);
+      setError(getErrorMessage(appError));
+      console.error("Trip cancellation failed:", appError);
+      throw appError;
     }
   };
 
@@ -486,6 +507,13 @@ export default function OperatorDashboard() {
                 setEditingScheduleId(null);
               }}
               saving={saving === "Schedule"}
+              onOpenModal={() => setShowScheduleModal(true)}
+              onCloseModal={() => setShowScheduleModal(false)}
+              showModal={showScheduleModal}
+              schedulePage={schedulePage}
+              onSchedulePageChange={setSchedulePage}
+              tripsPage={tripsPage}
+              onTripsPageChange={setTripsPage}
             />
           )}
           {view === "trips" && (
@@ -495,6 +523,9 @@ export default function OperatorDashboard() {
               routes={routes}
               buses={buses}
               onCreateNew={() => setView("schedules")}
+              tripsPage={tripsPage}
+              onTripsPageChange={setTripsPage}
+              onCancelTrip={cancelTrip}
             />
           )}
         </>
@@ -592,10 +623,7 @@ const BusesView = ({
         >
           <option value="SLEEPER">Sleeper</option>
           <option value="SEMI_SLEEPER">Semi-Sleeper</option>
-          <option value="COACH">Coach</option>
-          <option value="LUXURY">Luxury</option>
           <option value="AC_SLEEPER">AC Sleeper</option>
-          <option value="AC_SEMI_SLEEPER">AC Semi-Sleeper</option>
         </select>
       </label>
       <label className="block">
@@ -665,7 +693,7 @@ const BusesView = ({
   </section>
 );
 
-// ── Schedules View with Integrated Form ────────────────────────────────────
+// ── Schedules View with Modal Form ────────────────────────────────────────
 const SchedulesViewWithForm = ({
   schedules,
   routes,
@@ -679,163 +707,297 @@ const SchedulesViewWithForm = ({
   onDeleteSchedule,
   onCancelEdit,
   saving,
-}) => (
-  <section className="grid grid-cols-[280px_1fr] gap-6 py-8 max-[900px]:grid-cols-1">
-    {/* Compact Form */}
-    <EnhancedScheduleForm
-      scheduleForm={scheduleForm}
-      onScheduleChange={onScheduleChange}
-      onOperatingDayChange={onOperatingDayChange}
-      onSaveSchedule={onSaveSchedule}
-      onCancelEdit={onCancelEdit}
-      editingScheduleId={editingScheduleId}
-      routes={routes}
-      buses={buses}
-      saving={saving}
-    />
+  onOpenModal,
+  onCloseModal,
+  showModal,
+  schedulePage,
+  onSchedulePageChange,
+}) => {
+  const ITEMS_PER_PAGE = 8;
+  
+  const totalPages = Math.ceil(schedules.length / ITEMS_PER_PAGE);
+  const paginatedSchedules = useMemo(() => {
+    const startIdx = (schedulePage - 1) * ITEMS_PER_PAGE;
+    return schedules.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+  }, [schedules, schedulePage]);
 
-    {/* Schedule Cards with Info */}
-    <div>
-      <h3 className="text-lg font-semibold text-ink mb-4">Schedules ({schedules.length})</h3>
-      {schedules.length === 0 ? (
-        <div className="rounded-lg border border-[#e7e5dc] bg-[#f9f9f7] p-4 text-center text-sm text-muted">
-          No schedules yet. Create one to publish trips in bulk.
+  return (
+    <>
+      {/* Modal */}
+      <ScheduleFormModal
+        isOpen={showModal}
+        scheduleForm={scheduleForm}
+        onScheduleChange={onScheduleChange}
+        onOperatingDayChange={onOperatingDayChange}
+        onSaveSchedule={onSaveSchedule}
+        onCancelEdit={onCancelEdit}
+        editingScheduleId={editingScheduleId}
+        routes={routes}
+        buses={buses}
+        saving={saving}
+        onClose={onCloseModal}
+      />
+
+      <section className="py-8">
+        <div className="mb-6 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-ink">Schedules ({schedules.length})</h3>
+          <button
+            onClick={onOpenModal}
+            className="px-4 py-2 bg-orange text-white rounded font-semibold text-sm hover:bg-[#d97e3a] transition-colors"
+          >
+            + Create Schedule
+          </button>
         </div>
-      ) : (
-        <div className="grid gap-3">
-          {schedules.map((schedule) => {
-            const route = routes.find((r) => r.id === schedule.routeId);
-            const bus = buses.find((b) => b.id === schedule.busId);
-            return (
-              <div
-                key={schedule.id}
-                className="rounded-lg border border-[#e7e5dc] bg-white p-4 hover:shadow-sm transition-shadow"
+
+        {schedules.length === 0 ? (
+          <div className="rounded-lg border border-[#e7e5dc] bg-[#f9f9f7] p-4 text-center text-sm text-muted">
+            No schedules yet. Click "Create Schedule" to get started.
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-3 mb-6">
+              {paginatedSchedules.map((schedule) => {
+                const route = routes.find((r) => r.id === schedule.routeId);
+                const bus = buses.find((b) => b.id === schedule.busId);
+                return (
+                  <div
+                    key={schedule.id}
+                    className="rounded-lg border border-[#e7e5dc] bg-white p-4 hover:shadow-sm transition-shadow"
+                  >
+                    <div className="mb-3 pb-3 border-b border-[#e7e5dc]">
+                      <h4 className="font-semibold text-ink text-sm mb-1">
+                        {route?.name || "Unknown Route"}
+                      </h4>
+                      <p className="text-xs text-muted">
+                        {bus?.model || "Unknown Bus"} • Reg: {bus?.registrationNumber || "—"}
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mb-3 text-xs">
+                      <div>
+                        <p className="text-muted font-mono">Departure</p>
+                        <p className="font-semibold text-ink">{schedule.departureTime}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted font-mono">Pricing</p>
+                        <p className="font-semibold text-ink">
+                          ₹{schedule.baseFare} + ₹{schedule.pricePerKm}/km
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted font-mono">Effective</p>
+                        <p className="font-semibold text-ink text-[11px]">
+                          {schedule.effectiveFrom ? `${schedule.effectiveFrom.substring(5)}` : "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-muted font-mono">Status</p>
+                        <p className={`font-semibold text-xs ${schedule.status === "ACTIVE" ? "text-green" : "text-muted"}`}>
+                          {schedule.status}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-3 border-t border-[#e7e5dc]">
+                      <button
+                        onClick={() => {
+                          onEditSchedule(schedule);
+                          onOpenModal();
+                        }}
+                        className="flex-1 px-2 py-1.5 text-xs font-semibold text-orange hover:bg-[#fff6ee] rounded transition-colors"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => onDeleteSchedule(schedule.id)}
+                        className="flex-1 px-2 py-1.5 text-xs font-semibold text-[#8c3e2d] hover:bg-[#f7e5df] rounded transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={schedulePage}
+                totalPages={totalPages}
+                onPageChange={onSchedulePageChange}
+                isLoading={saving}
+              />
+            )}
+          </>
+        )}
+      </section>
+    </>
+  );
+};
+
+// ── Trips View (Read-only) with Pagination ────────────────────────────────
+const TripsViewReadOnly = ({ trips, schedules, routes, buses, onCreateNew, tripsPage, onTripsPageChange, onCancelTrip }) => {
+  const ITEMS_PER_PAGE = 8;
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedTripId, setSelectedTripId] = useState(null);
+  const [cancellationReason, setCancellationReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
+  
+  const totalPages = Math.ceil(trips.length / ITEMS_PER_PAGE);
+  const paginatedTrips = useMemo(() => {
+    const startIdx = (tripsPage - 1) * ITEMS_PER_PAGE;
+    return trips.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+  }, [trips, tripsPage]);
+
+  const handleCancelClick = (tripId) => {
+    setSelectedTripId(tripId);
+    setCancellationReason("");
+    setShowCancelModal(true);
+  };
+
+  const handleConfirmCancel = async () => {
+    if (!cancellationReason.trim()) {
+      alert("Please provide a reason for trip cancellation");
+      return;
+    }
+    setCancelling(true);
+    try {
+      await onCancelTrip(selectedTripId, cancellationReason);
+      setShowCancelModal(false);
+      setCancellationReason("");
+      setSelectedTripId(null);
+    } catch (error) {
+      console.error("Failed to cancel trip:", error);
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  return (
+    <>
+      {/* Cancellation Modal */}
+      {showCancelModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="rounded-lg border border-[#e7e5dc] bg-white p-6 max-w-sm w-full mx-4">
+            <h3 className="text-lg font-semibold text-ink mb-4">Cancel Trip</h3>
+            <p className="text-sm text-muted mb-4">
+              This will cancel the trip, refund all passengers, and move their bookings to past trips.
+            </p>
+            <label className="block mb-4">
+              <span className="text-xs font-mono uppercase text-muted block mb-1">
+                Reason for Cancellation *
+              </span>
+              <textarea
+                value={cancellationReason}
+                onChange={(e) => setCancellationReason(e.target.value)}
+                placeholder="e.g., Driver unavailable, Bus breakdown, Route issues"
+                className="w-full border border-[#e7e5dc] rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
+                rows={4}
+              />
+            </label>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowCancelModal(false)}
+                className="flex-1 border border-[#e7e5dc] text-ink py-2 rounded font-semibold hover:bg-[#fafaf8] transition-colors"
               >
-                {/* Header: Route & Bus */}
-                <div className="mb-3 pb-3 border-b border-[#e7e5dc]">
-                  <h4 className="font-semibold text-ink text-sm mb-1">
-                    {route?.name || "Unknown Route"}
-                  </h4>
-                  <p className="text-xs text-muted">
-                    🚌 {bus?.model || "Unknown Bus"} • Reg: {bus?.registrationNumber || "—"}
-                  </p>
-                </div>
-
-                {/* Details */}
-                <div className="grid grid-cols-2 gap-3 mb-3 text-xs">
-                  <div>
-                    <p className="text-muted font-mono">Departure</p>
-                    <p className="font-semibold text-ink">{schedule.departureTime}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted font-mono">Pricing</p>
-                    <p className="font-semibold text-ink">
-                      ₹{schedule.baseFare} + ₹{schedule.pricePerKm}/km
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted font-mono">Effective</p>
-                    <p className="font-semibold text-ink text-[11px]">
-                      {schedule.effectiveFrom ? `${schedule.effectiveFrom.substring(5)}` : "—"}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted font-mono">Status</p>
-                    <p className={`font-semibold text-xs ${schedule.status === "ACTIVE" ? "text-green" : "text-muted"}`}>
-                      {schedule.status}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-2 pt-3 border-t border-[#e7e5dc]">
-                  <button
-                    onClick={() => onEditSchedule(schedule)}
-                    className="flex-1 px-2 py-1.5 text-xs font-semibold text-orange hover:bg-[#fff6ee] rounded transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => onDeleteSchedule(schedule.id)}
-                    className="flex-1 px-2 py-1.5 text-xs font-semibold text-[#8c3e2d] hover:bg-[#f7e5df] rounded transition-colors"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+                Keep Trip
+              </button>
+              <button
+                onClick={handleConfirmCancel}
+                disabled={cancelling}
+                className="flex-1 bg-[#8c3e2d] text-white py-2 rounded font-semibold hover:bg-[#6d2f24] disabled:opacity-50 transition-colors"
+              >
+                {cancelling ? "Cancelling..." : "Cancel Trip"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
-    </div>
-  </section>
-);
 
-// ── Trips View (Read-only) ──────────────────────────────────────────────────
-const TripsViewReadOnly = ({ trips, schedules, routes, buses, onCreateNew }) => (
-  <section className="py-8">
-    <div className="mb-6 flex items-center justify-between max-[600px]:flex-col max-[600px]:gap-3">
-      <div>
-        <h3 className="text-lg font-semibold text-ink mb-2">Published Trips</h3>
-        <p className="text-sm text-muted">
-          {trips.length} trips
-        </p>
-      </div>
-      <button
-        onClick={onCreateNew}
-        className="px-4 py-2 bg-orange text-white rounded font-semibold text-sm hover:bg-[#d97e3a] transition-colors"
-      >
-        + Create Schedule
-      </button>
-    </div>
+      <section className="py-8">
+        <div className="mb-6 flex items-center justify-between max-[600px]:flex-col max-[600px]:gap-3">
+          <div>
+            <h3 className="text-lg font-semibold text-ink mb-2">Published Trips</h3>
+            <p className="text-sm text-muted">
+              {trips.length} trips • Auto-created from schedules
+            </p>
+          </div>
+          <button
+            onClick={onCreateNew}
+            className="px-4 py-2 bg-orange text-white rounded font-semibold text-sm hover:bg-[#d97e3a] transition-colors"
+          >
+            + Create Schedule
+          </button>
+        </div>
 
-    {trips.length === 0 ? (
-      <div className="rounded-lg border border-[#e7e5dc] bg-[#f9f9f7] p-4 text-center text-sm text-muted">
-        No trips published yet. Create a schedule to get started.
-      </div>
-    ) : (
-      <div className="grid gap-3">
-        {trips.map((trip) => {
-          const schedule = schedules.find((s) => s.id === trip.scheduleId);
-          const route = routes.find((r) => r.id === schedule?.routeId);
-          const bus = buses.find((b) => b.id === schedule?.busId);
-          return (
-            <div
-              key={trip.id}
-              className="rounded-lg border border-[#e7e5dc] bg-white p-4 hover:shadow-sm transition-shadow"
-            >
-              <div className="grid grid-cols-2 gap-4 items-start max-[600px]:grid-cols-1">
-                {/* Left: Route & Bus */}
-                <div className="pb-3 max-[600px]:pb-0 max-[600px]:border-b border-[#e7e5dc]">
-                  <h4 className="font-semibold text-ink text-sm mb-1">
-                    {route?.name || "Unknown Route"}
-                  </h4>
-                  <p className="text-xs text-muted mb-2">
-                    🚌 {bus?.model || "Unknown Bus"}
-                  </p>
-                  <p className="text-xs text-muted">
-                    Reg: {bus?.registrationNumber || "—"}
-                  </p>
-                </div>
+        {trips.length === 0 ? (
+          <div className="rounded-lg border border-[#e7e5dc] bg-[#f9f9f7] p-4 text-center text-sm text-muted">
+            No trips published yet. Create a schedule to get started.
+          </div>
+        ) : (
+          <>
+            <div className="grid gap-3 mb-6">
+              {paginatedTrips.map((trip) => {
+                const schedule = schedules.find((s) => s.id === trip.scheduleId);
+                const route = routes.find((r) => r.id === schedule?.routeId);
+                const bus = buses.find((b) => b.id === schedule?.busId);
+                return (
+                  <div
+                    key={trip.id}
+                    className="rounded-lg border border-[#e7e5dc] bg-white p-4 hover:shadow-sm transition-shadow"
+                  >
+                    <div className="grid grid-cols-2 gap-4 items-start max-[600px]:grid-cols-1">
+                      {/* Left: Route & Bus */}
+                      <div className="pb-3 max-[600px]:pb-0 max-[600px]:border-b border-[#e7e5dc]">
+                        <h4 className="font-semibold text-ink text-sm mb-1">
+                          {route?.name || "Unknown Route"}
+                        </h4>
+                        <p className="text-xs text-muted mb-2">
+                          🚌 {bus?.model || "Unknown Bus"}
+                        </p>
+                        <p className="text-xs text-muted">
+                          Reg: {bus?.registrationNumber || "—"}
+                        </p>
+                      </div>
 
-                {/* Right: Trip Details */}
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-xs text-muted font-mono mb-1">Trip Date</p>
-                    <p className="font-semibold text-ink text-sm">{trip.tripDate}</p>
-                    <p className="text-xs text-muted mt-1">
-                      Departure: {schedule?.departureTime || "—"}
-                    </p>
+                      {/* Right: Trip Details & Actions */}
+                      <div>
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <p className="text-xs text-muted font-mono mb-1">Trip Date</p>
+                            <p className="font-semibold text-ink text-sm">{trip.tripDate}</p>
+                            <p className="text-xs text-muted mt-1">
+                              Departure: {schedule?.departureTime || "—"}
+                            </p>
+                          </div>
+                          <span className="px-2.5 py-1 text-xs font-semibold bg-[#e8f3e0] text-green rounded-full">
+                            Active
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => handleCancelClick(trip.id)}
+                          className="w-full mt-2 px-3 py-1.5 text-xs font-semibold text-[#8c3e2d] hover:bg-[#f7e5df] rounded transition-colors border border-[#d79b8b]"
+                        >
+                          Cancel Trip
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <span className="px-2.5 py-1 text-xs font-semibold bg-[#e8f3e0] text-green rounded-full">
-                    Active
-                  </span>
-                </div>
-              </div>
+                );
+              })}
             </div>
-          );
-        })}
-      </div>
-    )}
-  </section>
-);
+
+            {totalPages > 1 && (
+              <Pagination
+                currentPage={tripsPage}
+                totalPages={totalPages}
+                onPageChange={onTripsPageChange}
+                isLoading={false}
+              />
+            )}
+          </>
+        )}
+      </section>
+    </>
+  );
+};

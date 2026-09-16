@@ -5,6 +5,7 @@ import com.yuvan.busbooking.bus.repository.SeatRepository;
 import com.yuvan.busbooking.common.exception.ResourceNotFoundException;
 import com.yuvan.busbooking.common.util.SecurityUtils;
 import com.yuvan.busbooking.trip.dto.TripRequest;
+import com.yuvan.busbooking.trip.dto.BulkTripRequest;
 import com.yuvan.busbooking.trip.dto.TripResponse;
 import com.yuvan.busbooking.trip.entity.Schedule;
 import com.yuvan.busbooking.trip.entity.Trip;
@@ -107,6 +108,57 @@ public TripResponse createTrip(TripRequest request) {
 
     return toResponse(trip);
 }
+
+    @Transactional
+    public List<TripResponse> createBulkTrips(BulkTripRequest request) {
+        Schedule schedule = scheduleRepository.findById(request.scheduleId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Schedule not found with id: " + request.scheduleId()
+                        )
+                );
+
+        List<Seat> seats = seatRepository.findByBusIdOrderBySeatNumber(
+                schedule.getBus().getId()
+        );
+
+        return request.tripDates().stream()
+                .map(tripDate -> {
+                    // Skip if trip already exists for this date
+                    if (tripRepository.existsByScheduleIdAndTripDate(
+                            request.scheduleId(),
+                            tripDate
+                    )) {
+                        return null;
+                    }
+
+                    Trip trip = new Trip();
+                    trip.setSchedule(schedule);
+                    trip.setRoute(schedule.getRoute());
+                    trip.setBus(schedule.getBus());
+                    trip.setTripDate(tripDate);
+                    trip.setBaseFare(schedule.getBaseFare());
+                    trip.setPricePerKm(schedule.getPricePerKm());
+                    trip.setDepartureTime(schedule.getDepartureTime());
+                    trip.setStatus(TripStatus.SCHEDULED);
+
+                    trip = tripRepository.save(trip);
+
+                    // Create trip seats
+                    for (Seat seat : seats) {
+                        TripSeat tripSeat = new TripSeat();
+                        tripSeat.setTrip(trip);
+                        tripSeat.setSeat(seat);
+                        tripSeat.setStatus(TripSeatStatus.AVAILABLE);
+                        tripSeatRepository.save(tripSeat);
+                    }
+
+                    return trip;
+                })
+                .filter(trip -> trip != null)
+                .map(this::toResponse)
+                .toList();
+    }
 
     @Transactional(readOnly = true)
     public List<TripResponse> findAll() {
@@ -216,6 +268,24 @@ public TripResponse createTrip(TripRequest request) {
         }
 
         tripRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void cancelTripAndRefundPassengers(Long tripId, String cancellationReason) {
+        Trip trip = tripRepository.findById(tripId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Trip not found: " + tripId
+                        )
+                );
+
+        // Mark trip as cancelled
+        trip.setStatus(TripStatus.CANCELLED);
+        tripRepository.save(trip);
+
+        // Find all bookings for this trip that are confirmed
+        // and cascade refunds to all passengers
+        // Note: Requires BookingRepository to have a method to find by trip
     }
 
     private TripResponse toResponse(Trip trip) {

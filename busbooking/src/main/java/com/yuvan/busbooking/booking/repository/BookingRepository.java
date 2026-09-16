@@ -20,6 +20,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             BookingStatus status
     );
 
+    List<Booking> findByTripIdAndStatus(
+            Long tripId,
+            BookingStatus status
+    );
+
     boolean existsByBookingReference(String bookingReference);
     
 }

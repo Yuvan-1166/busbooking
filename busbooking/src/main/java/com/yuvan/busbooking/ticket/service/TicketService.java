@@ -94,7 +94,9 @@ public class TicketService {
 
                 for(Booking booking : bookings) {
                         
-                        if(booking.getStatus().equals(BookingStatus.CONFIRMED)){
+                        // Include both CONFIRMED and CANCELLED bookings
+                        if(booking.getStatus().equals(BookingStatus.CONFIRMED) || 
+                           booking.getStatus().equals(BookingStatus.CANCELLED)){
                                 Ticket ticket = ticketRepository.findByBookingId(booking.getId())
                                                 .orElseThrow(
                                                         () -> new ResourceNotFoundException(
@@ -242,7 +244,8 @@ public class TicketService {
                                 passengers,
                                 ticket.getIssuedAt(),
                                 ticket.getExpiresAt(),
-                                ticket.getStatus()
+                                ticket.getStatus(),
+                                booking.getCancellationReason()
                         );
         }
 }
