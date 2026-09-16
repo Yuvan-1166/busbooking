@@ -8,7 +8,7 @@ function initials(email) {
   return local.slice(0, 2).toUpperCase() || '?'
 }
 
-export default function Header({ email, roles, onLogout }) {
+export default function Header({ email, roles }) {
   const isPassenger = roles?.includes('ROLE_PASSENGER') || roles?.includes('PASSENGER')
   const isAdmin = roles?.includes('ROLE_ADMIN') || roles?.includes('ADMIN')
   const workspacePath = isAdmin ? '/admin' : '/operator'
@@ -69,14 +69,6 @@ export default function Header({ email, roles, onLogout }) {
             </span>
           </span>
         </Link>
-
-        {/* Sign out */}
-        <button
-          className="border-0 border-b border-orange bg-transparent px-0 py-0.5 font-mono text-[11px] text-orange"
-          onClick={onLogout}
-        >
-          Sign out
-        </button>
       </div>
     </header>
   )

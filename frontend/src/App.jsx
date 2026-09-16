@@ -284,7 +284,6 @@ function App() {
         <Header
           email={session.email}
           roles={session.roles}
-          onLogout={handleLogout}
         />
       {error && (
         <div className="mx-auto mt-4 max-w-[1168px] border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]" role="alert">
@@ -439,7 +438,11 @@ function App() {
           path="/admin/:section"
           element={isAdmin ? <AdminDashboard /> : <AccessDenied />}
         />
-        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/profile" element={
+          <ProfilePage 
+            onLogout={handleLogout}
+          />
+          } />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
         <Footer />

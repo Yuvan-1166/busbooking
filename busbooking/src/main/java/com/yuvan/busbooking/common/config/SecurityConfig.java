@@ -54,10 +54,22 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
 
-                        // Public
+                        // Public auth endpoints (registration, login, verification, password reset)
                         .requestMatchers(
-                                "/api/v1/auth/**"
+                                "/api/v1/auth/register",
+                                "/api/v1/auth/operator/register",
+                                "/api/v1/auth/login",
+                                "/api/v1/auth/verify/send",
+                                "/api/v1/auth/verify/confirm",
+                                "/api/v1/auth/forgot-password",
+                                "/api/v1/auth/reset-password",
+                                "/api/v1/auth/google"
                         ).permitAll()
+
+                        // Authenticated endpoints
+                        .requestMatchers(
+                                "/api/v1/auth/onboarding/complete"
+                        ).authenticated()
 
                         // Everything else requires authentication
                         .anyRequest().authenticated()

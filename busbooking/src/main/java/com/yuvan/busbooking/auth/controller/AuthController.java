@@ -131,6 +131,7 @@ public class AuthController {
         onboardingService.completeOnboarding(request);
         return new OtpVerifyResponse("Onboarding completed successfully. Welcome!");
     }
+    @PostMapping("/google")
     public LoginResponse googleOAuth(
             @Valid @RequestBody GoogleOAuthRequest request
     ) {

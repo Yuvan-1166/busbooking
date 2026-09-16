@@ -227,6 +227,7 @@ public class OtpService {
                         new ResourceNotFoundException("User not found: " + email));
 
         user.setStatus(UserStatus.ACTIVE);
+        user.setOnboardingCompleted(true);  // Email/password users skip onboarding
         userRepository.save(user);
     }
 
