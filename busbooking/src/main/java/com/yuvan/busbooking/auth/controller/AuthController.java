@@ -1,6 +1,7 @@
 package com.yuvan.busbooking.auth.controller;
 
 import com.yuvan.busbooking.auth.dto.ForgotPasswordRequest;
+import com.yuvan.busbooking.auth.dto.GoogleOAuthRequest;
 import com.yuvan.busbooking.auth.dto.LoginRequest;
 import com.yuvan.busbooking.auth.dto.LoginResponse;
 import com.yuvan.busbooking.auth.dto.OperatorRegisterRequest;
@@ -14,6 +15,7 @@ import com.yuvan.busbooking.auth.dto.SendOtpRequest;
 import com.yuvan.busbooking.auth.dto.VerifyOtpRequest;
 import com.yuvan.busbooking.auth.entity.OtpPurpose;
 import com.yuvan.busbooking.auth.service.AuthService;
+import com.yuvan.busbooking.auth.service.GoogleOAuthService;
 import com.yuvan.busbooking.auth.service.OtpService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -25,10 +27,12 @@ public class AuthController {
 
     private final AuthService authService;
     private final OtpService otpService;
+    private final GoogleOAuthService googleOAuthService;
 
-    public AuthController(AuthService authService, OtpService otpService) {
+    public AuthController(AuthService authService, OtpService otpService, GoogleOAuthService googleOAuthService) {
         this.authService = authService;
         this.otpService = otpService;
+        this.googleOAuthService = googleOAuthService;
     }
 
     @PostMapping("/register")
@@ -106,5 +110,25 @@ public class AuthController {
             @Valid @RequestBody ResetPasswordRequest request
     ) {
         return authService.resetPassword(request);
+    }
+
+    /**
+     * Authenticates user with Google ID token (from @react-oauth/google on frontend).
+     * Creates new user if doesn't exist (auto-verified as PASSENGER).
+     * Returns JWT token immediately.
+     *
+     * POST /api/v1/auth/google
+     */
+    @PostMapping("/google")
+    public LoginResponse googleOAuth(
+            @Valid @RequestBody GoogleOAuthRequest request
+    ) {
+        System.out.println("=== Google OAuth Endpoint Called ===");
+        System.out.println("Request: " + request);
+        System.out.println("Token: " + (request.idToken() != null ? request.idToken().substring(0, Math.min(50, request.idToken().length())) + "..." : "NULL"));
+        
+        LoginResponse response = googleOAuthService.authenticateWithGoogle(request.idToken());
+        System.out.println("=== Google OAuth Endpoint Returning ===");
+        return response;
     }
 }

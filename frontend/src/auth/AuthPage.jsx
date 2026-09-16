@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "./AuthContext";
 import { api } from "../api";
-import { rememberRegisteredUser } from "./authStorage";
+import { rememberRegisteredUser, storeSession, createSession } from "./authStorage";
 import { parseApiError, getErrorMessage } from "../utils/errorHandler";
 import ForgotPassword from "../components/auth/ForgotPassword";
 
@@ -100,7 +101,8 @@ export default function AuthPage() {
       if (appError.statusCode === 409 || submitError.response?.status === 409) {
         userMessage = `This email is already registered as a ${registrationType}. Please sign in or use a different email.`;
       } else if (appError.statusCode === 403 && mode === "register") {
-        userMessage = "Registration is currently unavailable. Please try again later.";
+        userMessage =
+          "Registration is currently unavailable. Please try again later.";
       } else if (
         mode === "login" &&
         submitError.message?.toLowerCase().includes("email not verified")
@@ -146,10 +148,18 @@ export default function AuthPage() {
 
       if (appError.statusCode === 400 || otpError.response?.status === 400) {
         userMessage = "Invalid verification code. Please try again.";
-      } else if (appError.statusCode === 404 || otpError.response?.status === 404) {
-        userMessage = "Verification code expired or not found. Please request a new one.";
-      } else if (appError.statusCode === 429 || otpError.response?.status === 429) {
-        userMessage = "Too many verification attempts. Please wait before trying again.";
+      } else if (
+        appError.statusCode === 404 ||
+        otpError.response?.status === 404
+      ) {
+        userMessage =
+          "Verification code expired or not found. Please request a new one.";
+      } else if (
+        appError.statusCode === 429 ||
+        otpError.response?.status === 429
+      ) {
+        userMessage =
+          "Too many verification attempts. Please wait before trying again.";
       }
 
       setError(userMessage);
@@ -173,8 +183,12 @@ export default function AuthPage() {
       let userMessage = getErrorMessage(appError);
 
       if (appError.statusCode === 429 || resendError.response?.status === 429) {
-        userMessage = "Too many requests. Please wait a few minutes before requesting another code.";
-      } else if (appError.statusCode === 404 || resendError.response?.status === 404) {
+        userMessage =
+          "Too many requests. Please wait a few minutes before requesting another code.";
+      } else if (
+        appError.statusCode === 404 ||
+        resendError.response?.status === 404
+      ) {
         userMessage = "Email not found. Please register first.";
       }
 
@@ -197,6 +211,53 @@ export default function AuthPage() {
     setForm({ email: "", password: "" });
     setError("");
     setMessage("");
+  };
+
+  // ── Google OAuth ──────────────────────────────────────────────────────────
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError("");
+    setMessage("");
+    setSubmitting(true);
+    try {
+      // GoogleLogin component returns credential as a JWT string directly
+      const idToken = credentialResponse.credential;
+      
+      if (!idToken) {
+        throw new Error("No credential received from Google");
+      }
+
+      console.log("Google OAuth success, sending token to backend...");
+      // Call backend Google OAuth endpoint - it returns LoginResponse directly
+      const loginResponse = await api.googleOAuthCallback(idToken);
+      console.log("Backend response:", loginResponse);
+      
+      // Create session from the LoginResponse and store it
+      const session = createSession(loginResponse);
+      storeSession(session);
+      
+      // Navigate to home - AuthContext will pick up the stored session
+      navigate("/", { replace: true });
+      
+    } catch (googleError) {
+      const appError = parseApiError(googleError);
+      let userMessage = getErrorMessage(appError);
+
+      if (appError.statusCode === 400) {
+        userMessage = "Invalid Google credential. Please try again.";
+      } else if (appError.statusCode === 401) {
+        userMessage = "Google authentication failed. Please try again.";
+      }
+
+      setError(userMessage);
+      console.error("Google OAuth error:", appError);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setError("Google Sign-In failed. Please try again or use email/password.");
+    console.error("Google Sign-In error");
   };
 
   const tabClass = (tab) =>
@@ -299,10 +360,8 @@ export default function AuthPage() {
         )}
 
         {mode === "forgot-password" && (
-          <ForgotPassword onBack={handleForgotPasswordBack}/>
-        )
-
-        }
+          <ForgotPassword onBack={handleForgotPasswordBack} />
+        )}
 
         {/* ── OTP verification form ─────────────────────────────────────────── */}
         {mode === "verify" && (
@@ -394,6 +453,7 @@ export default function AuthPage() {
                 autoComplete="email"
               />
             </label>
+
             <label className={labelClass}>
               Password
               <input
@@ -457,6 +517,17 @@ export default function AuthPage() {
                 </label>
               </div>
             )}
+
+            {mode === "login" && (
+              <button
+                type="button"
+                className="border-0 bg-transparent flex justify-start p-0 text-[11px] text-muted underline"
+                onClick={handleForgotPassword}
+              >
+                Forgot password?
+              </button>
+            )}
+
             <button
               className="mt-2 border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
               disabled={submitting}
@@ -468,17 +539,36 @@ export default function AuthPage() {
                   : `Create ${registrationType} account`}
               <span className="float-right text-lg">→</span>
             </button>
-            {mode === "login" && (
-              <button
-                type="button"
-                className="border-0 bg-transparent p-0 text-[11px] text-muted underline"
-                onClick={handleForgotPassword}
-              >
-                Forgot password?
-              </button>
-            )}
           </form>
         )}
+
+        
+            {/* Divider */}
+            <div className="relative my-2">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-line"></div>
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-paper px-2 text-muted">
+                  or continue with google
+                </span>
+              </div>
+            </div>
+
+        {/* Google Sign-In button - show only in login mode and on register for passengers */}
+        {(mode === "login" ||
+          (mode === "register" && registrationType === "passenger")) && (
+          <div className="my-4 flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              theme="outline"
+              size="large"
+              text={mode === "login" ? "signin_with" : "signup_with"}
+            />
+          </div>
+        )}
+
       </section>
     </main>
   );

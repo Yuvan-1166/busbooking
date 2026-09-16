@@ -12,7 +12,8 @@
     "react": "latest",
     "react-dom": "latest",
     "react-router-dom": "^7.18.3",
-    "vite": "latest"
+    "vite": "latest",
+    "@react-oauth/google": "^0.12.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

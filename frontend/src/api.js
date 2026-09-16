@@ -27,6 +27,7 @@ export const api = {
   login: (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
   registerPassenger: (details) => request('/auth/register', { method: 'POST', body: JSON.stringify(details) }),
   registerOperator: (details) => request('/auth/operator/register', { method: 'POST', body: JSON.stringify(details) }),
+  googleOAuthCallback: (idToken) => request('/auth/google', { method: 'POST', body: JSON.stringify({ idToken }) }),
   sendOtp: (email) => request('/auth/verify/send', { method: 'POST', body: JSON.stringify({ email }) }),
   verifyOtp: (email, otp) => request('/auth/verify/confirm', { method: 'POST', body: JSON.stringify({ email, otp }) }),
   forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),

@@ -37,6 +37,8 @@ export function getStoredSession() {
 
 export function storeSession(session) {
   localStorage.setItem(SESSION_KEY, JSON.stringify(session))
+  // Dispatch custom event so AuthContext can react to session changes in the same window
+  window.dispatchEvent(new CustomEvent('auth:session-stored', { detail: session }))
 }
 
 export function clearStoredSession() {

@@ -953,7 +953,7 @@ const TripsViewReadOnly = ({ trips, schedules, routes, buses, onCreateNew, trips
                           {route?.name || "Unknown Route"}
                         </h4>
                         <p className="text-xs text-muted mb-2">
-                          🚌 {bus?.model || "Unknown Bus"}
+                          {bus?.model || "Unknown Bus"}
                         </p>
                         <p className="text-xs text-muted">
                           Reg: {bus?.registrationNumber || "—"}
