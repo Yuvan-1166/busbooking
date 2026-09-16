@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { api } from "../../api";
 import { parseApiError, getErrorMessage } from "../../utils/errorHandler";
+import { storeSession } from "../../auth/authStorage";
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
@@ -51,10 +52,29 @@ export default function OnboardingPage() {
       await api.completeOnboarding(payload);
       setMessage("Profile completed successfully! Redirecting...");
       
-      // Redirect to dashboard after 2 seconds
-      setTimeout(() => {
+      // Wait a moment for the backend to complete the onboarding
+      setTimeout(async () => {
+        try {
+          // Fetch updated user details with new roles
+          const updatedUser = await api.getCurrentUser();
+          const updatedSession = {
+            ...session,
+            onboardingRequired: false,
+            ...updatedUser,
+          };
+          storeSession(updatedSession);
+        } catch (err) {
+          console.error("Failed to fetch updated user details:", err);
+          // Even if we can't fetch details, mark onboarding as complete
+          const updatedSession = {
+            ...session,
+            onboardingRequired: false,
+          };
+          storeSession(updatedSession);
+        }
+        
         navigate("/", { replace: true });
-      }, 2000);
+      }, 500);
     } catch (submitError) {
       const appError = parseApiError(submitError);
       let userMessage = getErrorMessage(appError);

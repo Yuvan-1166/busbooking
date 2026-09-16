@@ -39,51 +39,77 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
 
         String authHeader = request.getHeader("Authorization");
+        System.out.println("=== JWT Filter Debug ===");
+        System.out.println("Path: " + request.getRequestURI());
+        System.out.println("Method: " + request.getMethod());
+        System.out.println("Auth Header Present: " + (authHeader != null));
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            System.out.println("No Bearer token found, proceeding without authentication");
             filterChain.doFilter(request, response);
             return;
         }
 
         String token = authHeader.substring(7);
+        System.out.println("Token found: " + token.substring(0, Math.min(50, token.length())) + "...");
 
-        if (!jwtService.isTokenValid(token)) {
+        boolean isValid = jwtService.isTokenValid(token);
+        System.out.println("Token validation result: " + isValid);
+
+        if (!isValid) {
+            System.out.println("Token validation failed!");
             filterChain.doFilter(request, response);
             return;
         }
 
-        String email = jwtService.extractUsername(token);
-
-        if (SecurityContextHolder.getContext().getAuthentication() == null) {
-
-            UserDetails userDetails =
-                    userDetailsService.loadUserByUsername(email);
-
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
-
-            authentication.setDetails(
-                    new WebAuthenticationDetailsSource()
-                            .buildDetails(request)
-            );
-
-            SecurityContextHolder.getContext()
-                    .setAuthentication(authentication);
-
-        //     System.out.println(
-        //                 "Authenticated user: " + userDetails.getUsername()
-        //         );
-
-        //     System.out.println(
-        //                 "Authorities: " + userDetails.getAuthorities()
-        //         );
-        
+        System.out.println("Token is valid, extracting username");
+        String email;
+        try {
+            email = jwtService.extractUsername(token);
+            System.out.println("Email extracted: " + email);
+        } catch (Exception e) {
+            System.out.println("Error extracting username: " + e.getMessage());
+            e.printStackTrace();
+            filterChain.doFilter(request, response);
+            return;
         }
 
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
+            System.out.println("No existing authentication, loading user details for: " + email);
+            try {
+                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+
+                System.out.println("User loaded successfully");
+                System.out.println("Username: " + userDetails.getUsername());
+                System.out.println("Enabled: " + userDetails.isEnabled());
+                System.out.println("Authorities: " + userDetails.getAuthorities());
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                userDetails,
+                                null,
+                                userDetails.getAuthorities()
+                        );
+
+                authentication.setDetails(
+                        new WebAuthenticationDetailsSource()
+                                .buildDetails(request)
+                );
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                
+                System.out.println("Authentication set successfully in SecurityContext");
+                System.out.println("IsAuthenticated: " + authentication.isAuthenticated());
+            } catch (Exception e) {
+                System.out.println("ERROR loading user details: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+                e.printStackTrace();
+                // Don't rethrow - continue filter chain so proper error handling can occur
+            }
+        } else {
+            System.out.println("Authentication already exists in SecurityContext");
+        }
+
+        System.out.println("Proceeding to next filter");
         filterChain.doFilter(request, response);
     }
 }

@@ -119,17 +119,19 @@ public class AuthController {
     /**
      * Completes user onboarding after Google OAuth.
      * Assigns role, saves profile details, creates operator if needed.
+     * Returns new JWT token with updated roles.
      *
      * POST /api/v1/auth/onboarding/complete
      * Requires authentication.
      */
     @PostMapping("/onboarding/complete")
-    public OtpVerifyResponse completeOnboarding(
+    public LoginResponse completeOnboarding(
             @Valid @RequestBody OnboardingCompleteRequest request
     ) {
         System.out.println("=== Onboarding Complete Endpoint ===");
-        onboardingService.completeOnboarding(request);
-        return new OtpVerifyResponse("Onboarding completed successfully. Welcome!");
+        LoginResponse response = onboardingService.completeOnboarding(request);
+        System.out.println("=== Onboarding Complete Endpoint Returning ===");
+        return response;
     }
     @PostMapping("/google")
     public LoginResponse googleOAuth(
