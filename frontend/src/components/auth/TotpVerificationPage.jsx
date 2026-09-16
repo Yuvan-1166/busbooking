@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api';
+import { parseApiError, getErrorMessage } from '../../utils/errorHandler';
 
 export default function TotpVerificationPage() {
   console.log("=== TotpVerificationPage RENDER ===");
@@ -11,6 +12,7 @@ export default function TotpVerificationPage() {
   const { login } = useAuth();
   const [totpCode, setTotpCode] = useState('');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [useBackupCode, setUseBackupCode] = useState(false);
   const [backupCode, setBackupCode] = useState('');
@@ -30,7 +32,7 @@ export default function TotpVerificationPage() {
       console.log("No tempToken, redirecting to /login");
       navigate('/login');
     }
-  }, [tempToken]);
+  }, [tempToken, navigate]);
 
   const handleVerify = async (e) => {
     e.preventDefault();
@@ -49,6 +51,7 @@ export default function TotpVerificationPage() {
 
     setVerifying(true);
     setError('');
+    setMessage('');
 
     try {
       const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || '/api/v1'}/auth/login/verify-totp`, {
@@ -66,7 +69,33 @@ export default function TotpVerificationPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Verification failed');
+        
+        // Parse and handle specific TOTP verification errors
+        if (response.status === 400) {
+          if (errorData.message?.toLowerCase().includes("invalid")) {
+            throw new Error(
+              useBackupCode 
+                ? "Invalid backup code. Please check and try again."
+                : "Invalid 2FA code. Please check and try again."
+            );
+          } else if (errorData.message?.toLowerCase().includes("expired")) {
+            throw new Error("The backup code has expired or been used. Please use a different code.");
+          } else {
+            throw new Error(
+              useBackupCode 
+                ? "Invalid backup code. Please try again."
+                : "Invalid 2FA code. Please try again."
+            );
+          }
+        } else if (response.status === 401) {
+          throw new Error("Session expired. Please log in again.");
+        } else if (response.status === 429) {
+          throw new Error("Too many verification attempts. Please wait a few minutes before trying again.");
+        } else if (response.status === 404) {
+          throw new Error("Verification code not found. Please log in again.");
+        } else {
+          throw new Error(errorData.message || 'Verification failed. Please try again.');
+        }
       }
 
       const data = await response.json();
@@ -79,8 +108,9 @@ export default function TotpVerificationPage() {
       login(data.accessToken);
       navigate('/');
     } catch (err) {
-      const message = err.message || 'Verification failed. Please try again.';
-      setError(message);
+      const errorMessage = err.message || 'Verification failed. Please try again.';
+      setError(errorMessage);
+      console.error("TOTP verification error:", err);
       
       // Clear input on error
       if (useBackupCode) {
@@ -109,6 +139,7 @@ export default function TotpVerificationPage() {
   const toggleBackupCode = () => {
     setUseBackupCode(!useBackupCode);
     setError('');
+    setMessage('');
     setTotpCode('');
     setBackupCode('');
   };
@@ -132,8 +163,14 @@ export default function TotpVerificationPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm" role="alert">
             {error}
+          </div>
+        )}
+
+        {message && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 text-sm" role="status">
+            {message}
           </div>
         )}
 

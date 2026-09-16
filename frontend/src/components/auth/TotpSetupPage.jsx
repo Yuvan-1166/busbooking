@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../api';
 import { useAuth } from '../../auth/AuthContext';
+import { parseApiError, getErrorMessage } from '../../utils/errorHandler';
 
 export default function TotpSetupPage() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export default function TotpSetupPage() {
   const [setupData, setSetupData] = useState(null);
   const [totpCode, setTotpCode] = useState('');
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
 
@@ -27,13 +29,33 @@ export default function TotpSetupPage() {
   const fetchSetupData = async () => {
     try {
       setLoading(true);
+      setError('');
+      setMessage('');
       
       // Call the backend endpoint to generate TOTP secret and QR code
       // This now uses the regular JWT token from the session
       const data = await api.setupTotp();
       setSetupData(data);
     } catch (err) {
-      setError(err.message || 'Failed to generate 2FA setup. Please try again.');
+      const appError = parseApiError(err);
+      let userMessage = getErrorMessage(appError);
+
+      // Handle specific setup errors
+      if (appError.statusCode === 400) {
+        userMessage = "Invalid setup request. Please try again.";
+      } else if (appError.statusCode === 401) {
+        userMessage = "Session expired. Please log in again.";
+        setTimeout(() => navigate('/login'), 2000);
+      } else if (appError.statusCode === 409) {
+        userMessage = "2FA is already enabled for this account.";
+      } else if (appError.statusCode === 0) {
+        userMessage = "Connection error. Please check your internet and try again.";
+      } else if (appError.statusCode === 408) {
+        userMessage = "Request timeout. Please check your connection and try again.";
+      }
+
+      setError(userMessage);
+      console.error("TOTP setup fetch error:", appError);
     } finally {
       setLoading(false);
     }
@@ -49,6 +71,7 @@ export default function TotpSetupPage() {
 
     setVerifying(true);
     setError('');
+    setMessage('');
 
     try {
       // Use the api helper with regular JWT token
@@ -61,7 +84,30 @@ export default function TotpSetupPage() {
         },
       });
     } catch (err) {
-      setError(err.message || 'Invalid verification code. Please try again.');
+      const appError = parseApiError(err);
+      let userMessage = getErrorMessage(appError);
+
+      // Handle specific verification errors
+      if (appError.statusCode === 400) {
+        if (err.response?.data?.message?.toLowerCase().includes("invalid")) {
+          userMessage = "Invalid 2FA code. Please check and try again.";
+        } else {
+          userMessage = "The code you entered is incorrect. Please try again.";
+        }
+      } else if (appError.statusCode === 401) {
+        userMessage = "Session expired. Please log in again.";
+      } else if (appError.statusCode === 409) {
+        userMessage = "2FA is already enabled. Please disable it first if you want to re-enable.";
+      } else if (appError.statusCode === 429) {
+        userMessage = "Too many verification attempts. Please wait a few minutes before trying again.";
+      } else if (appError.statusCode === 0) {
+        userMessage = "Connection error. Please check your internet and try again.";
+      } else if (appError.statusCode === 408) {
+        userMessage = "Request timeout. Please check your connection and try again.";
+      }
+
+      setError(userMessage);
+      console.error("TOTP verification error:", appError);
       setTotpCode('');
     } finally {
       setVerifying(false);
@@ -101,8 +147,14 @@ export default function TotpSetupPage() {
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm" role="alert">
             {error}
+          </div>
+        )}
+
+        {message && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 text-sm" role="status">
+            {message}
           </div>
         )}
 
