@@ -3,7 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "./AuthContext";
 import { api } from "../api";
-import { rememberRegisteredUser, storeSession, createSession } from "./authStorage";
+import {
+  rememberRegisteredUser,
+  storeSession,
+  createSession,
+} from "./authStorage";
 import { parseApiError, getErrorMessage } from "../utils/errorHandler";
 import ForgotPassword from "../components/auth/ForgotPassword";
 
@@ -77,7 +81,20 @@ export default function AuthPage() {
     setSubmitting(true);
     try {
       if (mode === "login") {
-        await login(form);
+        const response = await login(form);
+
+        // Check if TOTP verification is required
+        if (response && response.requiresTotp) {
+          navigate("/totp/verify", {
+            state: {
+              tempToken: response.tempToken,
+              userId: response.userId,
+            },
+          });
+          return;
+        }
+
+        // Normal login without TOTP (admin users)
         navigate("/", { replace: true });
       } else {
         const response = await register(form, registrationType);
@@ -136,8 +153,12 @@ export default function AuthPage() {
     setMessage("");
     setSubmitting(true);
     try {
-      await api.verifyOtp(pendingEmail, otp.trim());
-      // Verified — switch to login with success message
+      const response = await api.verifyOtp(pendingEmail, otp.trim());
+
+      // OTP verified successfully - user can now login
+      console.log("OTP verification response:", response);
+
+      // Switch to login with success message
       setMode("login");
       setForm({ email: pendingEmail, password: "" });
       setMessage("Email verified! You can now sign in.");
@@ -221,7 +242,7 @@ export default function AuthPage() {
     try {
       // GoogleLogin component returns credential as a JWT string directly
       const idToken = credentialResponse.credential;
-      
+
       if (!idToken) {
         throw new Error("No credential received from Google");
       }
@@ -231,14 +252,13 @@ export default function AuthPage() {
       // Send default PASSENGER type - will be overridden during onboarding
       const loginResponse = await api.googleOAuthCallback(idToken, "PASSENGER");
       console.log("Backend response:", loginResponse);
-      
+
       // Create session from the LoginResponse and store it
       const session = createSession(loginResponse);
       storeSession(session);
-      
+
       // Navigate to home - AuthContext/App will redirect to onboarding if needed
       navigate("/", { replace: true });
-      
     } catch (googleError) {
       const appError = parseApiError(googleError);
       let userMessage = getErrorMessage(appError);
@@ -543,30 +563,28 @@ export default function AuthPage() {
           </form>
         )}
 
-        
-            {/* Divider */}
-            <div className="relative my-2">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-line"></div>
-              </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="bg-paper px-2 text-muted">
-                  or continue with google
-                </span>
-              </div>
-            </div>
+        {/* Divider */}
+        <div className="relative my-2">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-line"></div>
+          </div>
+          <div className="relative flex justify-center text-xs">
+            <span className="bg-paper px-2 text-muted">
+              or continue with google
+            </span>
+          </div>
+        </div>
 
         {/* Google Sign-In button */}
-          <div className="my-4 flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              theme="outline"
-              size="large"
-              text={mode === "login" ? "signin_with" : "signup_with"}
-            />
-          </div>
-
+        <div className="my-4 flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={handleGoogleError}
+            theme="outline"
+            size="large"
+            text={mode === "login" ? "signin_with" : "signup_with"}
+          />
+        </div>
       </section>
     </main>
   );

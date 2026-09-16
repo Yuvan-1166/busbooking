@@ -3,6 +3,7 @@ package com.yuvan.busbooking.common.config;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 
 import com.yuvan.busbooking.user.dto.UserRequest;
 import com.yuvan.busbooking.user.entity.Role;
@@ -21,6 +22,7 @@ import io.github.cdimascio.dotenv.Dotenv;
 public class AdminInitializer {
     
     @Bean 
+    @Order(2)
     CommandLineRunner initializeAdmin(
         UserService userService, 
         RoleRepository roleRepository, 
@@ -43,6 +45,7 @@ public class AdminInitializer {
                 UserRole userRole = new UserRole();
                 userRole.setUser(user);
                 userRole.setRole(adminRole);
+
                 userRoleRepository.save(userRole);
             }
         };

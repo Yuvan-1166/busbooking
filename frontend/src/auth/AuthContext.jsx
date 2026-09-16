@@ -37,12 +37,28 @@ export function AuthProvider({ children }) {
     }
   }, [])
 
-  const login = async (credentialsOrResponse) => {
-    // If it's already a response (has accessToken), use it directly
+  const login = async (credentialsOrToken) => {
+    // If it's a token string, store session directly (from TOTP verification)
+    if (typeof credentialsOrToken === 'string') {
+      const nextSession = createSession({ accessToken: credentialsOrToken, tokenType: 'Bearer', expiresIn: 3600 })
+      storeSession(nextSession)
+      setSession(nextSession)
+      return nextSession
+    }
+    
+    // If it's already a response object (has accessToken), use it directly
     // Otherwise, it's credentials - call the API
-    const response = credentialsOrResponse.accessToken 
-      ? credentialsOrResponse 
-      : await api.login(credentialsOrResponse)
+    const response = credentialsOrToken.accessToken 
+      ? credentialsOrToken 
+      : await api.login(credentialsOrToken)
+    
+    // Check if TOTP is required (response doesn't have accessToken)
+    if (response.requiresTotp) {
+      // Return the response for the calling code to handle navigation
+      return response
+    }
+    
+    // Normal login flow - create and store session
     const nextSession = createSession(response)
     storeSession(nextSession)
     setSession(nextSession)

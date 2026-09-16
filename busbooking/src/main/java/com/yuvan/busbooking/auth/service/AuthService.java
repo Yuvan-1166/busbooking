@@ -9,6 +9,7 @@ import com.yuvan.busbooking.auth.dto.RegisterRequest;
 import com.yuvan.busbooking.auth.dto.RegisterResponse;
 import com.yuvan.busbooking.auth.dto.ResetPasswordRequest;
 import com.yuvan.busbooking.auth.dto.ResetPasswordResponse;
+import com.yuvan.busbooking.auth.dto.TotpVerifyRequest;
 import com.yuvan.busbooking.auth.entity.OtpPurpose;
 import com.yuvan.busbooking.operator.dto.OperatorRequest;
 import com.yuvan.busbooking.operator.dto.OperatorResponse;
@@ -49,6 +50,8 @@ public class AuthService {
     private final WalletService walletService;
     private final OtpService otpService;
     private final PasswordEncoder passwordEncoder;
+    private final TotpService totpService;
+    private final CustomUserDetailsService customUserDetailsService;
 
     public AuthService(
             UserRepository userRepository,
@@ -61,7 +64,9 @@ public class AuthService {
             JwtService jwtService,
             WalletService walletService,
             OtpService otpService,
-            PasswordEncoder passwordEncoder
+            PasswordEncoder passwordEncoder,
+            TotpService totpService,
+            CustomUserDetailsService customUserDetailsService
     ) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
@@ -74,6 +79,8 @@ public class AuthService {
         this.walletService = walletService;
         this.otpService = otpService;
         this.passwordEncoder = passwordEncoder;
+        this.totpService = totpService;
+        this.customUserDetailsService = customUserDetailsService;
     }
 
     @Transactional
@@ -176,10 +183,79 @@ public class AuthService {
                 );
 
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User user = userRepository.findByEmail(request.email())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
+        // Check if user has TOTP enabled
+        if (user.getTotpEnabled()) {
+            // User has 2FA enabled - require TOTP verification
+            String tempToken = jwtService.generateTempToken(userDetails);
+            return new LoginResponse(true, tempToken, user.getId());
+        }
+
+        // User doesn't have 2FA - return full token immediately
         String token = jwtService.generateToken(userDetails);
+        return new LoginResponse(token, "Bearer", 3600L);
+    }
 
-        return new LoginResponse(token, "Bearer", 3600);
+    /**
+     * Verify TOTP code and complete login
+     */
+    @Transactional
+    public LoginResponse verifyTotpAndLogin(TotpVerifyRequest request) {
+        // Validate and extract email from temp token
+        if (!jwtService.isTokenValid(request.tempToken())) {
+            throw new IllegalArgumentException("Invalid or expired temporary token");
+        }
+
+        String email = jwtService.extractUsernameFromTempToken(request.tempToken());
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Verify TOTP code or backup code
+        boolean verified = false;
+        try {
+            verified = totpService.verifyTotp(user.getId(), request.totpCode().trim());
+        } catch (IllegalStateException e) {
+            // If TOTP verification fails due to rate limiting, throw immediately
+            if (e.getMessage().contains("Too many failed attempts")) {
+                throw e;
+            }
+            // Otherwise, try backup code
+            verified = false;
+        }
+
+        if (!verified) {
+            // Try backup code
+            verified = totpService.verifyBackupCode(user.getId(), request.totpCode().trim());
+        }
+
+        if (!verified) {
+            // Log failed attempt with IP and User-Agent
+            totpService.logVerificationAttempt(
+                user.getId(),
+                com.yuvan.busbooking.auth.entity.TotpVerificationType.LOGIN,
+                false,
+                request.ipAddress(),
+                request.userAgent()
+            );
+            throw new IllegalArgumentException("Invalid verification code");
+        }
+
+        // Log successful verification
+        totpService.logVerificationAttempt(
+            user.getId(),
+            com.yuvan.busbooking.auth.entity.TotpVerificationType.LOGIN,
+            true,
+            request.ipAddress(),
+            request.userAgent()
+        );
+
+        // Generate full JWT token
+        UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
+        String fullToken = jwtService.generateToken(userDetails);
+
+        return new LoginResponse(fullToken, "Bearer", 3600L);
     }
 
     /**

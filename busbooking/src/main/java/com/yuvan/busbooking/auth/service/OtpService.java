@@ -26,6 +26,7 @@ public class OtpService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
     private final int expiryMinutes;
     private final int maxAttempts;
 
@@ -34,6 +35,7 @@ public class OtpService {
             UserRepository userRepository,
             EmailService emailService,
             PasswordEncoder passwordEncoder,
+            JwtService jwtService,
             @Value("${app.otp.expiry-minutes:10}") int expiryMinutes,
             @Value("${app.otp.max-attempts:5}") int maxAttempts
     ) {
@@ -41,6 +43,7 @@ public class OtpService {
         this.userRepository = userRepository;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
         this.expiryMinutes = expiryMinutes;
         this.maxAttempts = maxAttempts;
     }
@@ -176,10 +179,11 @@ public class OtpService {
 
     /**
      * Verifies the submitted OTP against the latest record for this email + purpose.
-     * On success, sets the user's status to ACTIVE.
+     * For REGISTRATION purpose: Returns tempToken for TOTP setup (does NOT activate user yet)
+     * For other purposes: Activates user immediately
      */
     @Transactional(noRollbackFor = OtpVerificationException.class)
-    public void verify(String email, String submittedOtp, OtpPurpose purpose) {
+    public String verify(String email, String submittedOtp, OtpPurpose purpose) {
         OtpVerification record = otpRepository
                 .findTopByEmailAndPurposeOrderByCreatedAtDesc(email, purpose)
                 .orElseThrow(() ->
@@ -217,7 +221,7 @@ public class OtpService {
                             + " attempt" + (remaining == 1 ? "" : "s") + " remaining.");
         }
 
-        // Correct — mark verified and activate the user
+        // Correct — mark verified
         record.setStatus(OtpStatus.VERIFIED);
         record.setVerifiedAt(LocalDateTime.now());
         otpRepository.save(record);
@@ -226,9 +230,13 @@ public class OtpService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("User not found: " + email));
 
+        // Activate user immediately after OTP verification
+        // TOTP 2FA setup is now optional and done from profile page
         user.setStatus(UserStatus.ACTIVE);
-        user.setOnboardingCompleted(true);  // Email/password users skip onboarding
+        user.setOnboardingCompleted(true);
         userRepository.save(user);
+        
+        return null;
     }
 
     private String generateSixDigitOtp() {

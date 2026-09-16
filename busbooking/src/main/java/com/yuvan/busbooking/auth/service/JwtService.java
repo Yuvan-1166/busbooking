@@ -16,6 +16,7 @@ public class JwtService {
 
     private final SecretKey secretKey;
     private final long expirationMs;
+    private static final long TEMP_TOKEN_EXPIRATION_MS = 5 * 60 * 1000; // 5 minutes
 
     public JwtService(
             @Value("${app.jwt.secret}") String secret,
@@ -44,6 +45,45 @@ public class JwtService {
                 .expiration(expiration)
                 .signWith(secretKey)
                 .compact();
+    }
+
+    /**
+     * Generate temporary token for TOTP verification (5 min expiry)
+     */
+    public String generateTempToken(UserDetails userDetails) {
+        Date now = new Date();
+        Date expiration = new Date(now.getTime() + TEMP_TOKEN_EXPIRATION_MS);
+
+        return Jwts.builder()
+                .subject(userDetails.getUsername())
+                .claim("temp", true)
+                .issuedAt(now)
+                .expiration(expiration)
+                .signWith(secretKey)
+                .compact();
+    }
+
+    /**
+     * Generate temporary token from email (for post-OTP verification TOTP setup)
+     */
+    public String generateTempTokenFromEmail(String email) {
+        Date now = new Date();
+        Date expiration = new Date(now.getTime() + TEMP_TOKEN_EXPIRATION_MS);
+
+        return Jwts.builder()
+                .subject(email)
+                .claim("temp", true)
+                .issuedAt(now)
+                .expiration(expiration)
+                .signWith(secretKey)
+                .compact();
+    }
+
+    /**
+     * Extract username from temporary token
+     */
+    public String extractUsernameFromTempToken(String token) {
+        return extractUsername(token);
     }
 
     public String extractUsername(String token) {

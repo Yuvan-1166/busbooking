@@ -18,6 +18,8 @@ import AdminDashboard from "./components/workspace/AdminDashboard";
 import OperatorDashboard from "./components/workspace/OperatorDashboard";
 import AuthPage from "./auth/AuthPage";
 import OnboardingPage from "./components/auth/OnboardingPage";
+import TotpSetupPage from "./components/auth/TotpSetupPage";
+import TotpVerificationPage from "./components/auth/TotpVerificationPage";
 
 function App() {
   const [locations, setLocations] = useState([]);
@@ -281,10 +283,12 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="app-shell">
-        <Header
-          email={session.email}
-          roles={session.roles}
-        />
+        {session && (
+          <Header
+            email={session.email}
+            roles={session.roles}
+          />
+        )}
       {error && (
         <div className="mx-auto mt-4 max-w-[1168px] border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]" role="alert">
           {error}
@@ -298,6 +302,14 @@ function App() {
         <Route
           path="/onboarding"
           element={<OnboardingPage />}
+        />
+        <Route
+          path="/totp/setup"
+          element={<TotpSetupPage />}
+        />
+        <Route
+          path="/totp/verify"
+          element={<TotpVerificationPage />}
         />
         <Route
           path="/"

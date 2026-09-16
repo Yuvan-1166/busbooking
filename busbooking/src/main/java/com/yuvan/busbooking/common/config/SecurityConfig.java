@@ -2,6 +2,7 @@ package com.yuvan.busbooking.common.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -54,11 +55,15 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
 
+                        // Allow all OPTIONS requests (CORS preflight)
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         // Public auth endpoints (registration, login, verification, password reset)
                         .requestMatchers(
                                 "/api/v1/auth/register",
                                 "/api/v1/auth/operator/register",
                                 "/api/v1/auth/login",
+                                "/api/v1/auth/login/verify-totp",
                                 "/api/v1/auth/verify/send",
                                 "/api/v1/auth/verify/confirm",
                                 "/api/v1/auth/forgot-password",
@@ -66,9 +71,13 @@ public class SecurityConfig {
                                 "/api/v1/auth/google"
                         ).permitAll()
 
-                        // Authenticated endpoints
+                        // Authenticated endpoints (onboarding, TOTP management)
                         .requestMatchers(
-                                "/api/v1/auth/onboarding/complete"
+                                "/api/v1/auth/onboarding/complete",
+                                "/api/v1/auth/totp/setup",
+                                "/api/v1/auth/totp/verify-setup",
+                                "/api/v1/auth/totp/disable",
+                                "/api/v1/auth/totp/backup-codes/generate"
                         ).authenticated()
 
                         // Everything else requires authentication

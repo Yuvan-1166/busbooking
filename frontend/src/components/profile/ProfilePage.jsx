@@ -69,7 +69,7 @@ export default function ProfilePage({ onLogout }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  // Active section: 'info' | 'edit' | 'password'
+  // Active section: 'info' | 'edit' | 'password' | 'security'
   const [section, setSection] = useState("info");
 
   // Edit profile form
@@ -91,6 +91,15 @@ export default function ProfilePage({ onLogout }) {
   const [otp, setOtp] = useState("");
   const [showResetForm, setShowResetForm] = useState(false);
 
+  // TOTP 2FA state
+  const [totpEnabled, setTotpEnabled] = useState(false);
+  const [setupMode, setSetupMode] = useState(false); // 'setup' | 'verify' | false
+  const [totpSetupData, setTotpSetupData] = useState(null);
+  const [totpCode, setTotpCode] = useState("");
+  const [totpLoading, setTotpLoading] = useState(false);
+  const [totpError, setTotpError] = useState("");
+  const [totpSuccess, setTotpSuccess] = useState("");
+
   // ── Load user ───────────────────────────────────────────────────────────────
   useEffect(() => {
     async function load() {
@@ -106,6 +115,9 @@ export default function ProfilePage({ onLogout }) {
           lastName: userData.lastName || "",
           phone: userData.phone || "",
         });
+        
+        // Set TOTP enabled status from user data
+        setTotpEnabled(userData.totpEnabled || false);
       } catch (err) {
         setLoadError(err.message);
       } finally {
@@ -141,6 +153,26 @@ export default function ProfilePage({ onLogout }) {
       setSaveError(err.message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  // ── TOTP Management ─────────────────────────────────────────────────────────
+  const disableTotp = async () => {
+    const password = prompt("Enter your password to confirm disabling 2FA:");
+    
+    if (!password) {
+      return; // User cancelled
+    }
+
+    setTotpError("");
+    setTotpSuccess("");
+
+    try {
+      await api.disableTotp({ password });
+      setTotpEnabled(false);
+      setTotpSuccess("Two-factor authentication has been disabled.");
+    } catch (err) {
+      setTotpError(err.message || "Failed to disable 2FA. Please check your password.");
     }
   };
 
@@ -302,6 +334,16 @@ export default function ProfilePage({ onLogout }) {
           }}
         >
           Change password
+        </button>
+        <button
+          className={tabClass(section === "security")}
+          onClick={() => {
+            setSection("security");
+            setTotpError("");
+            setTotpSuccess("");
+          }}
+        >
+          Security (2FA)
         </button>
       </nav>
 
@@ -516,6 +558,71 @@ export default function ProfilePage({ onLogout }) {
                 <span className="float-right text-lg">→</span>
               </button>
             </form>
+          </section>
+        </div>
+      )}
+
+      {/* ── Security (2FA) ── */}
+      {section === "security" && (
+        <div className="mt-8 max-w-[620px]">
+          <section className="border border-[#e7e5dc] bg-paper p-7">
+            <SectionLabel>TWO-FACTOR AUTHENTICATION (2FA)</SectionLabel>
+
+            <p className="mb-5 text-sm leading-6 text-muted">
+              Add an extra layer of security to your account by enabling
+              two-factor authentication. You'll need an authenticator app like
+              Zoho OneAuth, Google Authenticator, or Authy.
+            </p>
+
+            {totpError && (
+              <div
+                className="mb-5 border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]"
+                role="alert"
+              >
+                {totpError}
+              </div>
+            )}
+            {totpSuccess && (
+              <div
+                className="mb-5 border border-[#a5bea0] bg-[#e4eee1] px-4 py-3 text-xs text-green"
+                role="status"
+              >
+                {totpSuccess}
+              </div>
+            )}
+
+            {/* Show current status */}
+            <div className="mb-6 flex items-center gap-3 rounded border border-line bg-[#f9f8f5] p-4">
+              <div
+                className={`h-2.5 w-2.5 rounded-full ${totpEnabled ? "bg-green" : "bg-muted"}`}
+              ></div>
+              <span className="text-sm">
+                2FA is currently{" "}
+                <strong>{totpEnabled ? "enabled" : "disabled"}</strong>
+              </span>
+            </div>
+
+            {/* Not enabled - show setup button */}
+            {!totpEnabled && !setupMode && (
+              <button
+                className="border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
+                onClick={() => navigate("/totp/setup")}
+              >
+                Enable 2FA
+                <span className="float-right text-lg">→</span>
+              </button>
+            )}
+
+            {/* Enabled - show disable button */}
+            {totpEnabled && (
+              <button
+                className="border-0 bg-[#8c3e2d] px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
+                onClick={disableTotp}
+              >
+                Disable 2FA
+                <span className="float-right text-lg">×</span>
+              </button>
+            )}
           </section>
         </div>
       )}

@@ -63,6 +63,17 @@ public class AuthController {
     }
 
     /**
+     * Verify TOTP code and complete login
+     * POST /api/v1/auth/login/verify-totp
+     */
+    @PostMapping("/login/verify-totp")
+    public LoginResponse verifyTotpAndLogin(
+            @Valid @RequestBody com.yuvan.busbooking.auth.dto.TotpVerifyRequest request
+    ) {
+        return authService.verifyTotpAndLogin(request);
+    }
+
+    /**
      * Sends (or resends) a 6-digit OTP to the given email address.
      * The account must exist and must still be PENDING_VERIFICATION.
      *
@@ -79,7 +90,8 @@ public class AuthController {
 
     /**
      * Confirms the 6-digit OTP submitted by the user.
-     * On success the account becomes ACTIVE and the user can log in.
+     * On success, activates the user account and allows them to log in.
+     * TOTP 2FA setup is now optional and can be done from the profile page.
      *
      * POST /api/v1/auth/verify/confirm
      */

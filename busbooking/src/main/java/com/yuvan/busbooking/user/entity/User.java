@@ -43,6 +43,12 @@ public class User {
     @Column(name = "onboarding_completed", nullable = false)
     private Boolean onboardingCompleted = false;
 
+    @Column(name = "totp_secret", length = 255)
+    private String totpSecret;
+
+    @Column(name = "totp_enabled", nullable = false)
+    private Boolean totpEnabled = false;
+
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
@@ -54,6 +60,9 @@ public class User {
         }
         if (onboardingCompleted == null) {
             onboardingCompleted = false;
+        }
+        if (totpEnabled == null) {
+            totpEnabled = false;
         }
     }
 
