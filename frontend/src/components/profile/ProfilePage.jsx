@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api";
 import { useAuth } from "../../auth/AuthContext";
+import DisableTotpModal from "../../components/auth/DisableTotpModal";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -100,6 +101,9 @@ export default function ProfilePage({ onLogout }) {
   const [totpError, setTotpError] = useState("");
   const [totpSuccess, setTotpSuccess] = useState("");
 
+  // Disable TOTP modal state
+  const [showDisableTotpModal, setShowDisableTotpModal] = useState(false);
+
   // ── Load user ───────────────────────────────────────────────────────────────
   useEffect(() => {
     async function load() {
@@ -157,13 +161,7 @@ export default function ProfilePage({ onLogout }) {
   };
 
   // ── TOTP Management ─────────────────────────────────────────────────────────
-  const disableTotp = async () => {
-    const password = prompt("Enter your password to confirm disabling 2FA:");
-    
-    if (!password) {
-      return; // User cancelled
-    }
-
+  const disableTotp = async (password) => {
     setTotpError("");
     setTotpSuccess("");
 
@@ -171,8 +169,12 @@ export default function ProfilePage({ onLogout }) {
       await api.disableTotp({ password });
       setTotpEnabled(false);
       setTotpSuccess("Two-factor authentication has been disabled.");
+      setShowDisableTotpModal(false);
+      
+      // Clear the success message after a delay
+      setTimeout(() => setTotpSuccess(""), 5000);
     } catch (err) {
-      setTotpError(err.message || "Failed to disable 2FA. Please check your password.");
+      throw err; // Let the modal handle the error display
     }
   };
 
@@ -617,7 +619,7 @@ export default function ProfilePage({ onLogout }) {
             {totpEnabled && (
               <button
                 className="border-0 bg-[#8c3e2d] px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
-                onClick={disableTotp}
+                onClick={() => setShowDisableTotpModal(true)}
               >
                 Disable 2FA
                 <span className="float-right text-lg">×</span>
@@ -634,6 +636,13 @@ export default function ProfilePage({ onLogout }) {
       >
         Sign out
       </button>
+
+      {/* Disable 2FA Modal */}
+      <DisableTotpModal
+        isOpen={showDisableTotpModal}
+        onClose={() => setShowDisableTotpModal(false)}
+        onConfirm={disableTotp}
+      />
     </main>
   );
 }
