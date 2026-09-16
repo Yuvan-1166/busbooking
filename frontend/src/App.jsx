@@ -17,6 +17,7 @@ import SearchResults from "./components/search/SearchResults";
 import AdminDashboard from "./components/workspace/AdminDashboard";
 import OperatorDashboard from "./components/workspace/OperatorDashboard";
 import AuthPage from "./auth/AuthPage";
+import OnboardingPage from "./components/auth/OnboardingPage";
 
 function App() {
   const [locations, setLocations] = useState([]);
@@ -45,16 +46,24 @@ function App() {
   const isAdmin = hasRole("ADMIN");
 
   // Redirect operators and admins to their respective routes when at /
+  // Also redirect to onboarding if user hasn't completed it
   useEffect(() => {
-    if (location.pathname === "/") {
-      if (isAdmin) {
-        navigate("/admin", { replace: true });
-      } else if (isOperator) {
-        navigate("/operator", { replace: true });
+    if (location.pathname === "/" || location.pathname === "/onboarding") {
+      // Check if user needs to complete onboarding
+      if (session && !session.onboardingRequired) {
+        // User is authenticated and has completed onboarding
+        if (isAdmin) {
+          navigate("/admin", { replace: true });
+        } else if (isOperator) {
+          navigate("/operator", { replace: true });
+        }
+      } else if (session && session.onboardingRequired) {
+        // User needs to complete onboarding
+        navigate("/onboarding", { replace: true });
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [session, isAdmin, isOperator, location.pathname]);
 
   const handleLogout = () => {
     navigate("/login", { replace: true });
@@ -286,6 +295,10 @@ function App() {
         <Route
           path="/login"
           element={<AuthPage />}
+        />
+        <Route
+          path="/onboarding"
+          element={<OnboardingPage />}
         />
         <Route
           path="/"

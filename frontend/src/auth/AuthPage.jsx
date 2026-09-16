@@ -227,15 +227,16 @@ export default function AuthPage() {
       }
 
       console.log("Google OAuth success, sending token to backend...");
-      // Call backend Google OAuth endpoint - it returns LoginResponse directly
-      const loginResponse = await api.googleOAuthCallback(idToken);
+      // Call backend Google OAuth endpoint - role will be selected in onboarding
+      // Send default PASSENGER type - will be overridden during onboarding
+      const loginResponse = await api.googleOAuthCallback(idToken, "PASSENGER");
       console.log("Backend response:", loginResponse);
       
       // Create session from the LoginResponse and store it
       const session = createSession(loginResponse);
       storeSession(session);
       
-      // Navigate to home - AuthContext will pick up the stored session
+      // Navigate to home - AuthContext/App will redirect to onboarding if needed
       navigate("/", { replace: true });
       
     } catch (googleError) {
@@ -555,9 +556,7 @@ export default function AuthPage() {
               </div>
             </div>
 
-        {/* Google Sign-In button - show only in login mode and on register for passengers */}
-        {(mode === "login" ||
-          (mode === "register" && registrationType === "passenger")) && (
+        {/* Google Sign-In button */}
           <div className="my-4 flex justify-center">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
@@ -567,7 +566,6 @@ export default function AuthPage() {
               text={mode === "login" ? "signin_with" : "signup_with"}
             />
           </div>
-        )}
 
       </section>
     </main>

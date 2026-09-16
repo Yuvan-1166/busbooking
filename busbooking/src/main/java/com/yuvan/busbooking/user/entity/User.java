@@ -40,6 +40,9 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "onboarding_completed", nullable = false)
+    private Boolean onboardingCompleted = false;
+
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
@@ -48,6 +51,9 @@ public class User {
 
         if (status == null) {
             status = UserStatus.ACTIVE;
+        }
+        if (onboardingCompleted == null) {
+            onboardingCompleted = false;
         }
     }
 

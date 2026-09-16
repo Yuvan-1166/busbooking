@@ -2,6 +2,9 @@ const SESSION_KEY = 'busbooking.auth'
 const REGISTERED_USER_KEY = 'busbooking.registeredUser'
 
 function decodePayload(token) {
+  if (!token) {
+    throw new Error('No access token provided in login response.')
+  }
   const payload = token.split('.')[1]
   if (!payload) throw new Error('Invalid access token.')
   const normalized = payload.replace(/-/g, '+').replace(/_/g, '/')
@@ -9,6 +12,13 @@ function decodePayload(token) {
 }
 
 export function createSession(response) {
+  if (!response) {
+    throw new Error('Invalid login response: response is null or undefined.')
+  }
+  if (!response.accessToken) {
+    console.error('Invalid response from backend:', response)
+    throw new Error('Invalid login response: accessToken is missing. Backend returned: ' + JSON.stringify(response))
+  }
   const claims = decodePayload(response.accessToken)
   const roles = String(claims.roles || '').split(',').map((role) => role.trim()).filter(Boolean)
   return {
@@ -18,6 +28,7 @@ export function createSession(response) {
     email: claims.sub,
     roles,
     expiresAt: claims.exp ? claims.exp * 1000 : Date.now() + response.expiresIn * 1000,
+    onboardingRequired: response.onboardingRequired || false,
   }
 }
 

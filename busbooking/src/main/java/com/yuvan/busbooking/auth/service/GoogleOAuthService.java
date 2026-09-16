@@ -16,7 +16,6 @@ import com.yuvan.busbooking.user.entity.UserStatus;
 import com.yuvan.busbooking.user.repository.RoleRepository;
 import com.yuvan.busbooking.user.repository.UserRepository;
 import com.yuvan.busbooking.user.repository.UserRoleRepository;
-import com.yuvan.busbooking.wallet.service.WalletService;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -38,7 +37,6 @@ public class GoogleOAuthService {
     private final RoleRepository roleRepository;
     private final UserRoleRepository userRoleRepository;
     private final JwtService jwtService;
-    private final WalletService walletService;
     private final CustomUserDetailsService userDetailsService;
 
     public GoogleOAuthService(
@@ -48,14 +46,13 @@ public class GoogleOAuthService {
             RoleRepository roleRepository,
             UserRoleRepository userRoleRepository,
             JwtService jwtService,
-            WalletService walletService,
-            CustomUserDetailsService userDetailsService) {
+            CustomUserDetailsService userDetailsService
+        ) {
         this.userRepository = userRepository;
         this.googleCredentialRepository = googleCredentialRepository;
         this.roleRepository = roleRepository;
         this.userRoleRepository = userRoleRepository;
         this.jwtService = jwtService;
-        this.walletService = walletService;
         this.userDetailsService = userDetailsService;
 
         // Initialize Google ID Token verifier
@@ -68,18 +65,24 @@ public class GoogleOAuthService {
 
     /**
      * Authenticates user with Google ID token.
-     * Creates new user if doesn't exist, updates existing user's Google
-     * credentials.
+     * Creates new user if doesn't exist, updates existing user's Google credentials.
+     * Supports both PASSENGER and OPERATOR user types.
      *
      * @param idToken Google ID token from frontend
+     * @param userType "PASSENGER" or "OPERATOR"
      * @return LoginResponse with JWT token
      * @throws IllegalArgumentException if token is invalid or verification fails
      */
     @Transactional
-    public LoginResponse authenticateWithGoogle(String idToken) {
+    public LoginResponse authenticateWithGoogle(String idToken, String userType) {
         try {
             System.out.println("=== Google OAuth Flow Started ===");
+            System.out.println("User Type: " + userType);
             System.out.println("Token received: " + (idToken != null ? "YES (length: " + idToken.length() + ")" : "NO"));
+            
+            if (userType == null || (!userType.equals("PASSENGER") && !userType.equals("OPERATOR"))) {
+                throw new IllegalArgumentException("Invalid userType. Must be PASSENGER or OPERATOR");
+            }
             
             // Verify the token
 
@@ -133,18 +136,13 @@ public class GoogleOAuthService {
                 user.setLastName(name != null && name.split(" ").length > 1 ? name.split(" ")[1] : "");
                 user.setPhone(null);
                 user.setStatus(UserStatus.ACTIVE); // Google users are auto-verified
+                user.setOnboardingCompleted(false); // Mark as pending onboarding
                 user = userRepository.save(user);
 
-                // Assign PASSENGER role
-                Role passengerRole = roleRepository.findByName(RoleName.PASSENGER)
-                        .orElseThrow(() -> new IllegalStateException("PASSENGER role not found"));
-                UserRole userRole = new UserRole();
-                userRole.setUser(user);
-                userRole.setRole(passengerRole);
-                userRoleRepository.save(userRole);
-
-                // Create wallet with default balance
-                walletService.createWallet(user);
+                System.out.println("New Google user created (pending onboarding): " + user.getId());
+                
+                // Do NOT assign role here - let user select during onboarding
+                // Role will be assigned after profile completion
             }
 
             // Create Google credential record
@@ -159,7 +157,21 @@ public class GoogleOAuthService {
             System.out.println("=== Google Credential Saved ===");
             System.out.println("User ID: " + user.getId());
             System.out.println("Email: " + user.getEmail());
+            System.out.println("Onboarding Completed: " + user.getOnboardingCompleted());
             System.out.println("Credential ID: " + credential.getId());
+
+            // For JWT generation, assign PASSENGER role temporarily if user has no role yet
+            // This allows them to access the onboarding page
+            var existingRole = userRoleRepository.findByUserIdWithRoles(user.getId());
+            if (existingRole.isEmpty()) {
+                Role passengerRole = roleRepository.findByName(RoleName.PASSENGER)
+                        .orElseThrow(() -> new IllegalStateException("PASSENGER role not found"));
+                UserRole userRole = new UserRole();
+                userRole.setUser(user);
+                userRole.setRole(passengerRole);
+                userRoleRepository.save(userRole);
+                System.out.println("Temporary PASSENGER role assigned for onboarding");
+            }
 
             // Generate JWT token
             UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
@@ -167,8 +179,16 @@ public class GoogleOAuthService {
             
             System.out.println("=== JWT Token Generated ===");
             System.out.println("Token: " + token.substring(0, Math.min(50, token.length())) + "...");
+            System.out.println("Onboarding Required: " + !user.getOnboardingCompleted());
 
-            return new LoginResponse(token, "Bearer", 3600);
+            // Return response with onboardingRequired flag
+            // onboardingRequired = true means user needs to complete profile
+            return new LoginResponse(
+                    token,
+                    "Bearer",
+                    3600,
+                    !user.getOnboardingCompleted()
+            );
 
         } catch (Exception e) {
             System.err.println("=== Google OAuth Error ===");

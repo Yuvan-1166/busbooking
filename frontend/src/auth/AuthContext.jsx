@@ -38,8 +38,11 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = async (credentialsOrResponse) => {
-    // Handle both API responses and direct credential objects
-    const response = credentialsOrResponse.email ? credentialsOrResponse : await api.login(credentialsOrResponse)
+    // If it's already a response (has accessToken), use it directly
+    // Otherwise, it's credentials - call the API
+    const response = credentialsOrResponse.accessToken 
+      ? credentialsOrResponse 
+      : await api.login(credentialsOrResponse)
     const nextSession = createSession(response)
     storeSession(nextSession)
     setSession(nextSession)

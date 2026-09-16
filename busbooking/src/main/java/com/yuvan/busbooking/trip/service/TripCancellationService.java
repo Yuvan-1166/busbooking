@@ -4,7 +4,6 @@ import com.yuvan.busbooking.booking.entity.Booking;
 import com.yuvan.busbooking.booking.entity.BookingStatus;
 import com.yuvan.busbooking.booking.repository.BookingRepository;
 import com.yuvan.busbooking.common.exception.ResourceNotFoundException;
-import com.yuvan.busbooking.ticket.entity.Ticket;
 import com.yuvan.busbooking.ticket.entity.TicketStatus;
 import com.yuvan.busbooking.ticket.repository.TicketRepository;
 import com.yuvan.busbooking.trip.entity.Trip;

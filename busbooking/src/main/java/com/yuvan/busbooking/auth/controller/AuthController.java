@@ -4,6 +4,7 @@ import com.yuvan.busbooking.auth.dto.ForgotPasswordRequest;
 import com.yuvan.busbooking.auth.dto.GoogleOAuthRequest;
 import com.yuvan.busbooking.auth.dto.LoginRequest;
 import com.yuvan.busbooking.auth.dto.LoginResponse;
+import com.yuvan.busbooking.auth.dto.OnboardingCompleteRequest;
 import com.yuvan.busbooking.auth.dto.OperatorRegisterRequest;
 import com.yuvan.busbooking.auth.dto.OperatorRegisterResponse;
 import com.yuvan.busbooking.auth.dto.OtpVerifyResponse;
@@ -16,6 +17,7 @@ import com.yuvan.busbooking.auth.dto.VerifyOtpRequest;
 import com.yuvan.busbooking.auth.entity.OtpPurpose;
 import com.yuvan.busbooking.auth.service.AuthService;
 import com.yuvan.busbooking.auth.service.GoogleOAuthService;
+import com.yuvan.busbooking.auth.service.OnboardingService;
 import com.yuvan.busbooking.auth.service.OtpService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -28,11 +30,13 @@ public class AuthController {
     private final AuthService authService;
     private final OtpService otpService;
     private final GoogleOAuthService googleOAuthService;
+    private final OnboardingService onboardingService;
 
-    public AuthController(AuthService authService, OtpService otpService, GoogleOAuthService googleOAuthService) {
+    public AuthController(AuthService authService, OtpService otpService, GoogleOAuthService googleOAuthService, OnboardingService onboardingService) {
         this.authService = authService;
         this.otpService = otpService;
         this.googleOAuthService = googleOAuthService;
+        this.onboardingService = onboardingService;
     }
 
     @PostMapping("/register")
@@ -113,21 +117,29 @@ public class AuthController {
     }
 
     /**
-     * Authenticates user with Google ID token (from @react-oauth/google on frontend).
-     * Creates new user if doesn't exist (auto-verified as PASSENGER).
-     * Returns JWT token immediately.
+     * Completes user onboarding after Google OAuth.
+     * Assigns role, saves profile details, creates operator if needed.
      *
-     * POST /api/v1/auth/google
+     * POST /api/v1/auth/onboarding/complete
+     * Requires authentication.
      */
-    @PostMapping("/google")
+    @PostMapping("/onboarding/complete")
+    public OtpVerifyResponse completeOnboarding(
+            @Valid @RequestBody OnboardingCompleteRequest request
+    ) {
+        System.out.println("=== Onboarding Complete Endpoint ===");
+        onboardingService.completeOnboarding(request);
+        return new OtpVerifyResponse("Onboarding completed successfully. Welcome!");
+    }
     public LoginResponse googleOAuth(
             @Valid @RequestBody GoogleOAuthRequest request
     ) {
         System.out.println("=== Google OAuth Endpoint Called ===");
         System.out.println("Request: " + request);
+        System.out.println("User Type: " + request.userType());
         System.out.println("Token: " + (request.idToken() != null ? request.idToken().substring(0, Math.min(50, request.idToken().length())) + "..." : "NULL"));
         
-        LoginResponse response = googleOAuthService.authenticateWithGoogle(request.idToken());
+        LoginResponse response = googleOAuthService.authenticateWithGoogle(request.idToken(), request.userType());
         System.out.println("=== Google OAuth Endpoint Returning ===");
         return response;
     }
