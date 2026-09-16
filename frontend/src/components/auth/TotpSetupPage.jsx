@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../api';
 import { useAuth } from '../../auth/AuthContext';
 import { parseApiError, getErrorMessage } from '../../utils/errorHandler';
+import BackupCodesModal from './BackupCodesModal';
 
 export default function TotpSetupPage() {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ export default function TotpSetupPage() {
   const [message, setMessage] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [showManualEntry, setShowManualEntry] = useState(false);
+  const [showBackupCodesModal, setShowBackupCodesModal] = useState(false);
+  const [backupCodes, setBackupCodes] = useState([]);
 
   useEffect(() => {
     // Redirect to login if not authenticated
@@ -77,12 +80,15 @@ export default function TotpSetupPage() {
       // Use the api helper with regular JWT token
       await api.verifyTotpSetup(totpCode);
 
-      // Success! Redirect to profile
-      navigate('/profile', {
-        state: {
-          message: '2FA enabled successfully! You\'ll need to enter a code from your authenticator app when signing in.',
-        },
-      });
+      // 2FA enabled successfully! Now generate and show backup codes
+      setMessage('2FA enabled successfully! Generating backup codes...');
+      setTotpCode('');
+      
+      // Generate backup codes
+      await handleGenerateBackupCodes();
+      
+      // Show backup codes modal
+      setShowBackupCodesModal(true);
     } catch (err) {
       const appError = parseApiError(err);
       let userMessage = getErrorMessage(appError);
@@ -111,6 +117,18 @@ export default function TotpSetupPage() {
       setTotpCode('');
     } finally {
       setVerifying(false);
+    }
+  };
+
+  const handleGenerateBackupCodes = async () => {
+    try {
+      const response = await api.generateBackupCodes();
+      setBackupCodes(response.codes || response.plainCodes || []);
+      return response;
+    } catch (err) {
+      const appError = parseApiError(err);
+      console.error("Backup codes generation error:", appError);
+      throw err;
     }
   };
 
@@ -230,6 +248,21 @@ export default function TotpSetupPage() {
             </div>
           </>
         )}
+
+        {/* Backup Codes Modal */}
+        <BackupCodesModal
+          isOpen={showBackupCodesModal}
+          codes={backupCodes}
+          onClose={() => {
+            setShowBackupCodesModal(false);
+            navigate('/profile', {
+              state: {
+                message: '2FA enabled successfully! Backup codes saved.',
+              },
+            });
+          }}
+          onGenerate={handleGenerateBackupCodes}
+        />
       </div>
     </div>
   );

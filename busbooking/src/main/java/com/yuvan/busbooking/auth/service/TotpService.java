@@ -44,6 +44,7 @@ public class TotpService {
     private static final int RATE_LIMIT_MINUTES = 15;
     private static final int BACKUP_CODE_COUNT = 10;
     private static final int BACKUP_CODE_LENGTH = 8;
+    private static final int ALLOWED_TIME_PERIOD_DISCREPANCY = 1; // Allow 1 adjacent time window (±30 seconds)
 
     private final UserRepository userRepository;
     private final TotpVerificationLogRepository verificationLogRepository;
@@ -65,10 +66,14 @@ public class TotpService {
         this.secretGenerator = new DefaultSecretGenerator();
         
         TimeProvider timeProvider = new SystemTimeProvider();
-        this.codeVerifier = new DefaultCodeVerifier(
+        DefaultCodeVerifier verifier = new DefaultCodeVerifier(
             new dev.samstevens.totp.code.DefaultCodeGenerator(HashingAlgorithm.SHA1),
             timeProvider
         );
+        // Allow verification of codes from adjacent time windows (±30 seconds)
+        // This eases the verification process and allows for clock skew between devices
+        verifier.setAllowedTimePeriodDiscrepancy(ALLOWED_TIME_PERIOD_DISCREPANCY);
+        this.codeVerifier = verifier;
     }
 
     /**

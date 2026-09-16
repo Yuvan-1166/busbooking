@@ -36,6 +36,7 @@ export const api = {
   setupTotp: () => request('/auth/totp/setup', { method: 'POST' }),
   verifyTotpSetup: (totpCode) => request('/auth/totp/verify-setup', { method: 'POST', body: JSON.stringify({ totpCode }) }),
   disableTotp: (data) => request('/auth/totp/disable', { method: 'POST', body: JSON.stringify(data) }),
+  generateBackupCodes: () => request('/auth/totp/backup-codes/generate', { method: 'POST' }),
   getLocations: () => request('/locations'),
   getRoutes: () => request('/routes'),
   getRouteStops: (routeId) => request(`/route-stops/route/${routeId}`),

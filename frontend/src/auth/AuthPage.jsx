@@ -435,7 +435,9 @@ export default function AuthPage() {
         {mode === "verify" && (
           <form className="grid gap-[15px]" onSubmit={submitOtp}>
             <label className={labelClass}>
+              <span>
               Verification code {requiredSpan}
+              </span>
               <input
                 className={`${inputClass} font-mono text-2xl tracking-[.25em]`}
                 type="text"
@@ -487,7 +489,9 @@ export default function AuthPage() {
             {mode === "register" && (
               <>
                 <label className={labelClass}>
+                  <span>
                   First name {requiredSpan}
+                  </span>
                   <input
                     className={inputClass}
                     required
@@ -510,7 +514,9 @@ export default function AuthPage() {
               </>
             )}
             <label className={labelClass}>
+              <span>
               Email {requiredSpan}
+              </span>
               <input
                 className={inputClass}
                 required
@@ -523,7 +529,9 @@ export default function AuthPage() {
             </label>
 
             <label className={labelClass}>
+              <span>
               Password {requiredSpan}
+              </span>
               <input
                 className={inputClass}
                 required
@@ -552,7 +560,9 @@ export default function AuthPage() {
             {mode === "register" && registrationType === "operator" && (
               <div className="grid grid-cols-2 gap-[15px] max-[600px]:grid-cols-1">
                 <label className={labelClass}>
+                  <span>
                   Business name {requiredSpan}
+                  </span>
                   <input
                     className={inputClass}
                     required
@@ -562,7 +572,9 @@ export default function AuthPage() {
                   />
                 </label>
                 <label className={labelClass}>
+                  <span>
                   Registration number {requiredSpan}
+                  </span>
                   <input
                     className={inputClass}
                     required
@@ -574,7 +586,9 @@ export default function AuthPage() {
                 <label
                   className={`${labelClass} col-span-full max-[600px]:col-span-1`}
                 >
+                  <span>
                   Contact phone {requiredSpan}
+                  </span>
                   <input
                     className={inputClass}
                     required

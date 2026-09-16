@@ -276,7 +276,7 @@ export default function ProfilePage({ onLogout }) {
       {/* ── Back ── */}
       <button
         className="border-0 bg-transparent p-0 text-xs text-muted"
-        onClick={() => navigate(-1)}
+        onClick={() => navigate("/")}
       >
         ← Back
       </button>
