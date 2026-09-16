@@ -126,29 +126,43 @@ export default function AuthPage() {
       const appError = parseApiError(submitError);
       let userMessage = getErrorMessage(appError);
 
-      // Handle specific auth errors
-      if (appError.statusCode === 409 || submitError.response?.status === 409) {
-        userMessage = `This email is already registered as a ${registrationType}. Please sign in or use a different email.`;
-      } else if (appError.statusCode === 403 && mode === "register") {
-        userMessage =
-          "Registration is currently unavailable. Please try again later.";
-      } else if (
-        mode === "login" &&
-        submitError.message?.toLowerCase().includes("email not verified")
-      ) {
-        // Account not verified → go to verify screen
-        setPendingEmail(form.email);
-        setOtp("");
-        setMode("verify");
-        setMessage(
-          "Your email is not verified yet. Enter the code we sent you, or request a new one.",
-        );
-        setSubmitting(false);
-        return;
-      } else if (appError.statusCode === 401 && mode === "login") {
-        userMessage = "Invalid email or password. Please try again.";
-      } else if (appError.statusCode === 400) {
-        userMessage = "Please check your input and try again.";
+      // Handle specific auth errors for login
+      if (mode === "login") {
+        if (appError.statusCode === 401) {
+          // Check if it's an unverified email scenario
+          if (submitError.message?.toLowerCase().includes("not verified") ||
+              submitError.response?.data?.message?.toLowerCase().includes("not verified")) {
+            // Account not verified → go to verify screen
+            setPendingEmail(form.email);
+            setOtp("");
+            setMode("verify");
+            setMessage(
+              "Your email is not verified yet. Please verify it to continue.",
+            );
+            setSubmitting(false);
+            return;
+          }
+          // Invalid credentials
+          userMessage = "Invalid email or password. Please try again.";
+        } else if (appError.statusCode === 403) {
+          userMessage = "Your account has been disabled. Please contact support.";
+        } else if (appError.statusCode === 429) {
+          userMessage = "Too many login attempts. Please try again in a few minutes.";
+        } else if (appError.statusCode === 0) {
+          userMessage = "Connection error. Please check your internet and try again.";
+        }
+      }
+      // Handle specific auth errors for registration
+      else if (mode === "register") {
+        if (appError.statusCode === 409) {
+          userMessage = `This email is already registered as a ${registrationType}. Please sign in or use a different email.`;
+        } else if (appError.statusCode === 403) {
+          userMessage = "Registration is currently unavailable. Please try again later.";
+        } else if (appError.statusCode === 400) {
+          userMessage = "Please check your input and try again.";
+        } else if (appError.statusCode === 429) {
+          userMessage = "Too many registration attempts. Please try again later.";
+        }
       }
 
       setError(userMessage);
@@ -179,20 +193,23 @@ export default function AuthPage() {
       const appError = parseApiError(otpError);
       let userMessage = getErrorMessage(appError);
 
-      if (appError.statusCode === 400 || otpError.response?.status === 400) {
-        userMessage = "Invalid verification code. Please try again.";
-      } else if (
-        appError.statusCode === 404 ||
-        otpError.response?.status === 404
-      ) {
-        userMessage =
-          "Verification code expired or not found. Please request a new one.";
-      } else if (
-        appError.statusCode === 429 ||
-        otpError.response?.status === 429
-      ) {
-        userMessage =
-          "Too many verification attempts. Please wait before trying again.";
+      // Handle specific OTP verification errors
+      if (appError.statusCode === 400) {
+        if (otpError.response?.data?.message?.toLowerCase().includes("invalid")) {
+          userMessage = "The verification code is invalid. Please check and try again.";
+        } else if (otpError.response?.data?.message?.toLowerCase().includes("expired")) {
+          userMessage = "The verification code has expired. Please request a new one.";
+        } else {
+          userMessage = "Invalid verification code. Please try again.";
+        }
+      } else if (appError.statusCode === 404) {
+        userMessage = "Verification code not found or has expired. Please request a new one.";
+      } else if (appError.statusCode === 429) {
+        userMessage = "Too many verification attempts. Please wait before trying again.";
+      } else if (appError.statusCode === 0) {
+        userMessage = "Connection error. Please check your internet and try again.";
+      } else if (appError.statusCode === 408) {
+        userMessage = "Request timeout. Please check your connection and try again.";
       }
 
       setError(userMessage);
@@ -209,20 +226,24 @@ export default function AuthPage() {
     setMessage("");
     try {
       await api.sendOtp(pendingEmail);
-      setMessage("A new code has been sent to " + pendingEmail);
+      setMessage("A new verification code has been sent to " + pendingEmail);
       setOtp("");
     } catch (resendError) {
       const appError = parseApiError(resendError);
       let userMessage = getErrorMessage(appError);
 
-      if (appError.statusCode === 429 || resendError.response?.status === 429) {
+      // Handle specific resend OTP errors
+      if (appError.statusCode === 429) {
         userMessage =
           "Too many requests. Please wait a few minutes before requesting another code.";
-      } else if (
-        appError.statusCode === 404 ||
-        resendError.response?.status === 404
-      ) {
-        userMessage = "Email not found. Please register first.";
+      } else if (appError.statusCode === 404) {
+        userMessage = "Email not found in system. Please register first.";
+      } else if (appError.statusCode === 400) {
+        userMessage = "Cannot send verification code. Please try again.";
+      } else if (appError.statusCode === 0) {
+        userMessage = "Connection error. Please check your internet and try again.";
+      } else if (appError.statusCode === 408) {
+        userMessage = "Request timeout. Please check your connection and try again.";
       }
 
       setError(userMessage);
@@ -275,10 +296,23 @@ export default function AuthPage() {
       const appError = parseApiError(googleError);
       let userMessage = getErrorMessage(appError);
 
+      // Handle specific Google OAuth errors
       if (appError.statusCode === 400) {
-        userMessage = "Invalid Google credential. Please try again.";
+        if (googleError.message?.includes("No credential")) {
+          userMessage = "Google authentication failed. Please try again.";
+        } else if (googleError.response?.data?.message?.toLowerCase().includes("invalid")) {
+          userMessage = "Invalid Google credential. Please try again.";
+        } else {
+          userMessage = "Google authentication error. Please try again.";
+        }
       } else if (appError.statusCode === 401) {
-        userMessage = "Google authentication failed. Please try again.";
+        userMessage = "Google authentication failed. Please try again or use email/password.";
+      } else if (appError.statusCode === 409) {
+        userMessage = "This Google account is already linked. Please sign in.";
+      } else if (appError.statusCode === 0) {
+        userMessage = "Connection error. Please check your internet and try again.";
+      } else if (appError.statusCode === 408) {
+        userMessage = "Google authentication took too long. Please try again.";
       }
 
       setError(userMessage);
@@ -296,6 +330,7 @@ export default function AuthPage() {
   const tabClass = (tab) =>
     `border-b-2 bg-transparent p-2 text-xs ${mode === tab ? "border-ink font-bold text-ink" : "border-transparent text-muted"}`;
   const labelClass = "grid gap-1.5 font-mono text-[10px] uppercase text-muted";
+  const requiredSpan = <span className="text-orange">*</span>;
   const inputClass =
     "w-full border-0 border-b border-line bg-transparent py-2.5 text-sm text-ink outline-0";
 
@@ -400,7 +435,7 @@ export default function AuthPage() {
         {mode === "verify" && (
           <form className="grid gap-[15px]" onSubmit={submitOtp}>
             <label className={labelClass}>
-              Verification code
+              Verification code {requiredSpan}
               <input
                 className={`${inputClass} font-mono text-2xl tracking-[.25em]`}
                 type="text"
@@ -452,7 +487,7 @@ export default function AuthPage() {
             {mode === "register" && (
               <>
                 <label className={labelClass}>
-                  First name
+                  First name {requiredSpan}
                   <input
                     className={inputClass}
                     required
@@ -475,7 +510,7 @@ export default function AuthPage() {
               </>
             )}
             <label className={labelClass}>
-              Email
+              Email {requiredSpan}
               <input
                 className={inputClass}
                 required
@@ -488,7 +523,7 @@ export default function AuthPage() {
             </label>
 
             <label className={labelClass}>
-              Password
+              Password {requiredSpan}
               <input
                 className={inputClass}
                 required
@@ -517,7 +552,7 @@ export default function AuthPage() {
             {mode === "register" && registrationType === "operator" && (
               <div className="grid grid-cols-2 gap-[15px] max-[600px]:grid-cols-1">
                 <label className={labelClass}>
-                  Business name
+                  Business name {requiredSpan}
                   <input
                     className={inputClass}
                     required
@@ -527,7 +562,7 @@ export default function AuthPage() {
                   />
                 </label>
                 <label className={labelClass}>
-                  Registration number
+                  Registration number {requiredSpan}
                   <input
                     className={inputClass}
                     required
@@ -539,7 +574,7 @@ export default function AuthPage() {
                 <label
                   className={`${labelClass} col-span-full max-[600px]:col-span-1`}
                 >
-                  Contact phone
+                  Contact phone {requiredSpan}
                   <input
                     className={inputClass}
                     required

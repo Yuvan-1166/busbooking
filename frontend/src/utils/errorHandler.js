@@ -40,16 +40,63 @@ export function parseApiError(error) {
     // HTTP error response
     const { status, data } = error.response;
     let message = data?.message || error.message;
+    let userMessage = null;
     
-    // Parse specific error scenarios from backend messages
-    if (status === 409 && message?.toLowerCase().includes("already")) {
-      return new AppError(message, 409, "This email is already registered. Please sign in or use a different email.");
+    // Parse specific login/registration error scenarios
+    if (status === 401) {
+      if (message?.toLowerCase().includes("invalid credentials") || 
+          message?.toLowerCase().includes("invalid email or password")) {
+        userMessage = "Invalid email or password. Please check and try again.";
+      } else if (message?.toLowerCase().includes("password")) {
+        userMessage = "Invalid password. Please try again.";
+      } else if (message?.toLowerCase().includes("not found") || 
+                 message?.toLowerCase().includes("no user")) {
+        userMessage = "Email not found. Please check the email address or register.";
+      } else if (message?.toLowerCase().includes("not verified")) {
+        userMessage = "Your email has not been verified yet. Please verify your email first.";
+      } else {
+        userMessage = "Authentication failed. Please check your credentials.";
+      }
+      return new AppError(message, 401, userMessage);
     }
-    if (status === 400 && message?.toLowerCase().includes("invalid")) {
-      return new AppError(message, 400, "Invalid input. Please check your information.");
+    
+    if (status === 409) {
+      if (message?.toLowerCase().includes("already")) {
+        userMessage = "This email is already registered. Please sign in or use a different email.";
+      } else {
+        userMessage = "This data already exists. Please use different information.";
+      }
+      return new AppError(message, 409, userMessage);
     }
-    if (status === 401 && message?.toLowerCase().includes("password")) {
-      return new AppError(message, 401, "Invalid email or password.");
+
+    if (status === 400) {
+      if (message?.toLowerCase().includes("invalid") || message?.toLowerCase().includes("malformed")) {
+        userMessage = "Invalid input. Please check your information and try again.";
+      } else if (message?.toLowerCase().includes("password")) {
+        userMessage = "Password does not meet requirements. Use at least 8 characters.";
+      } else if (message?.toLowerCase().includes("email")) {
+        userMessage = "Please provide a valid email address.";
+      } else if (message?.toLowerCase().includes("otp") || message?.toLowerCase().includes("code")) {
+        userMessage = "Invalid verification code. Please check and try again.";
+      } else {
+        userMessage = "Invalid request. Please check your input.";
+      }
+      return new AppError(message, 400, userMessage);
+    }
+
+    if (status === 403) {
+      userMessage = "Access denied. You may not have permission to perform this action.";
+      return new AppError(message, 403, userMessage);
+    }
+
+    if (status === 404) {
+      userMessage = "Resource not found. Please try again.";
+      return new AppError(message, 404, userMessage);
+    }
+
+    if (status === 429) {
+      userMessage = "Too many attempts. Please wait a few minutes before trying again.";
+      return new AppError(message, 429, userMessage);
     }
     
     return new AppError(message, status);
@@ -59,7 +106,7 @@ export function parseApiError(error) {
     return new AppError(
       "Network error",
       0,
-      "Unable to connect. Please check your internet connection."
+      "Unable to connect. Please check your internet connection and try again."
     );
   }
 
@@ -67,7 +114,7 @@ export function parseApiError(error) {
     return new AppError(
       "Request timeout",
       408,
-      "The request took too long. Please try again."
+      "The request took too long. Please check your connection and try again."
     );
   }
 
