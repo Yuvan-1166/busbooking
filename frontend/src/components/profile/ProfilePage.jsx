@@ -571,7 +571,7 @@ export default function ProfilePage({ onLogout }) {
             <p className="mb-5 text-sm leading-6 text-muted">
               Add an extra layer of security to your account by enabling
               two-factor authentication. You'll need an authenticator app like
-              Zoho OneAuth, Google Authenticator, or Authy.
+              Zoho OneAuth, Google Authenticator, Microsoft Authenticator or Authy.
             </p>
 
             {totpError && (

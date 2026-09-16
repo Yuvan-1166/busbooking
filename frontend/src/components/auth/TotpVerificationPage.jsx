@@ -4,6 +4,8 @@ import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api';
 
 export default function TotpVerificationPage() {
+  console.log("=== TotpVerificationPage RENDER ===");
+  
   const navigate = useNavigate();
   const location = useLocation();
   const { login } = useAuth();
@@ -13,11 +15,19 @@ export default function TotpVerificationPage() {
   const [useBackupCode, setUseBackupCode] = useState(false);
   const [backupCode, setBackupCode] = useState('');
 
-  const tempToken = location.state?.tempToken;
-  const userId = location.state?.userId;
+  // Try to get from location.state first, then sessionStorage
+  const tempToken = location.state?.tempToken || sessionStorage.getItem('totp_verify_temp_token');
+  const userId = location.state?.userId || (sessionStorage.getItem('totp_verify_user_id') ? parseInt(sessionStorage.getItem('totp_verify_user_id')) : null);
+
+  console.log("TotpVerificationPage - location.state:", location.state);
+  console.log("TotpVerificationPage - sessionStorage tempToken:", sessionStorage.getItem('totp_verify_temp_token'));
+  console.log("TotpVerificationPage - tempToken:", tempToken);
+  console.log("TotpVerificationPage - userId:", userId);
 
   useEffect(() => {
+    console.log("TotpVerificationPage - useEffect running, tempToken:", tempToken);
     if (!tempToken) {
+      console.log("No tempToken, redirecting to /login");
       navigate('/login');
     }
   }, [tempToken]);
@@ -60,6 +70,10 @@ export default function TotpVerificationPage() {
       }
 
       const data = await response.json();
+
+      // Clear sessionStorage
+      sessionStorage.removeItem('totp_verify_temp_token');
+      sessionStorage.removeItem('totp_verify_user_id');
 
       // Success! Store token and redirect
       login(data.accessToken);

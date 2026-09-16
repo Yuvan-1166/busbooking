@@ -97,7 +97,7 @@ export default function TotpSetupPage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Set Up Two-Factor Authentication</h1>
-          <p className="text-gray-600 text-sm">Scan the QR code with Zoho OneAuth or any authenticator app</p>
+          <p className="text-gray-600 text-sm">Scan the QR code wit any authenticator app</p>
         </div>
 
         {error && (
@@ -116,7 +116,7 @@ export default function TotpSetupPage() {
                   alt="2FA QR Code"
                   className="mx-auto w-48 h-48"
                 />
-                <p className="mt-3 text-xs text-gray-500">Scan with Zoho OneAuth</p>
+                <p className="mt-3 text-xs text-gray-500">Scan with authenticator app</p>
               </div>
 
               {/* Manual Entry Toggle */}
@@ -172,7 +172,7 @@ export default function TotpSetupPage() {
             {/* Help Text */}
             <div className="mt-6 text-center">
               <p className="text-xs text-gray-500">
-                Download Zoho OneAuth from your app store if you haven't already.
+                Download any authenticator from Google PlayStone or Appstore
                 This code changes every 30 seconds.
               </p>
             </div>

@@ -81,10 +81,21 @@ export default function AuthPage() {
     setSubmitting(true);
     try {
       if (mode === "login") {
+        console.log("=== LOGIN START ===");
         const response = await login(form);
+        console.log("Login response:", response);
 
         // Check if TOTP verification is required
         if (response && response.requiresTotp) {
+          console.log("TOTP required, navigating to /totp/verify");
+          
+          // Store in sessionStorage as backup
+          sessionStorage.setItem('totp_verify_temp_token', response.tempToken);
+          sessionStorage.setItem('totp_verify_user_id', response.userId.toString());
+          
+          // Clear submitting state before navigating
+          setSubmitting(false);
+          
           navigate("/totp/verify", {
             state: {
               tempToken: response.tempToken,
@@ -94,6 +105,7 @@ export default function AuthPage() {
           return;
         }
 
+        console.log("Normal login (no TOTP), navigating to /");
         // Normal login without TOTP (admin users)
         navigate("/", { replace: true });
       } else {

@@ -19,7 +19,7 @@ import OperatorDashboard from "./components/workspace/OperatorDashboard";
 import AuthPage from "./auth/AuthPage";
 import OnboardingPage from "./components/auth/OnboardingPage";
 import TotpSetupPage from "./components/auth/TotpSetupPage";
-import TotpVerificationPage from "./components/auth/TotpVerificationPage";
+import TotpVerificationPage from "./components/auth/TotpVerificationPageWrapper";
 
 function App() {
   const [locations, setLocations] = useState([]);
@@ -295,6 +295,15 @@ function App() {
         </div>
       )}
       <Routes>
+        {/* Auth routes - must be first to avoid being caught by other routes */}
+        <Route
+          path="/totp/verify"
+          element={<TotpVerificationPage />}
+        />
+        <Route
+          path="/totp/setup"
+          element={<TotpSetupPage />}
+        />
         <Route
           path="/login"
           element={<AuthPage />}
@@ -302,14 +311,6 @@ function App() {
         <Route
           path="/onboarding"
           element={<OnboardingPage />}
-        />
-        <Route
-          path="/totp/setup"
-          element={<TotpSetupPage />}
-        />
-        <Route
-          path="/totp/verify"
-          element={<TotpVerificationPage />}
         />
         <Route
           path="/"
