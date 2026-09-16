@@ -302,11 +302,24 @@ function App() {
         />
         <Route
           path="/totp/setup"
-          element={<TotpSetupPage />}
+          element={session ? <TotpSetupPage /> : <Navigate to="/login" replace />}
         />
         <Route
           path="/login"
-          element={<AuthPage />}
+          element={
+            session ? (
+              // Redirect authenticated users to their appropriate page
+              isAdmin ? (
+                <Navigate to="/admin" replace />
+              ) : isOperator ? (
+                <Navigate to="/operator" replace />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            ) : (
+              <AuthPage />
+            )
+          }
         />
         <Route
           path="/onboarding"
@@ -315,35 +328,41 @@ function App() {
         <Route
           path="/"
           element={
-            canBook ? (
-              <HomePage
-                locations={availableLocations}
-                from={from}
-                to={to}
-                date={date}
-                loading={loading}
-                searching={searching}
-                matchingRoute={matchingRoute}
-                onFromChange={setFrom}
-                onToChange={setTo}
-                onDateChange={setDate}
-                onSwap={() => {
-                  setFrom(to);
-                  setTo(from);
-                }}
-                onSubmit={searchTrips}
-              />
-            ) : isAdmin ? (
-              <Navigate to="/admin" replace />
+            session ? (
+              canBook ? (
+                <HomePage
+                  locations={availableLocations}
+                  from={from}
+                  to={to}
+                  date={date}
+                  loading={loading}
+                  searching={searching}
+                  matchingRoute={matchingRoute}
+                  onFromChange={setFrom}
+                  onToChange={setTo}
+                  onDateChange={setDate}
+                  onSwap={() => {
+                    setFrom(to);
+                    setTo(from);
+                  }}
+                  onSubmit={searchTrips}
+                />
+              ) : isAdmin ? (
+                <Navigate to="/admin" replace />
+              ) : isOperator ? (
+                <Navigate to="/operator" replace />
+              ) : (
+                <Navigate to="/login" replace />
+              )
             ) : (
-              <Navigate to="/operator" replace />
+              <Navigate to="/login" replace />
             )
           }
         />
         <Route
           path="/search"
           element={
-            canBook ? (
+            session && canBook ? (
               <SearchResults
                 locations={locations}
                 routes={routes}
@@ -377,14 +396,16 @@ function App() {
                 getTripFare={getTripFare}
               />
             ) : (
-              <Navigate to="/" replace />
+              <Navigate to={session ? "/" : "/login"} replace />
             )
           }
         />
         <Route
           path="/book/:tripId"
           element={
-            isAdmin || isOperator ? (
+            !session ? (
+              <Navigate to="/login" replace />
+            ) : isAdmin || isOperator ? (
               <Navigate to={isAdmin ? "/admin" : "/operator"} replace />
             ) : canBook && selectedTrip ? (
               <BookingPanel
@@ -406,20 +427,20 @@ function App() {
         <Route
           path="/pay/:bookingId"
           element={
-            canBook ? (
+            session && canBook ? (
               <PaymentPage
                 locations={locations}
                 onPaymentSuccess={handlePaymentSuccess}
               />
             ) : (
-              <AccessDenied />
+              <Navigate to={session ? "/" : "/login"} replace />
             )
           }
         />
         <Route
           path="/bookings"
           element={
-            canBook ? (
+            session && canBook ? (
               <Bookings
                 tickets={tickets}
                 loading={ticketsLoading}
@@ -427,35 +448,68 @@ function App() {
                 onCancel={cancelBooking}
               />
             ) : (
-              <AccessDenied />
+              <Navigate to={session ? "/" : "/login"} replace />
             )
           }
         />
         <Route
           path="/operator"
           element={
-            isOperator ? <Navigate to="/operator/overview" replace /> : <AccessDenied />
+            !session ? (
+              <Navigate to="/login" replace />
+            ) : isOperator ? (
+              <Navigate to="/operator/overview" replace />
+            ) : (
+              <AccessDenied />
+            )
           }
         />
         <Route
           path="/operator/:section"
-          element={isOperator ? <OperatorDashboard /> : <AccessDenied />}
+          element={
+            !session ? (
+              <Navigate to="/login" replace />
+            ) : isOperator ? (
+              <OperatorDashboard />
+            ) : (
+              <AccessDenied />
+            )
+          }
         />
         <Route
           path="/admin"
           element={
-            isAdmin ? <Navigate to="/admin/overview" replace /> : <AccessDenied />
+            !session ? (
+              <Navigate to="/login" replace />
+            ) : isAdmin ? (
+              <Navigate to="/admin/overview" replace />
+            ) : (
+              <AccessDenied />
+            )
           }
         />
         <Route
           path="/admin/:section"
-          element={isAdmin ? <AdminDashboard /> : <AccessDenied />}
+          element={
+            !session ? (
+              <Navigate to="/login" replace />
+            ) : isAdmin ? (
+              <AdminDashboard />
+            ) : (
+              <AccessDenied />
+            )
+          }
         />
-        <Route path="/profile" element={
-          <ProfilePage 
-            onLogout={handleLogout}
-          />
-          } />
+        <Route
+          path="/profile"
+          element={
+            session ? (
+              <ProfilePage onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
+        />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
         <Footer />
