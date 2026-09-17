@@ -16,7 +16,7 @@ public class JwtService {
 
     private final SecretKey secretKey;
     private final long expirationMs;
-    private static final long TEMP_TOKEN_EXPIRATION_MS = 5 * 60 * 1000; // 5 minutes
+    private static final long TEMP_TOKEN_EXPIRATION_MS = 15 * 60 * 1000; // 15 minutes
 
     public JwtService(
             @Value("${app.jwt.secret}") String secret,

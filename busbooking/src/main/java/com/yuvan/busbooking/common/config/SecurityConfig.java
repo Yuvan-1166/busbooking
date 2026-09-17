@@ -64,6 +64,8 @@ public class SecurityConfig {
                                 "/api/v1/auth/operator/register",
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/login/verify-totp",
+                                "/api/v1/auth/login/request-otp-fallback",
+                                "/api/v1/auth/login/verify-otp-fallback",
                                 "/api/v1/auth/verify/send",
                                 "/api/v1/auth/verify/confirm",
                                 "/api/v1/auth/forgot-password",

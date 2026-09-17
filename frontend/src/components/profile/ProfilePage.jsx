@@ -104,6 +104,15 @@ export default function ProfilePage({ onLogout }) {
   // Disable TOTP modal state
   const [showDisableTotpModal, setShowDisableTotpModal] = useState(false);
 
+  // Mobile verification state
+  const [mobileNumber, setMobileNumber] = useState("");
+  const [mobileVerified, setMobileVerified] = useState(false);
+  const [showMobileOtpInput, setShowMobileOtpInput] = useState(false);
+  const [mobileOtp, setMobileOtp] = useState("");
+  const [mobileLoading, setMobileLoading] = useState(false);
+  const [mobileError, setMobileError] = useState("");
+  const [mobileSuccess, setMobileSuccess] = useState("");
+
   // ── Load user ───────────────────────────────────────────────────────────────
   useEffect(() => {
     async function load() {
@@ -122,6 +131,10 @@ export default function ProfilePage({ onLogout }) {
         
         // Set TOTP enabled status from user data
         setTotpEnabled(userData.totpEnabled || false);
+        
+        // Set mobile verification data
+        setMobileNumber(userData.mobileNumber || "");
+        setMobileVerified(userData.mobileVerified || false);
       } catch (err) {
         setLoadError(err.message);
       } finally {
@@ -175,6 +188,45 @@ export default function ProfilePage({ onLogout }) {
       setTimeout(() => setTotpSuccess(""), 5000);
     } catch (err) {
       throw err; // Let the modal handle the error display
+    }
+  };
+
+  // ── Mobile Verification ─────────────────────────────────────────────────────
+  const handleSendMobileOtp = async (e) => {
+    e.preventDefault();
+    setMobileError("");
+    setMobileSuccess("");
+    setMobileLoading(true);
+
+    try {
+      await api.sendMobileOtp(mobileNumber);
+      setShowMobileOtpInput(true);
+      setMobileSuccess("OTP sent to your mobile number");
+      setTimeout(() => setMobileSuccess(""), 5000);
+    } catch (err) {
+      setMobileError(err.message || "Failed to send OTP");
+    } finally {
+      setMobileLoading(false);
+    }
+  };
+
+  const handleVerifyMobileOtp = async (e) => {
+    e.preventDefault();
+    setMobileError("");
+    setMobileSuccess("");
+    setMobileLoading(true);
+
+    try {
+      await api.verifyMobileOtp(mobileOtp);
+      setMobileVerified(true);
+      setShowMobileOtpInput(false);
+      setMobileOtp("");
+      setMobileSuccess("Mobile number verified successfully!");
+      setTimeout(() => setMobileSuccess(""), 5000);
+    } catch (err) {
+      setMobileError(err.message || "Invalid OTP");
+    } finally {
+      setMobileLoading(false);
     }
   };
 
@@ -623,6 +675,130 @@ export default function ProfilePage({ onLogout }) {
               >
                 Disable 2FA
                 <span className="float-right text-lg">×</span>
+              </button>
+            )}
+          </section>
+
+          {/* Mobile Number Verification Section */}
+          <section className="mt-7 border border-[#e7e5dc] bg-paper p-7">
+            <SectionLabel>MOBILE NUMBER VERIFICATION</SectionLabel>
+
+            <p className="mb-5 text-sm leading-6 text-muted">
+              Verify your mobile number to enable SMS-based login and account recovery options.
+            </p>
+
+            {mobileError && (
+              <div
+                className="mb-5 border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]"
+                role="alert"
+              >
+                {mobileError}
+              </div>
+            )}
+            {mobileSuccess && (
+              <div
+                className="mb-5 border border-[#a5bea0] bg-[#e4eee1] px-4 py-3 text-xs text-green"
+                role="status"
+              >
+                {mobileSuccess}
+              </div>
+            )}
+
+            {/* Show current status */}
+            <div className="mb-6 flex items-center gap-3 rounded border border-line bg-[#f9f8f5] p-4">
+              <div
+                className={`h-2.5 w-2.5 rounded-full ${mobileVerified ? "bg-green" : "bg-muted"}`}
+              ></div>
+              <span className="text-sm">
+                Mobile is currently{" "}
+                <strong>{mobileVerified ? "verified" : "not verified"}</strong>
+                {mobileVerified && mobileNumber && (
+                  <span className="ml-2 font-mono text-xs text-muted">
+                    ({mobileNumber})
+                  </span>
+                )}
+              </span>
+            </div>
+
+            {/* Mobile verification form */}
+            {!mobileVerified && (
+              <form onSubmit={showMobileOtpInput ? handleVerifyMobileOtp : handleSendMobileOtp} className="grid gap-5">
+                {!showMobileOtpInput ? (
+                  <>
+                    <Field label="Mobile Number (with country code)">
+                      <TextInput
+                        type="tel"
+                        required
+                        value={mobileNumber}
+                        onChange={(e) => setMobileNumber(e.target.value)}
+                        disabled={mobileLoading}
+                        placeholder="+919876543210"
+                        pattern="^\+[1-9]\d{1,14}$"
+                        title="Enter mobile number in E.164 format (e.g., +919876543210)"
+                      />
+                    </Field>
+                    <button
+                      type="submit"
+                      className="border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
+                      disabled={mobileLoading || !mobileNumber}
+                    >
+                      {mobileLoading ? "Sending..." : "Send OTP"}
+                      <span className="float-right text-lg">→</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Field label="Enter OTP">
+                      <TextInput
+                        type="text"
+                        required
+                        value={mobileOtp}
+                        onChange={(e) => setMobileOtp(e.target.value)}
+                        disabled={mobileLoading}
+                        placeholder="6-digit code"
+                        pattern="\d{6}"
+                        maxLength={6}
+                      />
+                    </Field>
+                    <div className="flex gap-3">
+                      <button
+                        type="submit"
+                        className="flex-1 border-0 bg-green px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
+                        disabled={mobileLoading || mobileOtp.length !== 6}
+                      >
+                        {mobileLoading ? "Verifying..." : "Verify OTP"}
+                        <span className="float-right text-lg">✓</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowMobileOtpInput(false);
+                          setMobileOtp("");
+                          setMobileError("");
+                        }}
+                        className="border border-line bg-transparent px-[17px] py-3.5 text-left font-bold text-ink disabled:opacity-45"
+                        disabled={mobileLoading}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
+              </form>
+            )}
+
+            {/* Already verified */}
+            {mobileVerified && (
+              <button
+                className="border-0 bg-[#8c3e2d] px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
+                onClick={() => {
+                  setMobileVerified(false);
+                  setMobileNumber("");
+                  setShowMobileOtpInput(false);
+                }}
+              >
+                Change Mobile Number
+                <span className="float-right text-lg">↻</span>
               </button>
             )}
           </section>

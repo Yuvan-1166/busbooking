@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { Navigate, Route, Routes, useLocation, useNavigate } from "react-router-dom";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import { api } from "./api";
 import { enrichTripsData } from "./utils/tripEnricher";
 import { parseApiError, getErrorMessage } from "./utils/errorHandler";
@@ -40,6 +46,7 @@ function App() {
   const [bookingInProgress, setBookingInProgress] = useState(false);
   const [error, setError] = useState("");
   const [authorizationError, setAuthorizationError] = useState(false);
+  const [user, setUser] = useState(null);
   const { session, logout, hasRole } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -133,6 +140,14 @@ function App() {
     return locations.filter((location) => ids.has(location.id));
   }, [locations, routeStops]);
 
+  useEffect(() => {
+    if (!session?.email) {
+      setUser(null);
+      return;
+    }
+    api.getCurrentUser().then(setUser).catch(console.error);
+  }, [session?.email]);
+
   const matchingRoute = useMemo(
     () =>
       routes.find((route) => {
@@ -170,11 +185,14 @@ function App() {
       !Number.isFinite(pickupDistance) ||
       !Number.isFinite(dropDistance) ||
       dropDistance <= pickupDistance
-    ) return null;
+    )
+      return null;
 
-    return Math.round(
-      (baseFare + (dropDistance - pickupDistance) * pricePerKm) * 100,
-    ) / 100;
+    return (
+      Math.round(
+        (baseFare + (dropDistance - pickupDistance) * pricePerKm) * 100,
+      ) / 100
+    );
   };
 
   const searchTrips = async (event) => {
@@ -232,10 +250,18 @@ function App() {
     setError("");
     if (!selectedTrip || !selectedSeats.length)
       return setError("Select at least one available seat.");
-    if (!passengers.length || passengers.some((passenger) =>
-      !passenger.tripSeatId || !passenger.firstName || !passenger.lastName ||
-      !passenger.age || !passenger.gender
-    )) return setError("Complete passenger details for every selected seat.");
+    if (
+      !passengers.length ||
+      passengers.some(
+        (passenger) =>
+          !passenger.tripSeatId ||
+          !passenger.firstName ||
+          !passenger.lastName ||
+          !passenger.age ||
+          !passenger.gender,
+      )
+    )
+      return setError("Complete passenger details for every selected seat.");
     setBookingInProgress(true);
     try {
       const holdItems = passengers.map((passenger) => ({
@@ -286,57 +312,95 @@ function App() {
         {session && (
           <Header
             email={session.email}
+            firstName={user?.firstName}
+            lastName={user?.lastName}
             roles={session.roles}
           />
         )}
-      {error && (
-        <div className="mx-auto mt-4 max-w-[1168px] border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]" role="alert">
-          {error}
-        </div>
-      )}
-      <Routes>
-        {/* Auth routes - must be first to avoid being caught by other routes */}
-        <Route
-          path="/totp/verify"
-          element={<TotpVerificationPage />}
-        />
-        <Route
-          path="/totp/setup"
-          element={session ? <TotpSetupPage /> : <Navigate to="/login" replace />}
-        />
-        <Route
-          path="/login"
-          element={
-            session ? (
-              // Redirect authenticated users to their appropriate page
-              isAdmin ? (
-                <Navigate to="/admin" replace />
-              ) : isOperator ? (
-                <Navigate to="/operator" replace />
+        {error && (
+          <div
+            className="mx-auto mt-4 max-w-[1168px] border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]"
+            role="alert"
+          >
+            {error}
+          </div>
+        )}
+        <Routes>
+          {/* Auth routes - must be first to avoid being caught by other routes */}
+          <Route path="/totp/verify" element={<TotpVerificationPage />} />
+          <Route
+            path="/totp/setup"
+            element={
+              session ? <TotpSetupPage /> : <Navigate to="/login" replace />
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              session ? (
+                // Redirect authenticated users to their appropriate page
+                isAdmin ? (
+                  <Navigate to="/admin" replace />
+                ) : isOperator ? (
+                  <Navigate to="/operator" replace />
+                ) : (
+                  <Navigate to="/" replace />
+                )
               ) : (
-                <Navigate to="/" replace />
+                <AuthPage />
               )
-            ) : (
-              <AuthPage />
-            )
-          }
-        />
-        <Route
-          path="/onboarding"
-          element={<OnboardingPage />}
-        />
-        <Route
-          path="/"
-          element={
-            session ? (
-              canBook ? (
-                <HomePage
-                  locations={availableLocations}
+            }
+          />
+          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route
+            path="/"
+            element={
+              session ? (
+                canBook ? (
+                  <HomePage
+                    locations={availableLocations}
+                    from={from}
+                    to={to}
+                    date={date}
+                    loading={loading}
+                    searching={searching}
+                    matchingRoute={matchingRoute}
+                    onFromChange={setFrom}
+                    onToChange={setTo}
+                    onDateChange={setDate}
+                    onSwap={() => {
+                      setFrom(to);
+                      setTo(from);
+                    }}
+                    onSubmit={searchTrips}
+                  />
+                ) : isAdmin ? (
+                  <Navigate to="/admin" replace />
+                ) : isOperator ? (
+                  <Navigate to="/operator" replace />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          />
+          <Route
+            path="/search"
+            element={
+              session && canBook ? (
+                <SearchResults
+                  locations={locations}
+                  routes={routes}
+                  routeStops={routeStops}
+                  availableLocations={availableLocations}
                   from={from}
                   to={to}
                   date={date}
                   loading={loading}
                   searching={searching}
+                  trips={trips}
                   matchingRoute={matchingRoute}
                   onFromChange={setFrom}
                   onToChange={setTo}
@@ -346,172 +410,135 @@ function App() {
                     setTo(from);
                   }}
                   onSubmit={searchTrips}
+                  onTripSelect={async (trip) => {
+                    const fare = getTripFare(trip);
+                    if (fare === null) {
+                      setError("Fare is unavailable for this route.");
+                      return;
+                    }
+                    if (await openTrip({ ...trip, startingFare: fare })) {
+                      navigate(`/book/${trip.id}`);
+                    }
+                  }}
+                  getTripFare={getTripFare}
                 />
-              ) : isAdmin ? (
-                <Navigate to="/admin" replace />
+              ) : (
+                <Navigate to={session ? "/" : "/login"} replace />
+              )
+            }
+          />
+          <Route
+            path="/book/:tripId"
+            element={
+              !session ? (
+                <Navigate to="/login" replace />
+              ) : isAdmin || isOperator ? (
+                <Navigate to={isAdmin ? "/admin" : "/operator"} replace />
+              ) : canBook && selectedTrip ? (
+                <BookingPanel
+                  trip={selectedTrip}
+                  seats={tripSeats}
+                  selectedSeats={selectedSeatObjects}
+                  toggleSeat={toggleSeat}
+                  onConfirm={confirmBooking}
+                  bookingInProgress={bookingInProgress}
+                  onBack={() => {
+                    navigate("/search");
+                  }}
+                />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            }
+          />
+          <Route
+            path="/pay/:bookingId"
+            element={
+              session && canBook ? (
+                <PaymentPage
+                  locations={locations}
+                  onPaymentSuccess={handlePaymentSuccess}
+                />
+              ) : (
+                <Navigate to={session ? "/" : "/login"} replace />
+              )
+            }
+          />
+          <Route
+            path="/bookings"
+            element={
+              session && canBook ? (
+                <Bookings
+                  tickets={tickets}
+                  loading={ticketsLoading}
+                  onFind={() => navigate("/")}
+                  onCancel={cancelBooking}
+                />
+              ) : (
+                <Navigate to={session ? "/" : "/login"} replace />
+              )
+            }
+          />
+          <Route
+            path="/operator"
+            element={
+              !session ? (
+                <Navigate to="/login" replace />
               ) : isOperator ? (
-                <Navigate to="/operator" replace />
+                <Navigate to="/operator/overview" replace />
+              ) : (
+                <AccessDenied />
+              )
+            }
+          />
+          <Route
+            path="/operator/:section"
+            element={
+              !session ? (
+                <Navigate to="/login" replace />
+              ) : isOperator ? (
+                <OperatorDashboard />
+              ) : (
+                <AccessDenied />
+              )
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              !session ? (
+                <Navigate to="/login" replace />
+              ) : isAdmin ? (
+                <Navigate to="/admin/overview" replace />
+              ) : (
+                <AccessDenied />
+              )
+            }
+          />
+          <Route
+            path="/admin/:section"
+            element={
+              !session ? (
+                <Navigate to="/login" replace />
+              ) : isAdmin ? (
+                <AdminDashboard />
+              ) : (
+                <AccessDenied />
+              )
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              session ? (
+                <ProfilePage onLogout={handleLogout} />
               ) : (
                 <Navigate to="/login" replace />
               )
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-        <Route
-          path="/search"
-          element={
-            session && canBook ? (
-              <SearchResults
-                locations={locations}
-                routes={routes}
-                routeStops={routeStops}
-                availableLocations={availableLocations}
-                from={from}
-                to={to}
-                date={date}
-                loading={loading}
-                searching={searching}
-                trips={trips}
-                matchingRoute={matchingRoute}
-                onFromChange={setFrom}
-                onToChange={setTo}
-                onDateChange={setDate}
-                onSwap={() => {
-                  setFrom(to);
-                  setTo(from);
-                }}
-                onSubmit={searchTrips}
-                onTripSelect={async (trip) => {
-                  const fare = getTripFare(trip);
-                  if (fare === null) {
-                    setError("Fare is unavailable for this route.");
-                    return;
-                  }
-                  if (await openTrip({ ...trip, startingFare: fare })) {
-                    navigate(`/book/${trip.id}`);
-                  }
-                }}
-                getTripFare={getTripFare}
-              />
-            ) : (
-              <Navigate to={session ? "/" : "/login"} replace />
-            )
-          }
-        />
-        <Route
-          path="/book/:tripId"
-          element={
-            !session ? (
-              <Navigate to="/login" replace />
-            ) : isAdmin || isOperator ? (
-              <Navigate to={isAdmin ? "/admin" : "/operator"} replace />
-            ) : canBook && selectedTrip ? (
-              <BookingPanel
-                trip={selectedTrip}
-                seats={tripSeats}
-                selectedSeats={selectedSeatObjects}
-                toggleSeat={toggleSeat}
-                onConfirm={confirmBooking}
-                bookingInProgress={bookingInProgress}
-                onBack={() => {
-                  navigate("/search");
-                }}
-              />
-            ) : (
-              <Navigate to="/" replace />
-            )
-          }
-        />
-        <Route
-          path="/pay/:bookingId"
-          element={
-            session && canBook ? (
-              <PaymentPage
-                locations={locations}
-                onPaymentSuccess={handlePaymentSuccess}
-              />
-            ) : (
-              <Navigate to={session ? "/" : "/login"} replace />
-            )
-          }
-        />
-        <Route
-          path="/bookings"
-          element={
-            session && canBook ? (
-              <Bookings
-                tickets={tickets}
-                loading={ticketsLoading}
-                onFind={() => navigate("/")}
-                onCancel={cancelBooking}
-              />
-            ) : (
-              <Navigate to={session ? "/" : "/login"} replace />
-            )
-          }
-        />
-        <Route
-          path="/operator"
-          element={
-            !session ? (
-              <Navigate to="/login" replace />
-            ) : isOperator ? (
-              <Navigate to="/operator/overview" replace />
-            ) : (
-              <AccessDenied />
-            )
-          }
-        />
-        <Route
-          path="/operator/:section"
-          element={
-            !session ? (
-              <Navigate to="/login" replace />
-            ) : isOperator ? (
-              <OperatorDashboard />
-            ) : (
-              <AccessDenied />
-            )
-          }
-        />
-        <Route
-          path="/admin"
-          element={
-            !session ? (
-              <Navigate to="/login" replace />
-            ) : isAdmin ? (
-              <Navigate to="/admin/overview" replace />
-            ) : (
-              <AccessDenied />
-            )
-          }
-        />
-        <Route
-          path="/admin/:section"
-          element={
-            !session ? (
-              <Navigate to="/login" replace />
-            ) : isAdmin ? (
-              <AdminDashboard />
-            ) : (
-              <AccessDenied />
-            )
-          }
-        />
-        <Route
-          path="/profile"
-          element={
-            session ? (
-              <ProfilePage onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
-        />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
         <Footer />
       </div>
     </ErrorBoundary>

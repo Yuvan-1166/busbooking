@@ -296,4 +296,63 @@ public class AuthService {
 
         return new ResetPasswordResponse("Password reset successfully. You can now sign in.");
     }
+
+    /**
+     * Send email OTP as fallback for TOTP login
+     * Used when user cannot access authenticator app
+     */
+    @Transactional
+    public void sendOtpForTotpLoginFallback(String tempToken, String email) {
+        // Validate tempToken
+        if (!jwtService.isTokenValid(tempToken)) {
+            throw new IllegalArgumentException("Invalid or expired session");
+        }
+
+        // Extract user from tempToken
+        String tokenEmail = jwtService.extractUsernameFromTempToken(tempToken);
+        User user = userRepository.findByEmail(tokenEmail)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Verify email matches
+        if (!user.getEmail().equalsIgnoreCase(email)) {
+            throw new IllegalArgumentException("Email does not match user account");
+        }
+
+        // Verify user has TOTP enabled
+        if (!user.getTotpEnabled()) {
+            throw new IllegalStateException("2FA is not enabled for this user");
+        }
+
+        // Generate and send OTP (uses new TOTP-specific method)
+        otpService.generateAndSendTotpLoginFallback(email);
+    }
+
+    /**
+     * Verify email OTP and complete TOTP login
+     */
+    @Transactional
+    public LoginResponse verifyOtpForTotpLoginAndLogin(String tempToken, String otp) {
+        // Validate tempToken
+        if (!jwtService.isTokenValid(tempToken)) {
+            throw new IllegalArgumentException("Invalid or expired session");
+        }
+
+        // Extract email from tempToken
+        String email = jwtService.extractUsernameFromTempToken(tempToken);
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+
+        // Verify OTP using existing OtpService
+        try {
+            otpService.verify(email, otp.trim(), OtpPurpose.TOTP_LOGIN_FALLBACK);
+        } catch (com.yuvan.busbooking.common.exception.OtpVerificationException e) {
+            throw e;
+        }
+
+        // OTP verified - generate final login token
+        UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
+        String accessToken = jwtService.generateToken(userDetails);
+
+        return new LoginResponse(accessToken, "Bearer", 3600L);
+    }
 }

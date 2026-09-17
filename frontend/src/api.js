@@ -37,6 +37,8 @@ export const api = {
   verifyTotpSetup: (totpCode) => request('/auth/totp/verify-setup', { method: 'POST', body: JSON.stringify({ totpCode }) }),
   disableTotp: (data) => request('/auth/totp/disable', { method: 'POST', body: JSON.stringify(data) }),
   generateBackupCodes: () => request('/auth/totp/backup-codes/generate', { method: 'POST' }),
+  requestTotpLoginEmailOtp: (tempToken, email) => request('/auth/login/request-otp-fallback', { method: 'POST', body: JSON.stringify({ tempToken, email }) }),
+  verifyTotpLoginEmailOtp: (tempToken, otp) => request('/auth/login/verify-otp-fallback', { method: 'POST', body: JSON.stringify({ tempToken, otp }) }),
   getLocations: () => request('/locations'),
   getRoutes: () => request('/routes'),
   getRouteStops: (routeId) => request(`/route-stops/route/${routeId}`),
@@ -80,6 +82,8 @@ export const api = {
   createLocation: (payload) => request('/locations', { method: 'POST', body: JSON.stringify(payload) }),
   getAllRoutes: () => request('/routes'),
   createRoute: (payload) => request('/routes', { method: 'POST', body: JSON.stringify(payload) }),
+  sendMobileOtp: (mobileNumber) => request('/users/me/mobile/send-otp', { method: 'POST', body: JSON.stringify({ mobileNumber }) }),
+  verifyMobileOtp: (otp) => request('/users/me/mobile/verify-otp', { method: 'POST', body: JSON.stringify({ otp }) }),
 }
 
 export { API_BASE }

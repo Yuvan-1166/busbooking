@@ -25,6 +25,7 @@ public class OtpService {
     private final OtpVerificationRepository otpRepository;
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final SmsService smsService;  // Changed to interface for modularity
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final int expiryMinutes;
@@ -34,6 +35,7 @@ public class OtpService {
             OtpVerificationRepository otpRepository,
             UserRepository userRepository,
             EmailService emailService,
+            SmsService smsService,  // Inject interface, not concrete class
             PasswordEncoder passwordEncoder,
             JwtService jwtService,
             @Value("${app.otp.expiry-minutes:10}") int expiryMinutes,
@@ -42,6 +44,7 @@ public class OtpService {
         this.otpRepository = otpRepository;
         this.userRepository = userRepository;
         this.emailService = emailService;
+        this.smsService = smsService;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
         this.expiryMinutes = expiryMinutes;
@@ -178,6 +181,41 @@ public class OtpService {
     }
 
     /**
+     * Generates and sends OTP for TOTP login fallback.
+     * Used when user's authenticator app is unavailable.
+     * No verification status check - works for any verified user with TOTP enabled.
+     */
+    @Transactional
+    public void generateAndSendTotpLoginFallback(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found: " + email));
+
+        // Expire any existing active OTP for this email + purpose
+        otpRepository
+                .findTopByEmailAndPurposeOrderByCreatedAtDesc(email, OtpPurpose.TOTP_LOGIN_FALLBACK)
+                .filter(existing -> existing.getStatus() == OtpStatus.ACTIVE)
+                .ifPresent(existing -> {
+                    existing.setStatus(OtpStatus.EXPIRED);
+                    otpRepository.save(existing);
+                });
+
+        String plainOtp = generateSixDigitOtp();
+
+        OtpVerification record = new OtpVerification();
+        record.setEmail(email);
+        record.setOtpHash(passwordEncoder.encode(plainOtp));
+        record.setPurpose(OtpPurpose.TOTP_LOGIN_FALLBACK);
+        record.setStatus(OtpStatus.ACTIVE);
+        record.setExpiresAt(LocalDateTime.now().plusMinutes(expiryMinutes));
+        record.setAttempts(0);
+
+        otpRepository.save(record);
+
+        emailService.sendOtp(email, plainOtp, expiryMinutes);
+    }
+
+    /**
      * Verifies the submitted OTP against the latest record for this email + purpose.
      * For REGISTRATION purpose: Returns tempToken for TOTP setup (does NOT activate user yet)
      * For other purposes: Activates user immediately
@@ -241,5 +279,106 @@ public class OtpService {
 
     private String generateSixDigitOtp() {
         return String.format("%06d", RANDOM.nextInt(1_000_000));
+    }
+
+    /**
+     * Generate and send OTP via SMS for mobile number verification.
+     * Used in profile page to verify user's mobile number.
+     * 
+     * NOTE: Uses fixed OTP "123456" in trial mode for Twilio compatibility.
+     * The SMS service handles the OTP value internally.
+     */
+    @Transactional
+    public void generateAndSendMobileOtp(String email, String mobileNumber) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found: " + email));
+
+        // Expire any existing active OTP for this email + MOBILE_VERIFICATION purpose
+        otpRepository
+                .findTopByEmailAndPurposeOrderByCreatedAtDesc(email, OtpPurpose.MOBILE_VERIFICATION)
+                .filter(existing -> existing.getStatus() == OtpStatus.ACTIVE)
+                .ifPresent(existing -> {
+                    existing.setStatus(OtpStatus.EXPIRED);
+                    otpRepository.save(existing);
+                });
+
+        // Generate OTP - the SMS service may override this in trial mode
+        String plainOtp = generateSixDigitOtp();
+        
+        // For trial mode, we'll use "123456" - store its hash for verification
+        // The SMS service will send "123456" automatically
+        String otpForDb = "123456"; // Fixed OTP for trial testing
+
+        OtpVerification record = new OtpVerification();
+        record.setEmail(email);
+        record.setOtpHash(passwordEncoder.encode(otpForDb)); // Hash the fixed OTP
+        record.setPurpose(OtpPurpose.MOBILE_VERIFICATION);
+        record.setStatus(OtpStatus.ACTIVE);
+        record.setExpiresAt(LocalDateTime.now().plusMinutes(expiryMinutes));
+        record.setAttempts(0);
+
+        otpRepository.save(record);
+
+        // Send OTP via SMS - service handles trial mode internally
+        smsService.sendOtp(mobileNumber, plainOtp, expiryMinutes);
+        
+        System.out.println("⚠️  TRIAL MODE: Verify with OTP 123456");
+    }
+
+    /**
+     * Verify mobile OTP and mark mobile as verified.
+     * Returns success if OTP is correct.
+     */
+    @Transactional(noRollbackFor = OtpVerificationException.class)
+    public void verifyMobileOtp(String email, String submittedOtp) {
+        OtpVerification record = otpRepository
+                .findTopByEmailAndPurposeOrderByCreatedAtDesc(email, OtpPurpose.MOBILE_VERIFICATION)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "No verification code found. Please request a new one."));
+
+        if (record.getStatus() == OtpStatus.VERIFIED) {
+            throw new IllegalStateException("Mobile number is already verified.");
+        }
+
+        if (record.getStatus() == OtpStatus.EXPIRED
+                || LocalDateTime.now().isAfter(record.getExpiresAt())) {
+            record.setStatus(OtpStatus.EXPIRED);
+            otpRepository.save(record);
+            throw new OtpVerificationException(
+                    "The verification code has expired. Please request a new one.");
+        }
+
+        if (record.getAttempts() >= maxAttempts) {
+            record.setStatus(OtpStatus.EXPIRED);
+            otpRepository.save(record);
+            throw new OtpVerificationException(
+                    "Too many incorrect attempts. Please request a new code.");
+        }
+
+        if (!passwordEncoder.matches(submittedOtp, record.getOtpHash())) {
+            record.setAttempts(record.getAttempts() + 1);
+            otpRepository.save(record);
+
+            int remaining = maxAttempts - record.getAttempts();
+            throw new OtpVerificationException(
+                    "Incorrect code. " + remaining
+                            + " attempt" + (remaining == 1 ? "" : "s") + " remaining.");
+        }
+
+        // Mark OTP as verified
+        record.setStatus(OtpStatus.VERIFIED);
+        record.setVerifiedAt(LocalDateTime.now());
+        otpRepository.save(record);
+
+        // Mark user's mobile as verified
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found: " + email));
+        
+        user.setMobileVerified(true);
+        user.setMobileVerifiedAt(LocalDateTime.now());
+        userRepository.save(user);
     }
 }

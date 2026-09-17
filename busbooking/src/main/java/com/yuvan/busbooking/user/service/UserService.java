@@ -193,5 +193,12 @@ public class UserService {
                 user.getUpdatedAt()
         );
     }
+
+    /**
+     * Save user entity directly (used for mobile verification updates)
+     */
+    public User saveUser(User user) {
+        return userRepository.save(user);
+    }
     
 }

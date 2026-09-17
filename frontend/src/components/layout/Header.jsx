@@ -1,14 +1,12 @@
 import { Link, NavLink } from "react-router-dom"
 
-function initials(email) {
-  // Derive up to 2 initials from the email local-part  e.g. john.doe@ → JD
-  const local = email?.split('@')[0] || ''
-  const parts = local.split(/[._-]/).filter(Boolean)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+function initials(firstName, lastName) {
+  const local = firstName?.charAt(0) + lastName?.charAt(0) || ''
+  // const local = userData.firstName.charAt(0) + lastName.charAt(0);
   return local.slice(0, 2).toUpperCase() || '?'
 }
 
-export default function Header({ email, roles }) {
+export default function Header({ email, firstName, lastName, roles }) {
   const isPassenger = roles?.includes('ROLE_PASSENGER') || roles?.includes('PASSENGER')
   const isAdmin = roles?.includes('ROLE_ADMIN') || roles?.includes('ADMIN')
   const workspacePath = isAdmin ? '/admin' : '/operator'
@@ -17,7 +15,7 @@ export default function Header({ email, roles }) {
     `border-b-2 py-2 text-[13px] ${isActive ? 'border-ink font-bold text-ink' : 'border-transparent text-muted'}`
 
   const roleLabel = roles?.[0]?.replace('ROLE_', '') || 'USER'
-  const avatarInitials = initials(email)
+  const avatarInitials = initials(firstName, lastName)
 
   return (
     <header className="mx-auto flex min-h-[78px] max-w-[1240px] items-center justify-between gap-6 px-[34px] max-[600px]:flex-wrap max-[600px]:px-4 max-[600px]:py-3">

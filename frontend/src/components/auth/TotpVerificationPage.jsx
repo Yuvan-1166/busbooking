@@ -16,6 +16,11 @@ export default function TotpVerificationPage() {
   const [verifying, setVerifying] = useState(false);
   const [useBackupCode, setUseBackupCode] = useState(false);
   const [backupCode, setBackupCode] = useState('');
+  const [useEmailOtp, setUseEmailOtp] = useState(false);
+  const [emailOtp, setEmailOtp] = useState('');
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [requestingEmailOtp, setRequestingEmailOtp] = useState(false);
+  const [user, setUser] = useState(null);
 
   // Try to get from location.state first, then sessionStorage
   const tempToken = location.state?.tempToken || sessionStorage.getItem('totp_verify_temp_token');
@@ -31,8 +36,107 @@ export default function TotpVerificationPage() {
     if (!tempToken) {
       console.log("No tempToken, redirecting to /login");
       navigate('/login');
+    } else {
+      // Extract email from tempToken (JWT payload)
+      extractEmailFromToken(tempToken);
     }
   }, [tempToken, navigate]);
+
+  const extractEmailFromToken = (token) => {
+    try {
+      // Decode JWT payload (it's base64url encoded)
+      const parts = token.split('.');
+      if (parts.length !== 3) {
+        console.error("Invalid token format");
+        return;
+      }
+      
+      const payload = parts[1];
+      // Add padding if needed
+      const padded = payload + '='.repeat((4 - payload.length % 4) % 4);
+      const decoded = JSON.parse(atob(padded));
+      
+      if (decoded.sub) {
+        // sub contains the email
+        setUser({ email: decoded.sub });
+        console.log("Extracted email from token:", decoded.sub);
+      }
+    } catch (err) {
+      console.error("Failed to extract email from token:", err);
+    }
+  };
+
+  const handleRequestEmailOtp = async () => {
+    setRequestingEmailOtp(true);
+    setError('');
+    setMessage('');
+
+    try {
+      await api.requestTotpLoginEmailOtp(tempToken, user?.email);
+      setEmailOtpSent(true);
+      setUseEmailOtp(true);
+      setMessage('Email OTP sent to ' + user?.email + '. Check your inbox.');
+      setTotpCode('');
+    } catch (err) {
+      const appError = parseApiError(err);
+      let userMessage = getErrorMessage(appError);
+
+      if (appError.statusCode === 401) {
+        userMessage = 'Session expired. Please log in again.';
+      } else if (appError.statusCode === 429) {
+        userMessage = 'Too many OTP requests. Please wait before trying again.';
+      }
+
+      setError(userMessage);
+      console.error('Email OTP request error:', appError);
+    } finally {
+      setRequestingEmailOtp(false);
+    }
+  };
+
+  const handleVerifyEmailOtp = async (e) => {
+    e.preventDefault();
+
+    const code = emailOtp.trim();
+
+    if (code.length !== 6) {
+      setError('Please enter a 6-digit code');
+      return;
+    }
+
+    setVerifying(true);
+    setError('');
+    setMessage('');
+
+    try {
+      const response = await api.verifyTotpLoginEmailOtp(tempToken, code);
+
+      // Clear sessionStorage
+      sessionStorage.removeItem('totp_verify_temp_token');
+      sessionStorage.removeItem('totp_verify_user_id');
+
+      // Login successful
+      login(response.accessToken);
+      navigate('/');
+    } catch (err) {
+      const appError = parseApiError(err);
+      let userMessage = getErrorMessage(appError);
+
+      if (appError.statusCode === 400) {
+        userMessage = 'Invalid OTP. Please check and try again.';
+      } else if (appError.statusCode === 404) {
+        userMessage = 'OTP not found. Please request a new one.';
+      } else if (appError.statusCode === 429) {
+        userMessage = 'Too many attempts. Please wait a few minutes.';
+      }
+
+      setError(userMessage);
+      console.error('Email OTP verification error:', appError);
+      setEmailOtp('');
+    } finally {
+      setVerifying(false);
+    }
+  };
 
   const handleVerify = async (e) => {
     e.preventDefault();
@@ -174,8 +278,32 @@ export default function TotpVerificationPage() {
           </div>
         )}
 
-        <form onSubmit={handleVerify}>
-          {!useBackupCode ? (
+        <form onSubmit={useEmailOtp && emailOtpSent ? handleVerifyEmailOtp : handleVerify}>
+          {useEmailOtp && emailOtpSent ? (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Email OTP Code
+              </label>
+              <input
+                type="text"
+                inputMode="numeric"
+                pattern="\d{6}"
+                maxLength={6}
+                value={emailOtp}
+                onChange={(e) => {
+                  setEmailOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
+                  setError('');
+                }}
+                placeholder="000000"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl tracking-widest font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                autoFocus
+                disabled={verifying}
+              />
+              <p className="mt-2 text-xs text-gray-500 text-center">
+                Check your email for the verification code
+              </p>
+            </div>
+          ) : !useBackupCode ? (
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Verification Code
@@ -216,20 +344,49 @@ export default function TotpVerificationPage() {
 
           <button
             type="submit"
-            disabled={verifying || (!useBackupCode && totpCode.length !== 6) || (useBackupCode && backupCode.length === 0)}
+            disabled={verifying || (useEmailOtp && emailOtpSent && emailOtp.length !== 6) || (!useEmailOtp && !useBackupCode && totpCode.length !== 6) || (!useEmailOtp && useBackupCode && backupCode.length === 0)}
             className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors mb-4"
           >
-            {verifying ? 'Verifying...' : 'Verify & Sign In'}
+            {verifying ? 'Verifying...' : useEmailOtp && emailOtpSent ? 'Verify & Sign In' : 'Verify & Sign In'}
           </button>
 
-          {/* Toggle Backup Code */}
-          <button
-            type="button"
-            onClick={toggleBackupCode}
-            className="w-full text-sm text-indigo-600 hover:text-indigo-700 underline"
-          >
-            {useBackupCode ? 'Use authenticator code instead' : 'Use backup code instead'}
-          </button>
+          {/* Toggle Options */}
+          {!useEmailOtp && (
+            <>
+              <button
+                type="button"
+                onClick={toggleBackupCode}
+                className="w-full text-sm text-indigo-600 hover:text-indigo-700 underline mb-2"
+              >
+                {useBackupCode ? 'Use authenticator code instead' : 'Use backup code instead'}
+              </button>
+              <button
+                type="button"
+                onClick={handleRequestEmailOtp}
+                disabled={requestingEmailOtp || !user}
+                className="w-full text-sm text-indigo-600 hover:text-indigo-700 underline"
+              >
+                {requestingEmailOtp ? 'Sending email...' : "Can't access your authenticator app?"}
+              </button>
+            </>
+          )}
+
+          {/* Back from Email OTP */}
+          {useEmailOtp && emailOtpSent && (
+            <button
+              type="button"
+              onClick={() => {
+                setUseEmailOtp(false);
+                setEmailOtp('');
+                setEmailOtpSent(false);
+                setError('');
+                setMessage('');
+              }}
+              className="w-full text-sm text-indigo-600 hover:text-indigo-700 underline"
+            >
+              ← Back to authenticator code
+            </button>
+          )}
         </form>
 
         {/* Back to Login */}
