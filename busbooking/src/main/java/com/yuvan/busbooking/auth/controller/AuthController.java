@@ -13,6 +13,7 @@ import com.yuvan.busbooking.auth.dto.RegisterResponse;
 import com.yuvan.busbooking.auth.dto.ResetPasswordRequest;
 import com.yuvan.busbooking.auth.dto.ResetPasswordResponse;
 import com.yuvan.busbooking.auth.dto.SendOtpRequest;
+import com.yuvan.busbooking.auth.dto.TotpVerifyRequest;
 import com.yuvan.busbooking.auth.dto.VerifyOtpRequest;
 import com.yuvan.busbooking.auth.entity.OtpPurpose;
 import com.yuvan.busbooking.auth.service.AuthService;
@@ -68,7 +69,7 @@ public class AuthController {
      */
     @PostMapping("/login/verify-totp")
     public LoginResponse verifyTotpAndLogin(
-            @Valid @RequestBody com.yuvan.busbooking.auth.dto.TotpVerifyRequest request
+            @Valid @RequestBody TotpVerifyRequest request
     ) {
         return authService.verifyTotpAndLogin(request);
     }
