@@ -82,6 +82,10 @@ export const api = {
   createLocation: (payload) => request('/locations', { method: 'POST', body: JSON.stringify(payload) }),
   getAllRoutes: () => request('/routes'),
   createRoute: (payload) => request('/routes', { method: 'POST', body: JSON.stringify(payload) }),
+  // Mobile verification via MessageCentral
+  sendMobileOtp: (mobileNumber) => request('/verifynow/send-otp', { method: 'POST', body: JSON.stringify({ mobileNumber }) }),
+  validateMobileOtp: (verificationId, mobileNumber, code) => request('/verifynow/validate-otp', { method: 'POST', body: JSON.stringify({ verificationId, mobileNumber, code }) }),
+  updateMobileVerificationStatus: () => request('/users/me/verify-mobile', { method: 'POST' }),
 }
 
 export { API_BASE }

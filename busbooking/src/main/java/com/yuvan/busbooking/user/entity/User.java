@@ -49,6 +49,12 @@ public class User {
     @Column(name = "totp_enabled", nullable = false)
     private Boolean totpEnabled = false;
 
+    @Column(name = "mobile_verified", nullable = false)
+    private Boolean mobileVerified = false;
+
+    @Column(name = "mobile_verified_at")
+    private LocalDateTime mobileVerifiedAt;
+
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
@@ -63,6 +69,9 @@ public class User {
         }
         if (totpEnabled == null) {
             totpEnabled = false;
+        }
+        if (mobileVerified == null) {
+            mobileVerified = false;
         }
     }
 

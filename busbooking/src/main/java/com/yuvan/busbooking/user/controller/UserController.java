@@ -81,5 +81,13 @@ public class UserController {
             userService.update(request)
         );
     }
+
+    @PostMapping("/me/verify-mobile")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserResponse> verifyMobile() {
+        return ResponseEntity.ok(
+            userService.verifyMobile()
+        );
+    }
     
 }

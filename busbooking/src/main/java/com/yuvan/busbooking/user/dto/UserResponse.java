@@ -12,6 +12,9 @@ public record UserResponse(
         String phone,
         UserStatus status,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        Boolean totpEnabled,
+        Boolean mobileVerified,
+        LocalDateTime mobileVerifiedAt
 ) {
 }

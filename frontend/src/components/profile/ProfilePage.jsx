@@ -104,6 +104,15 @@ export default function ProfilePage({ onLogout }) {
   // Disable TOTP modal state
   const [showDisableTotpModal, setShowDisableTotpModal] = useState(false);
 
+  // Mobile verification state
+  const [mobileVerified, setMobileVerified] = useState(false);
+  const [mobileVerificationId, setMobileVerificationId] = useState("");
+  const [mobileOtp, setMobileOtp] = useState("");
+  const [mobileOtpSent, setMobileOtpSent] = useState(false);
+  const [mobileOtpLoading, setMobileOtpLoading] = useState(false);
+  const [mobileOtpError, setMobileOtpError] = useState("");
+  const [mobileOtpSuccess, setMobileOtpSuccess] = useState("");
+
   // ── Load user ───────────────────────────────────────────────────────────────
   useEffect(() => {
     async function load() {
@@ -122,6 +131,9 @@ export default function ProfilePage({ onLogout }) {
         
         // Set TOTP enabled status from user data
         setTotpEnabled(userData.totpEnabled || false);
+        
+        // Set mobile verification status from user data
+        setMobileVerified(userData.mobileVerified || false);
       } catch (err) {
         setLoadError(err.message);
       } finally {
@@ -179,6 +191,84 @@ export default function ProfilePage({ onLogout }) {
   };
 
   // ── Password reset ──────────────────────────────────────────────────────────
+
+  const sendMobileOtpHandler = async (e) => {
+    e.preventDefault();
+    
+    setMobileOtpError("");
+    setMobileOtpSuccess("");
+    
+    if (!user.phone || user.phone.length !== 10) {
+      setMobileOtpError("Please add a valid 10-digit mobile number to your profile first.");
+      return;
+    }
+    
+    setMobileOtpLoading(true);
+    
+    try {
+      // Extract only digits from phone (remove any country code or formatting)
+      const cleanPhone = user.phone.replace(/\D/g, '').slice(-10);
+      
+      const response = await api.sendMobileOtp(cleanPhone);
+      
+      if (response.success && response.data?.data?.verificationId) {
+        setMobileVerificationId(response.data.data.verificationId);
+        setMobileOtpSent(true);
+        setMobileOtpSuccess("OTP sent successfully to your mobile number.");
+      } else {
+        setMobileOtpError("Failed to send OTP. Please try again.");
+      }
+    } catch (err) {
+      setMobileOtpError(err.message || "Failed to send OTP. Please try again.");
+    } finally {
+      setMobileOtpLoading(false);
+    }
+  };
+
+  const verifyMobileOtpHandler = async (e) => {
+    e.preventDefault();
+    
+    setMobileOtpError("");
+    setMobileOtpSuccess("");
+    
+    if (!mobileOtp || mobileOtp.length < 4) {
+      setMobileOtpError("Please enter the OTP code.");
+      return;
+    }
+    
+    setMobileOtpLoading(true);
+    
+    try {
+      const cleanPhone = user.phone.replace(/\D/g, '').slice(-10);
+      
+      const validateResponse = await api.validateMobileOtp(
+        mobileVerificationId,
+        cleanPhone,
+        mobileOtp
+      );
+      
+      if (validateResponse.success && validateResponse.data?.valid) {
+        // Update user verification status in backend
+        await api.updateMobileVerificationStatus();
+        
+        setMobileVerified(true);
+        setMobileOtpSuccess("Mobile number verified successfully!");
+        setMobileOtpSent(false);
+        setMobileOtp("");
+        setMobileVerificationId("");
+        
+        // Reload user data to get updated verification status
+        const updatedUser = await api.getCurrentUser();
+        setUser(updatedUser);
+      } else {
+        setMobileOtpError("Invalid OTP. Please try again.");
+      }
+    } catch (err) {
+      setMobileOtpError(err.message || "Failed to verify OTP. Please try again.");
+    } finally {
+      setMobileOtpLoading(false);
+    }
+  };
 
   const requestOtp = async (e) => {
     e.preventDefault();
@@ -358,8 +448,94 @@ export default function ProfilePage({ onLogout }) {
               <InfoRow label="First name" value={user.firstName} />
               <InfoRow label="Last name" value={user.lastName || "—"} />
               <InfoRow label="Email" value={user.email} />
-              <InfoRow label="Phone" value={user.phone || "—"} />
+              <div className="flex justify-between gap-4 border-b border-line pb-4 last:border-0 last:pb-0">
+                <dt className="font-mono text-[10px] uppercase text-muted shrink-0">
+                  Phone
+                </dt>
+                <dd className="text-right text-sm text-ink flex items-center gap-2">
+                  {user.phone || "—"}
+                  {user.phone && (
+                    <span
+                      className={`rounded px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider ${
+                        mobileVerified
+                          ? "bg-[#e4eee1] text-green"
+                          : "bg-[#fff6ee] text-orange"
+                      }`}
+                    >
+                      {mobileVerified ? "✓ Verified" : "Unverified"}
+                    </span>
+                  )}
+                </dd>
+              </div>
             </dl>
+            
+            {/* Mobile Verification Card */}
+            {user.phone && !mobileVerified && (
+              <div className="mt-5 pt-5 border-t border-line">
+                <p className="mb-3 text-xs text-muted">
+                  Verify your mobile number to enhance account security.
+                </p>
+                
+                {mobileOtpError && (
+                  <div className="mb-3 border border-[#d79b8b] bg-[#f7e5df] px-3 py-2 text-[10px] text-[#8c3e2d]">
+                    {mobileOtpError}
+                  </div>
+                )}
+                {mobileOtpSuccess && (
+                  <div className="mb-3 border border-[#a5bea0] bg-[#e4eee1] px-3 py-2 text-[10px] text-green">
+                    {mobileOtpSuccess}
+                  </div>
+                )}
+                
+                {!mobileOtpSent ? (
+                  <button
+                    className="w-full border-0 bg-orange px-4 py-2.5 text-left text-xs font-bold text-white disabled:opacity-45"
+                    onClick={sendMobileOtpHandler}
+                    disabled={mobileOtpLoading}
+                  >
+                    {mobileOtpLoading ? "Sending OTP..." : "Verify Mobile Number"}
+                    <span className="float-right text-sm">→</span>
+                  </button>
+                ) : (
+                  <form onSubmit={verifyMobileOtpHandler} className="grid gap-3">
+                    <Field label="Enter OTP">
+                      <TextInput
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={6}
+                        required
+                        value={mobileOtp}
+                        onChange={(e) => setMobileOtp(e.target.value)}
+                        disabled={mobileOtpLoading}
+                        placeholder="Enter 6-digit OTP"
+                      />
+                    </Field>
+                    <div className="flex gap-2">
+                      <button
+                        type="submit"
+                        className="flex-1 border-0 bg-green px-4 py-2.5 text-xs font-bold text-white disabled:opacity-45"
+                        disabled={mobileOtpLoading}
+                      >
+                        {mobileOtpLoading ? "Verifying..." : "Verify OTP"}
+                      </button>
+                      <button
+                        type="button"
+                        className="border border-line bg-transparent px-4 py-2.5 text-xs font-bold text-muted hover:bg-[#f9f8f5]"
+                        onClick={() => {
+                          setMobileOtpSent(false);
+                          setMobileOtp("");
+                          setMobileOtpError("");
+                          setMobileOtpSuccess("");
+                        }}
+                        disabled={mobileOtpLoading}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
+              </div>
+            )}
           </section>
 
           <section className="border border-[#e7e5dc] bg-paper p-7">

@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,9 +28,10 @@ import lombok.RequiredArgsConstructor;
  * REST Controller for VerifyNow OTP operations
  */
 @RestController
-@RequestMapping("/api/verifynow")
+@RequestMapping("/api/v1/verifynow")
 @RequiredArgsConstructor
 @Validated
+@PreAuthorize("isAuthenticated()")
 public class VerifyNowController {
     
     private static final Logger logger = LoggerFactory.getLogger(VerifyNowController.class);

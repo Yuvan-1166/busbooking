@@ -190,7 +190,10 @@ public class UserService {
                 user.getPhone(),
                 user.getStatus(),
                 user.getCreatedAt(),
-                user.getUpdatedAt()
+                user.getUpdatedAt(),
+                user.getTotpEnabled(),
+                user.getMobileVerified(),
+                user.getMobileVerifiedAt()
         );
     }
 
@@ -199,6 +202,41 @@ public class UserService {
      */
     public User saveUser(User user) {
         return userRepository.save(user);
+    }
+
+    /**
+     * Mark user's mobile number as verified
+     */
+    public UserResponse verifyMobile(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found: " + userId
+                        )
+                );
+
+        user.setMobileVerified(true);
+        user.setMobileVerifiedAt(java.time.LocalDateTime.now());
+        
+        return toResponse(userRepository.save(user));
+    }
+
+    /**
+     * Mark current user's mobile number as verified
+     */
+    public UserResponse verifyMobile() {
+        String email = SecurityUtils.getCurrentUserEmail();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found: " + email
+                        )
+                );
+
+        user.setMobileVerified(true);
+        user.setMobileVerifiedAt(java.time.LocalDateTime.now());
+        
+        return toResponse(userRepository.save(user));
     }
     
 }
