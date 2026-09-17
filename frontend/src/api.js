@@ -17,8 +17,36 @@ async function request(path, options = {}) {
   })
   if (response.status === 401) window.dispatchEvent(new Event('auth:unauthorized'))
   if (!response.ok) {
-    const message = await response.text()
-    throw new Error(message || `${response.status} ${response.statusText}: ${path}`)
+    // Try to parse error response
+    let errorMessage = `${response.status} ${response.statusText}`
+    try {
+      const contentType = response.headers.get('content-type')
+      if (contentType?.includes('application/json')) {
+        const errorData = await response.json()
+        // Handle different error response formats
+        if (errorData.message) {
+          errorMessage = errorData.message
+        } else if (errorData.errorMessage) {
+          errorMessage = errorData.errorMessage
+        } else if (errorData.errors) {
+          // Handle validation errors
+          if (Array.isArray(errorData.errors)) {
+            errorMessage = errorData.errors.join(', ')
+          } else if (typeof errorData.errors === 'object') {
+            errorMessage = Object.values(errorData.errors).join(', ')
+          }
+        } else if (errorData.error) {
+          errorMessage = errorData.error
+        }
+      } else {
+        const text = await response.text()
+        if (text) errorMessage = text
+      }
+    } catch (parseError) {
+      // If parsing fails, use default message
+      console.error('Failed to parse error response:', parseError)
+    }
+    throw new Error(errorMessage)
   }
   return response.status === 204 ? null : response.json()
 }

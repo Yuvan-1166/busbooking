@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { api } from "../../api";
 import { useAuth } from "../../auth/AuthContext";
 import DisableTotpModal from "../../components/auth/DisableTotpModal";
+import { getUserFriendlyErrorMessage } from "../../utils/errorMessages";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -219,7 +220,8 @@ export default function ProfilePage({ onLogout }) {
         setMobileOtpError("Failed to send OTP. Please try again.");
       }
     } catch (err) {
-      setMobileOtpError(err.message || "Failed to send OTP. Please try again.");
+      const friendlyMessage = getUserFriendlyErrorMessage(err.message, 'send-otp');
+      setMobileOtpError(friendlyMessage);
     } finally {
       setMobileOtpLoading(false);
     }
@@ -249,22 +251,28 @@ export default function ProfilePage({ onLogout }) {
       
       if (validateResponse.success && validateResponse.data?.valid) {
         // Update user verification status in backend
-        await api.updateMobileVerificationStatus();
-        
-        setMobileVerified(true);
-        setMobileOtpSuccess("Mobile number verified successfully!");
-        setMobileOtpSent(false);
-        setMobileOtp("");
-        setMobileVerificationId("");
-        
-        // Reload user data to get updated verification status
-        const updatedUser = await api.getCurrentUser();
-        setUser(updatedUser);
+        try {
+          await api.updateMobileVerificationStatus();
+          
+          setMobileVerified(true);
+          setMobileOtpSuccess("Mobile number verified successfully!");
+          setMobileOtpSent(false);
+          setMobileOtp("");
+          setMobileVerificationId("");
+          
+          // Reload user data to get updated verification status
+          const updatedUser = await api.getCurrentUser();
+          setUser(updatedUser);
+        } catch (updateErr) {
+          const friendlyMessage = getUserFriendlyErrorMessage(updateErr.message, 'update-verification');
+          setMobileOtpError(friendlyMessage);
+        }
       } else {
         setMobileOtpError("Invalid OTP. Please try again.");
       }
     } catch (err) {
-      setMobileOtpError(err.message || "Failed to verify OTP. Please try again.");
+      const friendlyMessage = getUserFriendlyErrorMessage(err.message, 'verify-otp');
+      setMobileOtpError(friendlyMessage);
     } finally {
       setMobileOtpLoading(false);
     }
