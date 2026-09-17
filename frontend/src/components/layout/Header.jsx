@@ -1,9 +1,7 @@
 import { Link, NavLink } from "react-router-dom"
 
-function initials(firstName, lastName) {
-  const local = firstName?.charAt(0) + lastName?.charAt(0) || ''
-  // const local = userData.firstName.charAt(0) + lastName.charAt(0);
-  return local.slice(0, 2).toUpperCase() || '?'
+function initials(first, last) {
+  return ((first?.[0] || "") + (last?.[0] || "")).toUpperCase() || "?";
 }
 
 export default function Header({ email, firstName, lastName, roles }) {

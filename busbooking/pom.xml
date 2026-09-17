@@ -125,12 +125,6 @@
 			<artifactId>javase</artifactId>
 			<version>3.5.3</version>
 		</dependency>
-		<!-- Twilio SDK for SMS OTP -->
-		<dependency>
-			<groupId>com.twilio.sdk</groupId>
-			<artifactId>twilio</artifactId>
-			<version>10.6.3</version>
-		</dependency>
 	</dependencies>
 
 	<build>

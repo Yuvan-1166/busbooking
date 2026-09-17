@@ -82,8 +82,6 @@ export const api = {
   createLocation: (payload) => request('/locations', { method: 'POST', body: JSON.stringify(payload) }),
   getAllRoutes: () => request('/routes'),
   createRoute: (payload) => request('/routes', { method: 'POST', body: JSON.stringify(payload) }),
-  sendMobileOtp: (mobileNumber) => request('/users/me/mobile/send-otp', { method: 'POST', body: JSON.stringify({ mobileNumber }) }),
-  verifyMobileOtp: (otp) => request('/users/me/mobile/verify-otp', { method: 'POST', body: JSON.stringify({ otp }) }),
 }
 
 export { API_BASE }
