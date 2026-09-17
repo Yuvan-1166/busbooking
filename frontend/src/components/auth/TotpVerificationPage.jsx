@@ -16,11 +16,15 @@ export default function TotpVerificationPage() {
   const [verifying, setVerifying] = useState(false);
   const [useBackupCode, setUseBackupCode] = useState(false);
   const [backupCode, setBackupCode] = useState('');
-  const [useEmailOtp, setUseEmailOtp] = useState(false);
-  const [emailOtp, setEmailOtp] = useState('');
-  const [emailOtpSent, setEmailOtpSent] = useState(false);
-  const [requestingEmailOtp, setRequestingEmailOtp] = useState(false);
   const [user, setUser] = useState(null);
+  
+  // Phase management: 'totp' | 'alternatives' | 'alternative-verify'
+  const [phase, setPhase] = useState('totp');
+  const [selectedMethod, setSelectedMethod] = useState(null);
+  const [alternativeOtp, setAlternativeOtp] = useState('');
+  const [alternativeSession, setAlternativeSession] = useState(null);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [countdown, setCountdown] = useState(0);
 
   // Try to get from location.state first, then sessionStorage
   const tempToken = location.state?.tempToken || sessionStorage.getItem('totp_verify_temp_token');
@@ -41,6 +45,28 @@ export default function TotpVerificationPage() {
       extractEmailFromToken(tempToken);
     }
   }, [tempToken, navigate]);
+
+  // Countdown timer for alternative OTP expiration
+  useEffect(() => {
+    if (phase !== 'alternative-verify' || !alternativeSession) return;
+
+    const interval = setInterval(() => {
+      const now = Date.now();
+      const elapsed = (now - alternativeSession.createdAt) / 1000;
+      const remaining = Math.max(0, alternativeSession.expiresIn - elapsed);
+      setCountdown(Math.ceil(remaining));
+
+      if (remaining <= 0) {
+        setError('OTP has expired. Please request a new one.');
+        setPhase('alternatives');
+        setAlternativeSession(null);
+        setAlternativeOtp('');
+        clearInterval(interval);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [phase, alternativeSession]);
 
   const extractEmailFromToken = (token) => {
     try {
@@ -66,41 +92,53 @@ export default function TotpVerificationPage() {
     }
   };
 
-  const handleRequestEmailOtp = async () => {
-    setRequestingEmailOtp(true);
+  const handleShowAlternatives = () => {
+    setPhase('alternatives');
+    setError('');
+    setMessage('');
+  };
+
+  const handleSelectAlternative = async (method) => {
+    setSendingOtp(true);
     setError('');
     setMessage('');
 
     try {
-      await api.requestTotpLoginEmailOtp(tempToken, user?.email);
-      setEmailOtpSent(true);
-      setUseEmailOtp(true);
-      setMessage('Email OTP sent to ' + user?.email + '. Check your inbox.');
-      setTotpCode('');
+      const response = await api.sendTotpAlternativeOtp(method, tempToken);
+      
+      setSelectedMethod(method);
+      setAlternativeSession({
+        sessionId: response.sessionId,
+        maskedRecipient: response.maskedRecipient,
+        expiresIn: response.expiresIn,
+        createdAt: Date.now()
+      });
+      setPhase('alternative-verify');
+      setAlternativeOtp('');
+      setCountdown(response.expiresIn);
+      setMessage(`OTP sent to ${response.maskedRecipient}`);
     } catch (err) {
       const appError = parseApiError(err);
       let userMessage = getErrorMessage(appError);
 
-      if (appError.statusCode === 401) {
-        userMessage = 'Session expired. Please log in again.';
-      } else if (appError.statusCode === 429) {
-        userMessage = 'Too many OTP requests. Please wait before trying again.';
+      if (appError.statusCode === 429) {
+        userMessage = 'Too many requests. Please wait before trying again.';
+      } else if (appError.statusCode === 400) {
+        userMessage = err.message || 'Unable to send OTP to this method.';
       }
 
       setError(userMessage);
-      console.error('Email OTP request error:', appError);
+      console.error('Failed to send alternative OTP:', appError);
     } finally {
-      setRequestingEmailOtp(false);
+      setSendingOtp(false);
     }
   };
 
-  const handleVerifyEmailOtp = async (e) => {
+  const handleVerifyAlternativeOtp = async (e) => {
     e.preventDefault();
 
-    const code = emailOtp.trim();
-
-    if (code.length !== 6) {
-      setError('Please enter a 6-digit code');
+    if (alternativeOtp.length < 4 || alternativeOtp.length > 6) {
+      setError('Please enter a valid 4-6 digit code');
       return;
     }
 
@@ -109,33 +147,49 @@ export default function TotpVerificationPage() {
     setMessage('');
 
     try {
-      const response = await api.verifyTotpLoginEmailOtp(tempToken, code);
+      const response = await api.verifyTotpAlternativeOtp(
+        tempToken,
+        alternativeSession.sessionId,
+        alternativeOtp
+      );
 
+      setMessage('OTP verified successfully!');
+      
       // Clear sessionStorage
       sessionStorage.removeItem('totp_verify_temp_token');
       sessionStorage.removeItem('totp_verify_user_id');
 
       // Login successful
-      login(response.accessToken);
-      navigate('/');
+      setTimeout(() => {
+        login(response.accessToken);
+        navigate('/');
+      }, 500);
+
     } catch (err) {
       const appError = parseApiError(err);
       let userMessage = getErrorMessage(appError);
 
       if (appError.statusCode === 400) {
-        userMessage = 'Invalid OTP. Please check and try again.';
-      } else if (appError.statusCode === 404) {
-        userMessage = 'OTP not found. Please request a new one.';
+        userMessage = 'Invalid OTP code. Please check and try again.';
       } else if (appError.statusCode === 429) {
-        userMessage = 'Too many attempts. Please wait a few minutes.';
+        userMessage = 'Too many verification attempts. Please request a new OTP.';
       }
 
       setError(userMessage);
-      console.error('Email OTP verification error:', appError);
-      setEmailOtp('');
+      setAlternativeOtp('');
+      console.error('OTP verification failed:', appError);
     } finally {
       setVerifying(false);
     }
+  };
+
+  const handleBackToTotp = () => {
+    setPhase('totp');
+    setError('');
+    setMessage('');
+    setAlternativeOtp('');
+    setAlternativeSession(null);
+    setSelectedMethod(null);
   };
 
   const handleVerify = async (e) => {
@@ -248,6 +302,12 @@ export default function TotpVerificationPage() {
     setBackupCode('');
   };
 
+  const formatCountdown = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
@@ -259,10 +319,12 @@ export default function TotpVerificationPage() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Two-Factor Authentication</h1>
           <p className="text-gray-600 text-sm">
-            {useBackupCode 
+            {phase === 'totp' && (useBackupCode 
               ? 'Enter one of your backup codes'
               : 'Enter the 6-digit code from your authenticator app'
-            }
+            )}
+            {phase === 'alternatives' && 'Choose how to receive your verification code'}
+            {phase === 'alternative-verify' && `Enter the code sent to ${alternativeSession?.maskedRecipient}`}
           </p>
         </div>
 
@@ -278,20 +340,144 @@ export default function TotpVerificationPage() {
           </div>
         )}
 
-        <form onSubmit={useEmailOtp && emailOtpSent ? handleVerifyEmailOtp : handleVerify}>
-          {useEmailOtp && emailOtpSent ? (
+        {/* PHASE 1: TOTP or Backup Code */}
+        {phase === 'totp' && (
+          <form onSubmit={handleVerify}>
+            {!useBackupCode ? (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Verification Code
+                </label>
+                <input
+                  type="text"
+                  value={totpCode}
+                  onChange={handleCodeChange}
+                  placeholder="000000"
+                  maxLength={6}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl tracking-widest font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  autoFocus
+                  disabled={verifying}
+                />
+                <p className="mt-2 text-xs text-gray-500 text-center">
+                  The code changes every 30 seconds
+                </p>
+              </div>
+            ) : (
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Backup Code
+                </label>
+                <input
+                  type="text"
+                  value={backupCode}
+                  onChange={handleBackupCodeChange}
+                  placeholder="XXXX-XXXX"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-lg tracking-wider font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  autoFocus
+                  disabled={verifying}
+                />
+                <p className="mt-2 text-xs text-gray-500 text-center">
+                  Backup codes can only be used once
+                </p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={verifying || (!useBackupCode && totpCode.length !== 6) || (useBackupCode && backupCode.length === 0)}
+              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors mb-4"
+            >
+              {verifying ? 'Verifying...' : 'Verify & Sign In'}
+            </button>
+
+            {/* Toggle Options */}
+            <button
+              type="button"
+              onClick={toggleBackupCode}
+              className="w-full text-sm text-indigo-600 hover:text-indigo-700 underline mb-2"
+            >
+              {useBackupCode ? 'Use authenticator code instead' : 'Use backup code instead'}
+            </button>
+            <button
+              type="button"
+              onClick={handleShowAlternatives}
+              className="w-full text-sm text-indigo-600 hover:text-indigo-700 underline"
+            >
+              Can't access your authenticator app?
+            </button>
+          </form>
+        )}
+
+        {/* PHASE 2: Alternative Method Selection */}
+        {phase === 'alternatives' && (
+          <div className="space-y-3">
+            {/* SMS Method */}
+            <button
+              onClick={() => handleSelectAlternative('SMS')}
+              disabled={sendingOtp}
+              className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-left"
+            >
+              <div className="flex items-center">
+                <div className="text-3xl mr-4">📱</div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">SMS Code</h3>
+                  <p className="text-sm text-gray-600">Receive a code via text message</p>
+                </div>
+              </div>
+            </button>
+
+            {/* Email Method */}
+            <button
+              onClick={() => handleSelectAlternative('EMAIL')}
+              disabled={sendingOtp}
+              className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-left"
+            >
+              <div className="flex items-center">
+                <div className="text-3xl mr-4">📧</div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Email Code</h3>
+                  <p className="text-sm text-gray-600">Receive a code via email</p>
+                </div>
+              </div>
+            </button>
+
+            {sendingOtp && (
+              <div className="text-center py-4">
+                <div className="inline-block animate-spin">
+                  <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m0 0h6" />
+                  </svg>
+                </div>
+                <p className="text-gray-600 text-sm mt-2">Sending verification code...</p>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleBackToTotp}
+              disabled={sendingOtp}
+              className="w-full text-indigo-600 hover:text-indigo-700 text-sm font-medium py-2"
+            >
+              ← Back to authenticator
+            </button>
+          </div>
+        )}
+
+        {/* PHASE 3: Alternative OTP Verification */}
+        {phase === 'alternative-verify' && (
+          <form onSubmit={handleVerifyAlternativeOtp}>
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email OTP Code
+                Enter Verification Code
               </label>
               <input
                 type="text"
                 inputMode="numeric"
-                pattern="\d{6}"
+                pattern="\d{4,6}"
                 maxLength={6}
-                value={emailOtp}
+                value={alternativeOtp}
                 onChange={(e) => {
-                  setEmailOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
+                  setAlternativeOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
                   setError('');
                 }}
                 placeholder="000000"
@@ -300,94 +486,28 @@ export default function TotpVerificationPage() {
                 disabled={verifying}
               />
               <p className="mt-2 text-xs text-gray-500 text-center">
-                Check your email for the verification code
+                Code expires in {formatCountdown(countdown)}
               </p>
             </div>
-          ) : !useBackupCode ? (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Verification Code
-              </label>
-              <input
-                type="text"
-                value={totpCode}
-                onChange={handleCodeChange}
-                placeholder="000000"
-                maxLength={6}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl tracking-widest font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                autoFocus
-                disabled={verifying}
-              />
-              <p className="mt-2 text-xs text-gray-500 text-center">
-                The code changes every 30 seconds
-              </p>
-            </div>
-          ) : (
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Backup Code
-              </label>
-              <input
-                type="text"
-                value={backupCode}
-                onChange={handleBackupCodeChange}
-                placeholder="XXXX-XXXX"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-lg tracking-wider font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                autoFocus
-                disabled={verifying}
-              />
-              <p className="mt-2 text-xs text-gray-500 text-center">
-                Backup codes can only be used once
-              </p>
-            </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={verifying || (useEmailOtp && emailOtpSent && emailOtp.length !== 6) || (!useEmailOtp && !useBackupCode && totpCode.length !== 6) || (!useEmailOtp && useBackupCode && backupCode.length === 0)}
-            className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors mb-4"
-          >
-            {verifying ? 'Verifying...' : useEmailOtp && emailOtpSent ? 'Verify & Sign In' : 'Verify & Sign In'}
-          </button>
+            <button
+              type="submit"
+              disabled={verifying || alternativeOtp.length < 4}
+              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors mb-4"
+            >
+              {verifying ? 'Verifying...' : 'Verify Code'}
+            </button>
 
-          {/* Toggle Options */}
-          {!useEmailOtp && (
-            <>
-              <button
-                type="button"
-                onClick={toggleBackupCode}
-                className="w-full text-sm text-indigo-600 hover:text-indigo-700 underline mb-2"
-              >
-                {useBackupCode ? 'Use authenticator code instead' : 'Use backup code instead'}
-              </button>
-              <button
-                type="button"
-                onClick={handleRequestEmailOtp}
-                disabled={requestingEmailOtp || !user}
-                className="w-full text-sm text-indigo-600 hover:text-indigo-700 underline"
-              >
-                {requestingEmailOtp ? 'Sending email...' : "Can't access your authenticator app?"}
-              </button>
-            </>
-          )}
-
-          {/* Back from Email OTP */}
-          {useEmailOtp && emailOtpSent && (
             <button
               type="button"
-              onClick={() => {
-                setUseEmailOtp(false);
-                setEmailOtp('');
-                setEmailOtpSent(false);
-                setError('');
-                setMessage('');
-              }}
-              className="w-full text-sm text-indigo-600 hover:text-indigo-700 underline"
+              onClick={() => setPhase('alternatives')}
+              disabled={verifying}
+              className="w-full text-indigo-600 hover:text-indigo-700 text-sm font-medium py-2"
             >
-              ← Back to authenticator code
+              ← Try another method
             </button>
-          )}
-        </form>
+          </form>
+        )}
 
         {/* Back to Login */}
         <div className="mt-6 text-center">

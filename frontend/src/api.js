@@ -67,6 +67,9 @@ export const api = {
   generateBackupCodes: () => request('/auth/totp/backup-codes/generate', { method: 'POST' }),
   requestTotpLoginEmailOtp: (tempToken, email) => request('/auth/login/request-otp-fallback', { method: 'POST', body: JSON.stringify({ tempToken, email }) }),
   verifyTotpLoginEmailOtp: (tempToken, otp) => request('/auth/login/verify-otp-fallback', { method: 'POST', body: JSON.stringify({ tempToken, otp }) }),
+  // TOTP Alternative OTP methods (SMS, Email, etc.)
+  sendTotpAlternativeOtp: (method, tempToken) => request('/auth/totp-alternative/send', { method: 'POST', body: JSON.stringify({ method, tempToken }) }),
+  verifyTotpAlternativeOtp: (tempToken, sessionId, code) => request('/auth/totp-alternative/verify', { method: 'POST', body: JSON.stringify({ tempToken, sessionId, code }) }),
   getLocations: () => request('/locations'),
   getRoutes: () => request('/routes'),
   getRouteStops: (routeId) => request(`/route-stops/route/${routeId}`),
