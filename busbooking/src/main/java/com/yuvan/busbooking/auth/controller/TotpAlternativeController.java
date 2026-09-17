@@ -49,7 +49,7 @@ public class TotpAlternativeController {
      * @return OTP response with masked recipient and session ID
      */
     @PostMapping("/send")
-    public ResponseEntity<TotpAlternativeOtpResponse> sendAlternativeOtp(
+    public ResponseEntity<?> sendAlternativeOtp(
             @Valid @RequestBody TotpAlternativeOtpRequest request,
             HttpServletRequest httpRequest
     ) {
@@ -62,7 +62,7 @@ public class TotpAlternativeController {
             if (user == null) {
                 log.warn("Failed to extract user from temporary token");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(null);
+                        .body(new ErrorResponse("Invalid or expired session"));
             }
             
             // Extract IP and user agent for audit
@@ -82,10 +82,12 @@ public class TotpAlternativeController {
             
         } catch (IllegalArgumentException e) {
             log.warn("Validation error: {}", e.getMessage());
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest()
+                    .body(new ErrorResponse(e.getMessage()));
         } catch (Exception e) {
             log.error("Error sending alternative OTP: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ErrorResponse("Failed to send OTP. Please try again later."));
         }
     }
     

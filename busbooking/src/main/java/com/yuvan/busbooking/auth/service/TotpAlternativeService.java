@@ -86,9 +86,14 @@ public class TotpAlternativeService {
      * Send OTP via SMS using VerifyNow service
      */
     private TotpAlternativeOtpResponse sendSmsOtp(User user, String ipAddress, String userAgent) {
-        // Validate that user has a verified mobile number
+        // Validate that user has a phone number
         if (user.getPhone() == null || user.getPhone().isBlank()) {
-            throw new IllegalArgumentException("User does not have a verified mobile number");
+            throw new IllegalArgumentException("Phone number is not registered. Please add and verify your phone number from your profile.");
+        }
+        
+        // Validate that the phone number is verified
+        if (!Boolean.TRUE.equals(user.getMobileVerified())) {
+            throw new IllegalArgumentException("Phone number is not verified. Please verify your phone number before using SMS authentication.");
         }
         
         String mobileNumber = user.getPhone();

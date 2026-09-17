@@ -151,7 +151,7 @@ export default function ProfilePage({ onLogout }) {
     setSaveError("");
     setSaveSuccess("");
     try {
-      const updated = await api.updateUser(user.id, {
+      const updated = await api.updateUser({
         email: user.email,
         password: "_placeholder_", // backend requires it; only changes if different hash
         firstName: editForm.firstName.trim(),
