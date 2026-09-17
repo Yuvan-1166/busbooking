@@ -19,10 +19,11 @@ async function request(path, options = {}) {
   if (!response.ok) {
     // Try to parse error response
     let errorMessage = `${response.status} ${response.statusText}`
+    let errorData = null
     try {
       const contentType = response.headers.get('content-type')
       if (contentType?.includes('application/json')) {
-        const errorData = await response.json()
+        errorData = await response.json()
         // Handle different error response formats
         if (errorData.message) {
           errorMessage = errorData.message
@@ -46,7 +47,14 @@ async function request(path, options = {}) {
       // If parsing fails, use default message
       console.error('Failed to parse error response:', parseError)
     }
-    throw new Error(errorMessage)
+    
+    // Create error object that includes status code for proper error handling
+    const error = new Error(errorMessage)
+    error.response = {
+      status: response.status,
+      data: errorData || { message: errorMessage }
+    }
+    throw error
   }
   return response.status === 204 ? null : response.json()
 }
