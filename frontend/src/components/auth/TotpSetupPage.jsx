@@ -142,128 +142,139 @@ export default function TotpSetupPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Setting up 2FA...</p>
+      <main className="mx-auto my-[55px] max-w-[520px] px-4">
+        <div className="border border-dashed border-line p-[74px_30px] text-center text-sm text-muted">
+          Setting up 2FA…
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
-        <div className="text-center mb-6">
-          <div className="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Set Up Two-Factor Authentication</h1>
-          <p className="text-gray-600 text-sm">Scan the QR code wit any authenticator app</p>
-        </div>
+    <main className="mx-auto mb-[100px] mt-[55px] max-w-[520px] px-4">
+      {/* ── Back ── */}
+      <button
+        className="border-0 bg-transparent p-0 text-xs text-muted"
+        onClick={() => navigate("/profile")}
+      >
+        ← Back
+      </button>
+
+      {/* ── Section ── */}
+      <section className="mt-8 border border-[#e7e5dc] bg-paper p-7">
+        <p className="mb-4 font-mono text-[10px] tracking-[.13em] text-green">
+          TWO-FACTOR AUTHENTICATION
+        </p>
+        <h1 className="mb-2 font-display text-[28px] font-semibold leading-tight text-ink">
+          Set Up 2FA
+        </h1>
+        <p className="mb-6 text-sm text-muted leading-6">
+          Scan the QR code below with any authenticator app (Google Authenticator, Authy, Microsoft Authenticator, etc.) and enter the 6-digit code to enable two-factor authentication on your account.
+        </p>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm" role="alert">
+          <div
+            className="mb-5 border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]"
+            role="alert"
+          >
             {error}
           </div>
         )}
 
         {message && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 text-sm" role="status">
+          <div
+            className="mb-5 border border-[#a5bea0] bg-[#e4eee1] px-4 py-3 text-xs text-green"
+            role="status"
+          >
             {message}
           </div>
         )}
 
         {setupData && (
           <>
-            {/* QR Code Display */}
-            <div className="mb-6">
-              <div className="bg-gray-50 p-6 rounded-lg text-center">
-                <img
-                  src={`data:image/png;base64,${setupData.qrCodeBase64}`}
-                  alt="2FA QR Code"
-                  className="mx-auto w-48 h-48"
-                />
-                <p className="mt-3 text-xs text-gray-500">Scan with authenticator app</p>
-              </div>
-
-              {/* Manual Entry Toggle */}
-              <button
-                type="button"
-                onClick={() => setShowManualEntry(!showManualEntry)}
-                className="mt-3 text-sm text-indigo-600 hover:text-indigo-700 underline mx-auto block"
-              >
-                {showManualEntry ? 'Hide' : 'Can\'t scan? Enter manually'}
-              </button>
-
-              {showManualEntry && (
-                <div className="mt-4 bg-gray-50 p-4 rounded-lg">
-                  <p className="text-xs text-gray-600 mb-2">Enter this code manually:</p>
-                  <code className="block bg-white px-3 py-2 rounded border border-gray-200 text-sm font-mono break-all">
-                    {setupData.secret}
-                  </code>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Account: {setupData.accountName}<br />
-                    Issuer: {setupData.issuer}
-                  </p>
-                </div>
-              )}
+            {/* QR Code */}
+            <div className="mb-6 border border-line bg-[#f9f8f5] p-6 text-center">
+              <img
+                src={`data:image/png;base64,${setupData.qrCodeBase64}`}
+                alt="2FA QR Code"
+                className="mx-auto h-48 w-48"
+              />
+              <p className="mt-3 text-[11px] text-muted">Scan with your authenticator app</p>
             </div>
 
+            {/* Manual Entry */}
+            <button
+              type="button"
+              onClick={() => setShowManualEntry(!showManualEntry)}
+              className="mb-4 border-0 border-b border-orange bg-transparent p-0 text-[11px] text-orange"
+            >
+              {showManualEntry ? "Hide manual entry" : "Can't scan? Enter manually"}
+            </button>
+
+            {showManualEntry && (
+              <div className="mb-6 border border-line bg-[#f9f8f5] p-4">
+                <p className="mb-2 text-[10px] uppercase text-muted">Manual entry code:</p>
+                <code className="block break-all border-0 border-b border-line bg-transparent py-2 font-mono text-sm text-ink">
+                  {setupData.secret}
+                </code>
+                <p className="mt-3 text-[10px] text-muted">
+                  <strong>Account:</strong> {setupData.accountName}
+                  <br />
+                  <strong>Issuer:</strong> {setupData.issuer}
+                </p>
+              </div>
+            )}
+
             {/* Verification Form */}
-            <form onSubmit={handleVerify}>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Enter 6-digit code from your app
-                </label>
+            <form onSubmit={handleVerify} className="grid gap-5">
+              <label className="grid gap-1.5 font-mono text-[10px] uppercase text-muted">
+                <span>Enter 6-digit code</span>
                 <input
                   type="text"
                   value={totpCode}
                   onChange={handleCodeChange}
                   placeholder="000000"
                   maxLength={6}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl tracking-widest font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full border-0 border-b border-line bg-transparent py-2.5 text-center text-2xl text-ink outline-0 font-mono tracking-widest focus:border-orange"
                   autoFocus
                   disabled={verifying}
                 />
-              </div>
+              </label>
 
               <button
                 type="submit"
                 disabled={verifying || totpCode.length !== 6}
-                className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                className="mt-2 border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
               >
-                {verifying ? 'Verifying...' : 'Verify & Enable 2FA'}
+                {verifying ? "Verifying…" : "Verify & Enable 2FA"}
+                <span className="float-right text-lg">→</span>
               </button>
             </form>
 
-            {/* Help Text */}
-            <div className="mt-6 text-center">
-              <p className="text-xs text-gray-500">
-                Download any authenticator from Google PlayStone or Appstore
-                This code changes every 30 seconds.
+            {/* Info */}
+            <div className="mt-6 text-[11px] leading-6 text-muted">
+              <p>
+                <strong>Need help?</strong> Download an authenticator app like Google Authenticator, Authy, or Microsoft Authenticator from your app store. The code changes every 30 seconds.
               </p>
             </div>
           </>
         )}
+      </section>
 
-        {/* Backup Codes Modal */}
-        <BackupCodesModal
-          isOpen={showBackupCodesModal}
-          codes={backupCodes}
-          onClose={() => {
-            setShowBackupCodesModal(false);
-            navigate('/profile', {
-              state: {
-                message: '2FA enabled successfully! Backup codes saved.',
-              },
-            });
-          }}
-          onGenerate={handleGenerateBackupCodes}
-        />
-      </div>
-    </div>
+      {/* Backup Codes Modal */}
+      <BackupCodesModal
+        isOpen={showBackupCodesModal}
+        codes={backupCodes}
+        onClose={() => {
+          setShowBackupCodesModal(false);
+          navigate("/profile", {
+            state: {
+              message: "2FA enabled successfully! Backup codes saved.",
+            },
+          });
+        }}
+        onGenerate={handleGenerateBackupCodes}
+      />
+    </main>
   );
 }

@@ -309,99 +309,96 @@ export default function TotpVerificationPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full">
-        <div className="text-center mb-6">
-          <div className="bg-indigo-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Two-Factor Authentication</h1>
-          <p className="text-gray-600 text-sm">
-            {phase === 'totp' && (useBackupCode 
-              ? 'Enter one of your backup codes'
-              : 'Enter the 6-digit code from your authenticator app'
-            )}
-            {phase === 'alternatives' && 'Choose how to receive your verification code'}
-            {phase === 'alternative-verify' && `Enter the code sent to ${alternativeSession?.maskedRecipient}`}
-          </p>
-        </div>
+    <main className="mx-auto mb-[100px] mt-[55px] max-w-[520px] px-4">
+      <section className="border border-[#e7e5dc] bg-paper p-7">
+        <p className="mb-4 font-mono text-[10px] tracking-[.13em] text-green">
+          SIGN IN
+        </p>
+        <h1 className="mb-2 font-display text-[28px] font-semibold leading-tight text-ink">
+          {phase === 'totp' && "Two-Factor Authentication"}
+          {phase === 'alternatives' && "Choose Verification Method"}
+          {phase === 'alternative-verify' && "Verify Code"}
+        </h1>
+        <p className="mb-6 text-sm text-muted leading-6">
+          {phase === 'totp' && (useBackupCode 
+            ? 'Enter one of your backup codes to complete sign in.'
+            : 'Enter the 6-digit code from your authenticator app to complete sign in.'
+          )}
+          {phase === 'alternatives' && 'Choose how to receive your verification code.'}
+          {phase === 'alternative-verify' && `Enter the code sent to ${alternativeSession?.maskedRecipient}`}
+        </p>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6 text-sm" role="alert">
+          <div
+            className="mb-5 border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]"
+            role="alert"
+          >
             {error}
           </div>
         )}
 
         {message && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 text-sm" role="status">
+          <div
+            className="mb-5 border border-[#a5bea0] bg-[#e4eee1] px-4 py-3 text-xs text-green"
+            role="status"
+          >
             {message}
           </div>
         )}
 
         {/* PHASE 1: TOTP or Backup Code */}
         {phase === 'totp' && (
-          <form onSubmit={handleVerify}>
+          <form onSubmit={handleVerify} className="grid gap-5">
             {!useBackupCode ? (
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Verification Code
-                </label>
+              <label className="grid gap-1.5 font-mono text-[10px] uppercase text-muted">
+                <span>6-digit code</span>
                 <input
                   type="text"
                   value={totpCode}
                   onChange={handleCodeChange}
                   placeholder="000000"
                   maxLength={6}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl tracking-widest font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full border-0 border-b border-line bg-transparent py-2.5 text-center text-2xl text-ink outline-0 font-mono tracking-widest focus:border-orange"
                   autoFocus
                   disabled={verifying}
                 />
-                <p className="mt-2 text-xs text-gray-500 text-center">
-                  The code changes every 30 seconds
-                </p>
-              </div>
+              </label>
             ) : (
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Backup Code
-                </label>
+              <label className="grid gap-1.5 font-mono text-[10px] uppercase text-muted">
+                <span>Backup code</span>
                 <input
                   type="text"
                   value={backupCode}
                   onChange={handleBackupCodeChange}
                   placeholder="XXXX-XXXX"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-lg tracking-wider font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full border-0 border-b border-line bg-transparent py-2.5 text-center text-lg text-ink outline-0 font-mono tracking-wider focus:border-orange"
                   autoFocus
                   disabled={verifying}
                 />
-                <p className="mt-2 text-xs text-gray-500 text-center">
-                  Backup codes can only be used once
-                </p>
-              </div>
+              </label>
             )}
 
             <button
               type="submit"
               disabled={verifying || (!useBackupCode && totpCode.length !== 6) || (useBackupCode && backupCode.length === 0)}
-              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors mb-4"
+              className="mt-2 border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
             >
-              {verifying ? 'Verifying...' : 'Verify & Sign In'}
+              {verifying ? "Verifying…" : "Verify & Sign In"}
+              <span className="float-right text-lg">→</span>
             </button>
 
             {/* Toggle Options */}
             <button
               type="button"
               onClick={toggleBackupCode}
-              className="w-full text-sm text-indigo-600 hover:text-indigo-700 underline mb-2"
+              className="bg-transparent p-0 text-[11px] text-orange"
             >
-              {useBackupCode ? 'Use authenticator code instead' : 'Use backup code instead'}
+              {useBackupCode ? "Use authenticator code instead" : "Use backup code instead"}
             </button>
             <button
               type="button"
               onClick={handleShowAlternatives}
-              className="w-full text-sm text-indigo-600 hover:text-indigo-700 underline"
+              className="bg-transparent p-0 text-[11px] text-orange"
             >
               Can't access your authenticator app?
             </button>
@@ -410,45 +407,30 @@ export default function TotpVerificationPage() {
 
         {/* PHASE 2: Alternative Method Selection */}
         {phase === 'alternatives' && (
-          <div className="space-y-3">
+          <div className="grid gap-3">
             {/* SMS Method */}
             <button
               onClick={() => handleSelectAlternative('SMS')}
               disabled={sendingOtp}
-              className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-left"
+              className="grid gap-2 border border-line bg-[#f9f8f5] p-4 text-left disabled:opacity-45 hover:border-orange hover:bg-[#fff6ee]"
             >
-              <div className="flex items-center">
-                <div className="text-3xl mr-4">📱</div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">SMS Code</h3>
-                  <p className="text-sm text-gray-600">Receive a code via text message</p>
-                </div>
-              </div>
+              <strong className="font-display text-sm text-ink">SMS Code</strong>
+              <span className="text-xs text-muted">Receive a code via text message</span>
             </button>
 
             {/* Email Method */}
             <button
               onClick={() => handleSelectAlternative('EMAIL')}
               disabled={sendingOtp}
-              className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-indigo-600 hover:bg-indigo-50 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-left"
+              className="grid gap-2 border border-line bg-[#f9f8f5] p-4 text-left disabled:opacity-45 hover:border-orange hover:bg-[#fff6ee]"
             >
-              <div className="flex items-center">
-                <div className="text-3xl mr-4">📧</div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Email Code</h3>
-                  <p className="text-sm text-gray-600">Receive a code via email</p>
-                </div>
-              </div>
+              <strong className="font-display text-sm text-ink">Email Code</strong>
+              <span className="text-xs text-muted">Receive a code via email</span>
             </button>
 
             {sendingOtp && (
-              <div className="text-center py-4">
-                <div className="inline-block animate-spin">
-                  <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m0 0h6" />
-                  </svg>
-                </div>
-                <p className="text-gray-600 text-sm mt-2">Sending verification code...</p>
+              <div className="border border-dashed border-line p-6 text-center">
+                <p className="text-xs text-muted">Sending verification code…</p>
               </div>
             )}
 
@@ -456,20 +438,18 @@ export default function TotpVerificationPage() {
               type="button"
               onClick={handleBackToTotp}
               disabled={sendingOtp}
-              className="w-full text-indigo-600 hover:text-indigo-700 text-sm font-medium py-2"
+              className="bg-transparent p-0 text-[11px] text-orange"
             >
-              ← Back to authenticator
+              ← Back to authenticator app
             </button>
           </div>
         )}
 
         {/* PHASE 3: Alternative OTP Verification */}
         {phase === 'alternative-verify' && (
-          <form onSubmit={handleVerifyAlternativeOtp}>
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Enter Verification Code
-              </label>
+          <form onSubmit={handleVerifyAlternativeOtp} className="grid gap-5">
+            <label className="grid gap-1.5 font-mono text-[10px] uppercase text-muted">
+              <span>Verification code</span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -478,31 +458,30 @@ export default function TotpVerificationPage() {
                 value={alternativeOtp}
                 onChange={(e) => {
                   setAlternativeOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
-                  setError('');
+                  setError("");
                 }}
                 placeholder="000000"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-center text-2xl tracking-widest font-mono focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full border-0 border-b border-line bg-transparent py-2.5 text-center text-2xl text-ink outline-0 font-mono tracking-widest focus:border-orange"
                 autoFocus
                 disabled={verifying}
               />
-              <p className="mt-2 text-xs text-gray-500 text-center">
-                Code expires in {formatCountdown(countdown)}
-              </p>
-            </div>
+              <span className="text-[9px] text-muted">Code expires in {formatCountdown(countdown)}</span>
+            </label>
 
             <button
               type="submit"
               disabled={verifying || alternativeOtp.length < 4}
-              className="w-full bg-indigo-600 text-white py-3 rounded-lg font-semibold hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors mb-4"
+              className="mt-2 border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
             >
-              {verifying ? 'Verifying...' : 'Verify Code'}
+              {verifying ? "Verifying…" : "Verify Code"}
+              <span className="float-right text-lg">→</span>
             </button>
 
             <button
               type="button"
               onClick={() => setPhase('alternatives')}
               disabled={verifying}
-              className="w-full text-indigo-600 hover:text-indigo-700 text-sm font-medium py-2"
+              className="border-0 border-b border-orange bg-transparent p-0 text-[11px] text-orange"
             >
               ← Try another method
             </button>
@@ -520,12 +499,12 @@ export default function TotpVerificationPage() {
         </div>
 
         {/* Help Text */}
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <p className="text-xs text-gray-500 text-center">
-            Lost access to your authenticator? Contact support for assistance.
+        <div className="mt-6 border-t border-line pt-4 text-[10px] text-muted">
+          <p>
+            Lost access to your authenticator? Contact support for assistance or use a backup code if available.
           </p>
         </div>
-      </div>
-    </div>
+      </section>
+    </main>
   );
 }

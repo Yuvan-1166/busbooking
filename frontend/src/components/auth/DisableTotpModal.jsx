@@ -62,25 +62,20 @@ export default function DisableTotpModal({ isOpen, onClose, onConfirm }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-transparent flex items-center justify-center p-4 z-50">
-      <div className="bg-paper rounded-lg shadow-lg p-8 max-w-md w-full">
+    <div className="fixed inset-0 bg-black/20 flex items-center justify-center p-4 z-50">
+      <div className="max-w-[520px] w-full border border-[#e7e5dc] bg-paper p-7">
         {/* Header */}
-        <div className="text-center mb-6">
-          <div className="bg-[#f7e5df] w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg className="w-6 h-6 text-[#8c3e2d]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold text-ink mb-2">Disable Two-Factor Authentication</h2>
-          <p className="text-sm text-muted">
-            Enter your password to disable 2FA on your account.
-          </p>
-        </div>
+        <h2 className="mb-2 font-display text-[24px] font-semibold leading-tight text-ink">
+          Disable 2FA
+        </h2>
+        <p className="mb-6 text-sm leading-6 text-muted">
+          Enter your password to disable two-factor authentication on your account.
+        </p>
 
         {/* Error Message */}
         {error && (
           <div
-            className="mb-4 border border-[#d79b8b] bg-[#f7e5df] p-3 text-xs text-[#8c3e2d]"
+            className="mb-4 border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]"
             role="alert"
           >
             {error}
@@ -90,7 +85,7 @@ export default function DisableTotpModal({ isOpen, onClose, onConfirm }) {
         {/* Success Message */}
         {message && (
           <div
-            className="mb-4 border border-[#a5bea0] bg-[#e4eee1] p-3 text-xs text-green"
+            className="mb-4 border border-[#a5bea0] bg-[#e4eee1] px-4 py-3 text-xs text-green"
             role="status"
           >
             {message}
@@ -98,53 +93,52 @@ export default function DisableTotpModal({ isOpen, onClose, onConfirm }) {
         )}
 
         {/* Form */}
-        <form className="grid gap-[15px]" onSubmit={handleSubmit}>
+        <form className="grid gap-5" onSubmit={handleSubmit}>
           <label className="grid gap-1.5 font-mono text-[10px] uppercase text-muted">
-            Account password <span className="text-orange">*</span>
+            <span>Account password <span className="text-orange">*</span></span>
             <input
               type="password"
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value);
-                setError(''); // Clear error on input change
+                setError("");
               }}
               placeholder="••••••••"
-              className="w-full border-0 border-b border-line bg-transparent py-2.5 text-sm text-ink outline-0"
+              className="w-full border-0 border-b border-line bg-transparent py-2.5 text-sm text-ink outline-0 focus:border-orange"
               disabled={isSubmitting}
               autoFocus
               required
             />
           </label>
 
-          <p className="text-xs text-muted mt-2">
-            ⓘ We need your password to confirm this action for security purposes.
+          <p className="text-[10px] text-muted">
+            We need your password to confirm this action for security purposes.
           </p>
 
           {/* Buttons */}
-          <div className="flex gap-3 mt-4">
+          <div className="mt-4 flex gap-3">
             <button
               type="button"
               onClick={handleClose}
-              className="flex-1 border border-line bg-transparent px-4 py-3 text-sm font-bold text-ink hover:bg-[#f9f9f7] disabled:opacity-50"
+              className="flex-1 border border-line bg-transparent px-4 py-2.5 font-bold text-ink hover:bg-[#fdfcf9] disabled:opacity-45"
               disabled={isSubmitting}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 border-0 bg-[#8c3e2d] px-4 py-3 text-sm font-bold text-white hover:bg-[#6b2e22] disabled:opacity-50"
+              className="flex-1 border-0 bg-[#8c3e2d] px-4 py-3.5 text-left font-bold text-white disabled:opacity-45"
               disabled={isSubmitting || !password.trim()}
             >
-              {isSubmitting ? 'Confirming…' : 'Confirm & Disable'}
+              {isSubmitting ? "Confirming…" : "Confirm & Disable"}
+              <span className="float-right text-lg">→</span>
             </button>
           </div>
         </form>
 
         {/* Info */}
-        <div className="mt-6 pt-6 border-t border-line">
-          <p className="text-xs text-muted text-center">
-            You'll need to re-enable 2FA to use it again.
-          </p>
+        <div className="mt-6 border-t border-line pt-4 text-center text-[10px] text-muted">
+          You'll need to re-enable 2FA if you want to use it again.
         </div>
       </div>
     </div>

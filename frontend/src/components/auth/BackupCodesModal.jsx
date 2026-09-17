@@ -61,24 +61,19 @@ export default function BackupCodesModal({ isOpen, codes, onClose, onGenerate })
 
   return (
     <div className="fixed inset-0 bg-transparent flex items-center justify-center p-4 z-50">
-      <div className="bg-paper rounded-lg shadow-lg p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div className="max-w-[520px] w-full max-h-[90vh] overflow-y-auto border border-[#e7e5dc] bg-paper p-7">
         {/* Header */}
-        <div className="text-center mb-6">
-          <div className="bg-[#dce5d5] w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3">
-            <svg className="w-6 h-6 text-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold text-ink mb-2">Backup Codes</h2>
-          <p className="text-sm text-muted">
-            Save these codes in a secure location. Use them to access your account if you lose access to your authenticator.
-          </p>
-        </div>
+        <h2 className="mb-2 font-display text-[28px] font-semibold leading-tight text-ink">
+          Backup Codes
+        </h2>
+        <p className="mb-6 text-sm leading-6 text-muted">
+          Save these codes in a secure location. Each code can only be used once to access your account if you lose access to your authenticator.
+        </p>
 
         {/* Error Message */}
         {error && (
           <div
-            className="mb-4 border border-[#d79b8b] bg-[#f7e5df] p-3 text-xs text-[#8c3e2d]"
+            className="mb-4 border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]"
             role="alert"
           >
             {error}
@@ -88,7 +83,7 @@ export default function BackupCodesModal({ isOpen, codes, onClose, onGenerate })
         {/* Success Message */}
         {message && (
           <div
-            className="mb-4 border border-[#a5bea0] bg-[#e4eee1] p-3 text-xs text-green"
+            className="mb-4 border border-[#a5bea0] bg-[#e4eee1] px-4 py-3 text-xs text-green"
             role="status"
           >
             {message}
@@ -97,19 +92,22 @@ export default function BackupCodesModal({ isOpen, codes, onClose, onGenerate })
 
         {/* Codes Display */}
         {codes && codes.length > 0 && (
-          <div className="mb-6 bg-[#f5f5f5] p-4 rounded-lg">
-            <p className="text-xs font-mono text-muted mb-3 uppercase">Your Backup Codes</p>
-            <div className="space-y-2">
+          <div className="mb-6 border border-line bg-[#f9f8f5] p-4">
+            <p className="mb-3 font-mono text-[10px] uppercase text-muted">Your Backup Codes</p>
+            <div className="grid gap-2">
               {codes.map((code, index) => (
-                <div key={index} className="flex items-center justify-between bg-white p-3 rounded border border-line">
+                <div
+                  key={index}
+                  className="flex items-center justify-between border-b border-line pb-2 last:border-0 last:pb-0"
+                >
                   <code className="font-mono text-sm text-ink">{code}</code>
                   <button
                     type="button"
                     onClick={() => handleCopyCode(code, index)}
-                    className="ml-2 px-2 py-1 text-xs bg-orange text-white rounded hover:bg-orange/80 disabled:opacity-50"
+                    className="border-0 border-b border-orange bg-transparent px-0 py-0 text-[10px] font-bold text-orange"
                     title="Copy to clipboard"
                   >
-                    {copiedIndex === index ? '✓' : 'Copy'}
+                    {copiedIndex === index ? "✓ Copied" : "Copy"}
                   </button>
                 </div>
               ))}
@@ -119,9 +117,10 @@ export default function BackupCodesModal({ isOpen, codes, onClose, onGenerate })
             <button
               type="button"
               onClick={handleDownloadCodes}
-              className="mt-4 w-full px-4 py-2 border border-line bg-transparent text-sm font-bold text-ink hover:bg-[#f9f9f7] rounded"
+              className="mt-4 w-full border border-line bg-transparent px-4 py-2.5 text-left font-bold text-ink hover:bg-[#fdfcf9]"
             >
               ⬇ Download as Text File
+              <span className="float-right text-lg">→</span>
             </button>
           </div>
         )}
@@ -129,16 +128,17 @@ export default function BackupCodesModal({ isOpen, codes, onClose, onGenerate })
         {/* Generate Button */}
         {(!codes || codes.length === 0) && (
           <div className="mb-6">
-            <p className="text-sm text-muted mb-4 text-center">
+            <p className="mb-4 text-xs text-muted">
               No backup codes generated yet. Generate them now to secure your account.
             </p>
             <button
               type="button"
               onClick={handleGenerate}
               disabled={isGenerating}
-              className="w-full px-4 py-3 bg-green text-white font-bold rounded hover:bg-green/90 disabled:opacity-50"
+              className="w-full border-0 bg-green px-4 py-3.5 text-left font-bold text-white disabled:opacity-45"
             >
-              {isGenerating ? 'Generating…' : 'Generate Backup Codes'}
+              {isGenerating ? "Generating…" : "Generate Backup Codes"}
+              <span className="float-right text-lg">→</span>
             </button>
           </div>
         )}
@@ -149,30 +149,29 @@ export default function BackupCodesModal({ isOpen, codes, onClose, onGenerate })
             type="button"
             onClick={handleGenerate}
             disabled={isGenerating}
-            className="w-full px-4 py-2 bg-orange text-white font-bold rounded hover:bg-orange/80 disabled:opacity-50"
+            className="mb-4 w-full border-0 bg-orange px-4 py-3.5 text-left font-bold text-white disabled:opacity-45"
           >
-            {isGenerating ? 'Regenerating…' : 'Regenerate New Codes'}
+            {isGenerating ? "Regenerating…" : "Regenerate New Codes"}
+            <span className="float-right text-lg">→</span>
           </button>
         )}
 
         {/* Close Button */}
-        <div className="mt-4 flex gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 px-4 py-3 border border-line bg-transparent font-bold text-ink rounded hover:bg-[#f9f9f7]"
-          >
-            Close
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="w-full border border-line bg-transparent px-4 py-2.5 font-bold text-ink hover:bg-[#fdfcf9]"
+        >
+          Done
+        </button>
 
         {/* Info */}
-        <div className="mt-6 pt-6 border-t border-line">
-          <ul className="text-xs text-muted space-y-2">
+        <div className="mt-6 border-t border-line pt-4 text-[10px] text-muted">
+          <ul className="grid gap-2">
             <li>✓ Each code can only be used once</li>
-            <li>✓ Store in a secure location (password manager)</li>
+            <li>✓ Store these codes in a secure location (like a password manager)</li>
             <li>✓ Do not share these codes with anyone</li>
-            <li>✓ Regenerating creates new codes</li>
+            <li>✓ Regenerating old codes will create new ones</li>
           </ul>
         </div>
       </div>
