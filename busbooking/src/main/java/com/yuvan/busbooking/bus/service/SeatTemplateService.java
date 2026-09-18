@@ -21,18 +21,15 @@ public class SeatTemplateService {
     private final SeatTemplateRepository seatTemplateRepository;
     private final BusRepository busRepository;
     private final SeatRepository seatRepository;
-    private final SeatService seatService;
 
     public SeatTemplateService(
             SeatTemplateRepository seatTemplateRepository,
             BusRepository busRepository,
-            SeatRepository seatRepository,
-            SeatService seatService
+            SeatRepository seatRepository
     ) {
         this.seatTemplateRepository = seatTemplateRepository;
         this.busRepository = busRepository;
         this.seatRepository = seatRepository;
-        this.seatService = seatService;
     }
 
     /**

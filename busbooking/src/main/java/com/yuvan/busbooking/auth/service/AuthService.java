@@ -339,8 +339,6 @@ public class AuthService {
 
         // Extract email from tempToken
         String email = jwtService.extractUsernameFromTempToken(tempToken);
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         // Verify OTP using existing OtpService
         try {

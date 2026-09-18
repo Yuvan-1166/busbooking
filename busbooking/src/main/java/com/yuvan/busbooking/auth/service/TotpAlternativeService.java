@@ -4,7 +4,6 @@ import com.yuvan.busbooking.auth.dto.TotpAlternativeOtpResponse;
 import com.yuvan.busbooking.auth.entity.*;
 import com.yuvan.busbooking.auth.repository.TotpAlternativeOtpRepository;
 import com.yuvan.busbooking.user.entity.User;
-import com.yuvan.busbooking.user.repository.UserRepository;
 import com.yuvan.busbooking.verifynow.dto.OtpSendResponse;
 import com.yuvan.busbooking.verifynow.dto.OtpValidateResponse;
 import com.yuvan.busbooking.verifynow.service.VerifyNowOtpService;
@@ -35,7 +34,6 @@ import java.util.List;
 public class TotpAlternativeService {
     
     private final TotpAlternativeOtpRepository alternativeOtpRepository;
-    private final UserRepository userRepository;
     private final EmailService emailService;
     private final VerifyNowOtpService verifyNowOtpService;
     private final PasswordEncoder passwordEncoder;

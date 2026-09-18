@@ -26,7 +26,6 @@ public class OtpService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
-    private final JwtService jwtService;
     private final int expiryMinutes;
     private final int maxAttempts;
 
@@ -35,7 +34,6 @@ public class OtpService {
             UserRepository userRepository,
             EmailService emailService,
             PasswordEncoder passwordEncoder,
-            JwtService jwtService,
             @Value("${app.otp.expiry-minutes:10}") int expiryMinutes,
             @Value("${app.otp.max-attempts:5}") int maxAttempts
     ) {
@@ -43,7 +41,6 @@ public class OtpService {
         this.userRepository = userRepository;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
-        this.jwtService = jwtService;
         this.expiryMinutes = expiryMinutes;
         this.maxAttempts = maxAttempts;
     }
@@ -184,9 +181,6 @@ public class OtpService {
      */
     @Transactional
     public void generateAndSendTotpLoginFallback(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found: " + email));
 
         // Expire any existing active OTP for this email + purpose
         otpRepository

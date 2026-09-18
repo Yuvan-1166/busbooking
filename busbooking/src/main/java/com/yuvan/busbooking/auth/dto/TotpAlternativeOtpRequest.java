@@ -2,7 +2,6 @@ package com.yuvan.busbooking.auth.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import com.yuvan.busbooking.auth.entity.TotpAlternativeType;
 
 /**

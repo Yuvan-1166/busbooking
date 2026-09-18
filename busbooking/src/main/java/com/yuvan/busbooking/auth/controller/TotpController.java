@@ -5,7 +5,6 @@ import com.yuvan.busbooking.auth.dto.DisableTotpRequest;
 import com.yuvan.busbooking.auth.dto.MessageResponse;
 import com.yuvan.busbooking.auth.dto.TotpSetupResponse;
 import com.yuvan.busbooking.auth.dto.TotpVerifySetupRequest;
-import com.yuvan.busbooking.auth.service.JwtService;
 import com.yuvan.busbooking.auth.service.TotpService;
 import com.yuvan.busbooking.common.exception.ResourceNotFoundException;
 import com.yuvan.busbooking.common.util.SecurityUtils;
@@ -21,18 +20,15 @@ import org.springframework.web.bind.annotation.*;
 public class TotpController {
 
     private final TotpService totpService;
-    private final JwtService jwtService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
     public TotpController(
             TotpService totpService,
-            JwtService jwtService,
             UserRepository userRepository,
             PasswordEncoder passwordEncoder
     ) {
         this.totpService = totpService;
-        this.jwtService = jwtService;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
