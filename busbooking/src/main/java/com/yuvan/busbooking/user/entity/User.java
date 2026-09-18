@@ -55,6 +55,9 @@ public class User {
     @Column(name = "mobile_verified_at")
     private LocalDateTime mobileVerifiedAt;
 
+    @Column(name = "twitter_email_pending", nullable = false)
+    private Boolean twitterEmailPending = false;
+
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
@@ -72,6 +75,9 @@ public class User {
         }
         if (mobileVerified == null) {
             mobileVerified = false;
+        }
+        if (twitterEmailPending == null) {
+            twitterEmailPending = false;
         }
     }
 

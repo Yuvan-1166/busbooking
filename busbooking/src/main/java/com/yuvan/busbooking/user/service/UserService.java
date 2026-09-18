@@ -1,5 +1,8 @@
 package com.yuvan.busbooking.user.service;
 
+import com.yuvan.busbooking.auth.dto.VerifyTwitterEmailRequest;
+import com.yuvan.busbooking.auth.entity.OtpPurpose;
+import com.yuvan.busbooking.auth.service.OtpService;
 import com.yuvan.busbooking.common.exception.ResourceNotFoundException;
 import com.yuvan.busbooking.common.util.SecurityUtils;
 import com.yuvan.busbooking.user.dto.UserRequest;
@@ -20,10 +23,12 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final OtpService otpService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, OtpService otpService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.otpService = otpService;
     }
 
     public UserResponse create(UserRequest request) {
@@ -178,6 +183,47 @@ public class UserService {
         }
 
         userRepository.deleteById(id);
+    }
+
+    /**
+     * Verifies email OTP for Twitter OAuth users and updates their account email.
+     * 
+     * <p>Flow:</p>
+     * <ol>
+     *   <li>User provides email + OTP received in onboarding</li>
+     *   <li>Verify OTP matches the email</li>
+     *   <li>Check email isn't already registered</li>
+     *   <li>Update user's email and clear twitterEmailPending flag</li>
+     * </ol>
+     *
+     * @param request {@link VerifyTwitterEmailRequest} with email and OTP
+     * @throws IllegalArgumentException if email is already taken or OTP is invalid
+     */
+    public UserResponse verifyTwitterEmail(VerifyTwitterEmailRequest request) {
+        // Get current authenticated user
+        String currentEmail = SecurityUtils.getCurrentUserEmail();
+        User user = userRepository.findByEmail(currentEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // Verify the user is a Twitter account pending email
+        if (!user.getTwitterEmailPending()) {
+            throw new IllegalStateException("This user is not pending Twitter email verification");
+        }
+
+        // Verify OTP for the new email
+        otpService.verify(request.email(), request.otp(), OtpPurpose.REGISTRATION);
+
+        // Check if email is already registered
+        if (userRepository.existsByEmail(request.email())) {
+            throw new IllegalArgumentException("Email address is already registered");
+        }
+
+        // Update user with verified email and clear pending flag
+        user.setEmail(request.email());
+        user.setTwitterEmailPending(false);
+        User updated = userRepository.save(user);
+
+        return toResponse(updated);
     }
 
     private UserResponse toResponse(User user) {

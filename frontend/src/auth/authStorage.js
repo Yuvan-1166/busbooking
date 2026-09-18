@@ -29,6 +29,7 @@ export function createSession(response) {
     roles,
     expiresAt: claims.exp ? claims.exp * 1000 : Date.now() + response.expiresIn * 1000,
     onboardingRequired: response.onboardingRequired || false,
+    twitterEmailPending: response.twitterEmailPending || false,
   }
 }
 

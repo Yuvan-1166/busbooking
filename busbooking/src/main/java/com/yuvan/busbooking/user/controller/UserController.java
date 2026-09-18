@@ -1,5 +1,6 @@
 package com.yuvan.busbooking.user.controller;
 
+import com.yuvan.busbooking.auth.dto.VerifyTwitterEmailRequest;
 import com.yuvan.busbooking.user.dto.UserRequest;
 import com.yuvan.busbooking.user.dto.UserResponse;
 import com.yuvan.busbooking.user.entity.User;
@@ -88,6 +89,22 @@ public class UserController {
         return ResponseEntity.ok(
             userService.verifyMobile()
         );
+    }
+
+    /**
+     * Verifies email OTP for Twitter OAuth users and updates their account email.
+     * 
+     * Twitter's free tier API doesn't expose email, so users provide it during onboarding.
+     * This endpoint validates the OTP and saves the verified email address.
+     *
+     * POST /api/v1/users/me/verify-twitter-email
+     * Requires authentication.
+     */
+    @PostMapping("/me/verify-twitter-email")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<UserResponse> verifyTwitterEmail(
+            @Valid @RequestBody VerifyTwitterEmailRequest request) {
+        return ResponseEntity.ok(userService.verifyTwitterEmail(request));
     }
     
 }

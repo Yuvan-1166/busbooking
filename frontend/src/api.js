@@ -67,6 +67,7 @@ export const api = {
   // Twitter (X) OAuth 2.0 PKCE
   getTwitterAuthorizeUrl: () => request('/auth/twitter/authorize'),
   twitterCallback: (code, state, userType) => request('/auth/twitter/callback', { method: 'POST', body: JSON.stringify({ code, state, userType: userType || 'PASSENGER' }) }),
+  verifyTwitterEmail: (email, otp) => request('/users/me/verify-twitter-email', { method: 'POST', body: JSON.stringify({ email, otp }) }),
   completeOnboarding: (payload) => request('/auth/onboarding/complete', { method: 'POST', body: JSON.stringify(payload) }),
   sendOtp: (email) => request('/auth/verify/send', { method: 'POST', body: JSON.stringify({ email }) }),
   verifyOtp: (email, otp) => request('/auth/verify/confirm', { method: 'POST', body: JSON.stringify({ email, otp }) }),

@@ -165,19 +165,30 @@ public class TwitterOAuthService {
      */
     @Transactional
     public LoginResponse handleCallback(String code, String state, String userType) {
+        System.out.println("=== Twitter OAuth Callback ===");
+        System.out.println("Code: " + (code != null ? code.substring(0, Math.min(20, code.length())) + "..." : "NULL"));
+        System.out.println("State: " + state);
+        System.out.println("UserType: " + userType);
+        
         validateUserType(userType);
 
         // 1. Validate state and retrieve verifier
         String codeVerifier = consumeState(state);
+        System.out.println("State validation: OK");
 
         // 2. Exchange code for access token
         String accessToken = exchangeCodeForToken(code, codeVerifier);
+        System.out.println("Token exchange: OK");
 
         // 3. Fetch user info from Twitter
         TwitterUserInfo userInfo = fetchUserInfo(accessToken);
+        System.out.println("Twitter ID: " + userInfo.twitterId());
+        System.out.println("Twitter Email: " + userInfo.email());
 
         // 4. Create or update local user + credential
-        return createOrUpdateUser(userInfo, userType);
+        LoginResponse response = createOrUpdateUser(userInfo, userType);
+        System.out.println("=== Twitter OAuth Callback Complete ===");
+        return response;
     }
 
     // ── private helpers ────────────────────────────────────────────────────────
@@ -214,7 +225,11 @@ public class TwitterOAuthService {
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 
         try {
+            System.out.println("Exchanging code at: " + tokenUrl);
             ResponseEntity<String> response = restTemplate.postForEntity(tokenUrl, request, String.class);
+
+            System.out.println("Token exchange response status: " + response.getStatusCode());
+            System.out.println("Token exchange response body: " + response.getBody());
 
             if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
                 throw new IllegalStateException("Twitter token exchange failed: " + response.getStatusCode());
@@ -228,21 +243,25 @@ public class TwitterOAuthService {
             return tokenNode.asText();
 
         } catch (IllegalStateException | IllegalArgumentException e) {
+            System.err.println("Token exchange error: " + e.getMessage());
             throw e;
         } catch (Exception e) {
+            System.err.println("Token exchange exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
+            e.printStackTrace();
             throw new IllegalStateException("Failed to exchange Twitter authorization code: " + e.getMessage(), e);
         }
     }
 
     /** Fetches the authenticated user's Twitter profile. */
     private TwitterUserInfo fetchUserInfo(String accessToken) {
+        System.out.println("Fetch User Info");
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
 
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
         // Request the fields we need
-        String url = userInfoUrl + "?user.fields=id,name,username,profile_image_url,email";
+        String url = userInfoUrl + "?user.fields=id,name,username,profile_image_url";
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(
@@ -252,6 +271,8 @@ public class TwitterOAuthService {
                 throw new IllegalStateException("Twitter user info fetch failed: " + response.getStatusCode());
             }
 
+            System.out.println("Fetch success");
+
             JsonNode root = objectMapper.readTree(response.getBody());
             JsonNode data = root.path("data");
 
@@ -259,7 +280,9 @@ public class TwitterOAuthService {
             String username = data.path("username").asText();
             String name = data.path("name").asText();
             String profileImageUrl = data.path("profile_image_url").asText(null);
-            String email = data.path("email").asText();
+            String email = data.path("email").asText(null);
+
+            System.out.println("Got everything including email: " + email);
 
             if (twitterId.isEmpty()) {
                 throw new IllegalStateException("Twitter user info response missing 'id'");
@@ -268,8 +291,10 @@ public class TwitterOAuthService {
             return new TwitterUserInfo(twitterId, username, name, profileImageUrl, email);
 
         } catch (IllegalStateException e) {
+            System.err.println("Some Error 1");
             throw e;
         } catch (Exception e) {
+            System.err.println("Some Error 2");
             throw new IllegalStateException("Failed to fetch Twitter user info: " + e.getMessage(), e);
         }
     }
@@ -289,27 +314,25 @@ public class TwitterOAuthService {
             User user = credential.getUser();
             UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
             String token = jwtService.generateToken(userDetails);
-            return new LoginResponse(token, "Bearer", 3600L);
+            return new LoginResponse(token, "Bearer", 3600L, !user.getOnboardingCompleted(), user.getTwitterEmailPending());
         }
 
-        // Determine email: use real email from Twitter if available, fall back to synthetic
-        String accountEmail = (info.email() != null && !info.email().isBlank())
-                ? info.email()
-                : buildSyntheticEmail(info.twitterId());
+        // New user: create account with synthetic email (Twitter free tier doesn't expose email)
+        String syntheticEmail = buildSyntheticEmail(info.twitterId());
 
-        // Check if user with this email already exists (link Twitter to existing account)
-        User user = userRepository.findByEmail(accountEmail).orElse(null);
+        User user = userRepository.findByEmail(syntheticEmail).orElse(null);
         boolean isNewUser = (user == null);
 
         if (isNewUser) {
             user = new User();
-            user.setEmail(accountEmail);
+            user.setEmail(syntheticEmail);
             user.setPasswordHash(null); // OAuth-only account
             user.setFirstName(extractFirstName(info.name()));
             user.setLastName(extractLastName(info.name()));
             user.setPhone(null);
             user.setStatus(UserStatus.ACTIVE); // OAuth users are auto-verified
             user.setOnboardingCompleted(false); // Let user fill in profile
+            user.setTwitterEmailPending(true); // Flag for email verification during onboarding
             user = userRepository.save(user);
 
             // Assign a temporary PASSENGER role so the onboarding JWT is valid
@@ -334,9 +357,8 @@ public class TwitterOAuthService {
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
         String token = jwtService.generateToken(userDetails);
 
-        // onboardingRequired tells the frontend to prompt the user to complete their profile
-        // Only for brand-new users; existing users don't need onboarding
-        return new LoginResponse(token, "Bearer", 3600L, isNewUser && !user.getOnboardingCompleted());
+        // onboardingRequired tells the frontend to show onboarding for new users
+        return new LoginResponse(token, "Bearer", 3600L, isNewUser && !user.getOnboardingCompleted(), user.getTwitterEmailPending());
     }
 
     // ── PKCE helpers ───────────────────────────────────────────────────────────

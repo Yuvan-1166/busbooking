@@ -24,6 +24,9 @@ public class LoginResponse {
     @JsonProperty("onboardingRequired")
     private final Boolean onboardingRequired;
 
+    @JsonProperty("twitterEmailPending")
+    private final Boolean twitterEmailPending;
+
     @JsonProperty("requiresTotp")
     private final Boolean requiresTotp;
 
@@ -35,17 +38,22 @@ public class LoginResponse {
 
     // Constructor for standard login (3 params)
     public LoginResponse(String accessToken, String tokenType, long expiresIn) {
-        this(accessToken, tokenType, expiresIn, null, null, null, null);
+        this(accessToken, tokenType, expiresIn, null, null, null, null, null);
     }
 
     // Constructor for Google OAuth with onboarding flag (4 params)
     public LoginResponse(String accessToken, String tokenType, long expiresIn, Boolean onboardingRequired) {
-        this(accessToken, tokenType, expiresIn, onboardingRequired, null, null, null);
+        this(accessToken, tokenType, expiresIn, onboardingRequired, null, null, null, null);
+    }
+
+    // Constructor for Twitter OAuth
+    public LoginResponse(String accessToken, String tokenType, long expiresIn, Boolean onboardingRequired, Boolean twitterEmailPending) {
+        this(accessToken, tokenType, expiresIn, onboardingRequired, twitterEmailPending, null, null, null);
     }
 
     // Constructor for TOTP pending (requires verification)
     public LoginResponse(Boolean requiresTotp, String tempToken, Long userId) {
-        this(null, null, null, null, requiresTotp, tempToken, userId);
+        this(null, null, null, null, null, requiresTotp, tempToken, userId);
     }
 
     // Full constructor
@@ -54,6 +62,7 @@ public class LoginResponse {
             String tokenType,
             Long expiresIn,
             Boolean onboardingRequired,
+            Boolean twitterEmailPending,
             Boolean requiresTotp,
             String tempToken,
             Long userId
@@ -62,6 +71,7 @@ public class LoginResponse {
         this.tokenType = tokenType;
         this.expiresIn = expiresIn;
         this.onboardingRequired = onboardingRequired;
+        this.twitterEmailPending = twitterEmailPending;
         this.requiresTotp = requiresTotp;
         this.tempToken = tempToken;
         this.userId = userId;
@@ -81,6 +91,10 @@ public class LoginResponse {
 
     public Boolean getOnboardingRequired() {
         return onboardingRequired;
+    }
+
+    public Boolean getTwitterEmailPending() {
+        return twitterEmailPending;
     }
 
     public Boolean getRequiresTotp() {
