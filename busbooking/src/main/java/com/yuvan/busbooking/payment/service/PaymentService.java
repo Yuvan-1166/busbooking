@@ -1,5 +1,7 @@
 package com.yuvan.busbooking.payment.service;
 
+import com.yuvan.busbooking.auth.service.EmailService;
+import com.yuvan.busbooking.booking.dto.BookingPassengerResponse;
 import com.yuvan.busbooking.booking.entity.Booking;
 import com.yuvan.busbooking.booking.entity.BookingPassenger;
 import com.yuvan.busbooking.booking.entity.BookingStatus;
@@ -15,12 +17,15 @@ import com.yuvan.busbooking.payment.entity.Payment;
 import com.yuvan.busbooking.payment.entity.PaymentMethod;
 import com.yuvan.busbooking.payment.entity.PaymentStatus;
 import com.yuvan.busbooking.payment.repository.PaymentRepository;
+import com.yuvan.busbooking.ticket.dto.TicketResponse;
 import com.yuvan.busbooking.ticket.service.TicketService;
 import com.yuvan.busbooking.trip.entity.TripSeat;
 import com.yuvan.busbooking.trip.entity.TripSeatStatus;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.repository.UserRepository;
 import com.yuvan.busbooking.wallet.service.WalletService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +35,8 @@ import java.util.*;
 @Service
 public class PaymentService {
 
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
+
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
     private final PaymentGateway paymentGateway;
@@ -37,6 +44,7 @@ public class PaymentService {
     private final TicketService ticketService;
     private final WalletService walletService;
     private final UserRepository userRepository;
+    private final EmailService emailService;
 
     public PaymentService(
             PaymentRepository paymentRepository,
@@ -45,7 +53,8 @@ public class PaymentService {
             BookingPassengerRepository bookingPassengerRepository,
             TicketService ticketService,
             WalletService walletService,
-            UserRepository userRepository
+            UserRepository userRepository,
+            EmailService emailService
     ) {
         this.paymentRepository = paymentRepository;
         this.bookingRepository = bookingRepository;
@@ -54,6 +63,7 @@ public class PaymentService {
         this.ticketService = ticketService;
         this.walletService = walletService;
         this.userRepository = userRepository;
+        this.emailService = emailService;
     }
 
     @Transactional
@@ -143,7 +153,42 @@ public class PaymentService {
             tripSeat.setStatus(TripSeatStatus.BOOKED);
             tripSeat.setHeldUntil(null);
         }
-        ticketService.generateTicket(booking.getId());
+
+        TicketResponse ticket = ticketService.generateTicket(booking.getId());
+
+        // Send booking confirmation email — wrapped so an SMTP failure never
+        // rolls back the payment transaction.
+        try {
+            User user = booking.getUser();
+
+            List<BookingPassengerResponse> passengerResponses = passengers.stream()
+                    .map(p -> new BookingPassengerResponse(
+                            p.getId(),
+                            p.getTripSeat().getId(),
+                            p.getTripSeat().getSeat().getSeatNumber(),
+                            p.getFirstName(),
+                            p.getLastName(),
+                            p.getAge(),
+                            p.getGender()
+                    ))
+                    .toList();
+
+            emailService.sendBookingConfirmation(
+                    user.getEmail(),
+                    user.getFirstName(),
+                    booking.getBookingReference(),
+                    ticket.ticketNumber(),
+                    booking.getTrip().getTripDate(),
+                    booking.getTrip().getDepartureTime(),
+                    booking.getPickupLocation().getCity(),
+                    booking.getDropLocation().getCity(),
+                    passengerResponses,
+                    booking.getTotalAmount()
+            );
+        } catch (Exception e) {
+            log.warn("Booking confirmation email failed for booking {}: {}",
+                    booking.getBookingReference(), e.getMessage());
+        }
     }
 
     private void handleFailedPayment(Payment payment, Booking booking, String reason) {
