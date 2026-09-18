@@ -50,6 +50,8 @@ public class SeatService {
 
         seat.setBus(bus);
         seat.setSeatNumber(request.seatNumber());
+        seat.setDeckNumber(request.deckNumber());
+        seat.setDeckName(request.deckName());
         seat.setSeatType(request.seatType());
         seat.setPosition(request.position());
         seat.setGenderPolicy(
@@ -59,6 +61,54 @@ public class SeatService {
         );
 
         return toResponse(seatRepository.save(seat));
+    }
+
+    public List<SeatResponse> createBatch(List<SeatRequest> requests) {
+        if (requests == null || requests.isEmpty()) {
+            throw new IllegalArgumentException("Seat requests cannot be empty");
+        }
+
+        // Validate all buses exist
+        Long busId = requests.get(0).busId();
+        Bus bus = busRepository.findById(busId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Bus not found: " + busId
+                        )
+                );
+
+        // Create all seats
+        List<Seat> seats = requests.stream()
+                .map(request -> {
+                    // Validate seat number doesn't exist
+                    if (seatRepository.existsByBusIdAndSeatNumber(
+                            request.busId(),
+                            request.seatNumber()
+                    )) {
+                        throw new IllegalArgumentException(
+                                "Seat number already exists for this bus: " + request.seatNumber()
+                        );
+                    }
+
+                    Seat seat = new Seat();
+                    seat.setBus(bus);
+                    seat.setSeatNumber(request.seatNumber());
+                    seat.setDeckNumber(request.deckNumber());
+                    seat.setDeckName(request.deckName());
+                    seat.setSeatType(request.seatType());
+                    seat.setPosition(request.position());
+                    seat.setGenderPolicy(
+                            request.genderPolicy() != null
+                                    ? request.genderPolicy()
+                                    : SeatGenderPolicy.ANY
+                    );
+                    return seat;
+                })
+                .toList();
+
+        return seatRepository.saveAll(seats).stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -122,6 +172,8 @@ public class SeatService {
 
         seat.setBus(bus);
         seat.setSeatNumber(request.seatNumber());
+        seat.setDeckNumber(request.deckNumber());
+        seat.setDeckName(request.deckName());
         seat.setSeatType(request.seatType());
         seat.setPosition(request.position());
         seat.setGenderPolicy(
@@ -144,12 +196,14 @@ public class SeatService {
         seatRepository.deleteById(id);
     }
 
-    private SeatResponse toResponse(Seat seat) {
+    public SeatResponse toResponse(Seat seat) {
 
         return new SeatResponse(
                 seat.getId(),
                 seat.getBus().getId(),
                 seat.getSeatNumber(),
+                seat.getDeckNumber(),
+                seat.getDeckName(),
                 seat.getSeatType(),
                 seat.getPosition(),
                 seat.getGenderPolicy() != null

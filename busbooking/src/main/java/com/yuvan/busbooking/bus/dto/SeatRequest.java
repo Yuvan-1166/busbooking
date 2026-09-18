@@ -16,6 +16,11 @@ public record SeatRequest(
         @Size(max = 20)
         String seatNumber,
 
+        Integer deckNumber,
+
+        @Size(max = 50)
+        String deckName,
+
         @NotNull
         SeatType seatType,
 

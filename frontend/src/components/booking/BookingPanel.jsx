@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import BusSeatLayout from "../workspace/BusSeatLayout";
+import { api } from "../../api";
 
 /** Returns the gender locked by a strict policy, or null if open. */
 function lockedGender(policy) {
@@ -38,7 +39,30 @@ export default function BookingPanel({
   onBack,
 }) {
   const [passengerDetails, setPassengerDetails] = useState({});
+  const [busDetails, setBusDetails] = useState(null);
   const selectedSeatKey = selectedSeats.map((seat) => seat.id).join(",");
+
+  // Load bus details to get deckType
+  useEffect(() => {
+    async function loadBusDetails() {
+      if (trip.busId) {
+        try {
+          const bus = await api.getBus(trip.busId);
+          setBusDetails(bus);
+        } catch (err) {
+          console.error("Failed to load bus details:", err);
+          // Fallback to basic info
+          setBusDetails({
+            id: trip.busId,
+            registrationNumber: `Bus ${trip.busId}`,
+            model: trip.busModel || "Bus",
+            deckType: "SINGLE", // fallback
+          });
+        }
+      }
+    }
+    loadBusDetails();
+  }, [trip.busId, trip.busModel]);
 
   useEffect(() => {
     setPassengerDetails((current) =>
@@ -133,18 +157,20 @@ export default function BookingPanel({
         </div>
       </div>
       <div className="grid grid-cols-[1.4fr_.75fr] gap-[27px] max-[900px]:grid-cols-1">
-        <BusSeatLayout
-          bus={{
-            id: trip.busId,
-            registrationNumber: `TRIP ${trip.id}`,
-            model: `Bus ${trip.busId || "—"}`,
-          }}
-          seats={seats}
-          selectedSeats={selectedSeats}
-          multiSelect
-          disabled={bookingInProgress}
-          onSelect={toggleSeat}
-        />
+        {busDetails ? (
+          <BusSeatLayout
+            bus={busDetails}
+            seats={seats}
+            selectedSeats={selectedSeats}
+            multiSelect
+            disabled={bookingInProgress}
+            onSelect={toggleSeat}
+          />
+        ) : (
+          <div className="flex items-center justify-center border border-line bg-[#f4f5ef] p-12">
+            <p className="text-muted">Loading bus layout...</p>
+          </div>
+        )}
         <form
           className="self-start border border-[#e7e5dc] bg-paper p-[26px]"
           noValidate

@@ -31,6 +31,12 @@ public class Seat {
     @Column(name = "seat_number", nullable = false, length = 20)
     private String seatNumber;
 
+    @Column(name = "deck_number")
+    private Integer deckNumber;
+
+    @Column(name = "deck_name", length = 50)
+    private String deckName;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "seat_type", nullable = false, length = 20)
     private SeatType seatType;

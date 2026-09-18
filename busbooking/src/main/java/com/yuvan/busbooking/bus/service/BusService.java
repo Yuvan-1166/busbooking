@@ -64,6 +64,7 @@ public class BusService {
         bus.setRegistrationNumber(request.registrationNumber());
         bus.setModel(request.model());
         bus.setBusType(request.busType());
+        bus.setDeckType(request.deckType() != null ? request.deckType() : com.yuvan.busbooking.bus.entity.DeckType.SINGLE);
         bus.setStatus(
                 request.status() != null
                         ? request.status()
@@ -169,6 +170,7 @@ public class BusService {
         bus.setRegistrationNumber(request.registrationNumber());
         bus.setModel(request.model());
         bus.setBusType(request.busType());
+        bus.setDeckType(request.deckType() != null ? request.deckType() : com.yuvan.busbooking.bus.entity.DeckType.SINGLE);
 
         if (request.status() != null) {
             bus.setStatus(request.status());
@@ -196,6 +198,7 @@ public class BusService {
                 bus.getRegistrationNumber(),
                 bus.getModel(),
                 bus.getBusType(),
+                bus.getDeckType(),
                 bus.getStatus(),
                 bus.getCreatedAt(),
                 bus.getUpdatedAt()

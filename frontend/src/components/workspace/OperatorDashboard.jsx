@@ -13,6 +13,7 @@ const emptyBus = {
   registrationNumber: "",
   model: "",
   busType: "SLEEPER",
+  deckType: "SINGLE",
   status: "ACTIVE",
 };
 const emptySeat = {
@@ -375,7 +376,7 @@ export default function OperatorDashboard() {
     setError("");
     setMessage("");
     try {
-      for (const payload of payloads) await api.createSeat(payload);
+      await api.createSeats(payloads);
       setMessage(`${payloads.length} seats saved.`);
       await loadData();
       return true;
@@ -483,10 +484,10 @@ export default function OperatorDashboard() {
             <SeatsWorkspace
               seats={seats}
               buses={buses}
-              createSeat={createSeat}
-              createSeats={createSeats}
-              updateSeat={updateSeat}
-              deleteSeat={deleteSeat}
+              onCreate={createSeat}
+              onCreateBatch={createSeats}
+              onUpdate={updateSeat}
+              onDelete={deleteSeat}
               saving={saving}
             />
           )}
@@ -624,6 +625,17 @@ const BusesView = ({
           <option value="SLEEPER">Sleeper</option>
           <option value="SEMI_SLEEPER">Semi-Sleeper</option>
           <option value="AC_SLEEPER">AC Sleeper</option>
+        </select>
+      </label>
+      <label className="block">
+        <span className="text-xs font-mono uppercase text-muted">Deck Type</span>
+        <select
+          value={busForm.deckType}
+          onChange={(e) => onBusChange("deckType", e.target.value)}
+          className="w-full mt-1 border-b border-line bg-transparent py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
+        >
+          <option value="SINGLE">Single Deck</option>
+          <option value="DOUBLE">Double Decker</option>
         </select>
       </label>
       <label className="block">

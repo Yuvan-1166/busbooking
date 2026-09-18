@@ -31,6 +31,15 @@ public class SeatController {
                 .body(seatService.create(request));
     }
 
+    @PostMapping("/batch")
+    public ResponseEntity<List<SeatResponse>> createBatch(
+            @Valid @RequestBody List<SeatRequest> requests
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(seatService.createBatch(requests));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<SeatResponse> findById(
             @PathVariable Long id

@@ -40,6 +40,10 @@ public class Bus {
     private BusType busType;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "deck_type", nullable = false, length = 20)
+    private DeckType deckType;
+
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private BusStatus status;
 
@@ -58,6 +62,10 @@ public class Bus {
 
         if (status == null) {
             status = BusStatus.ACTIVE;
+        }
+        
+        if (deckType == null) {
+            deckType = DeckType.SINGLE;
         }
     }
 

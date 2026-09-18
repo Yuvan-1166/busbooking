@@ -1,19 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
 import BusSeatLayout from "./BusSeatLayout";
 import StateMessage from "../common/StateMessage";
+import TemplateGallery from "./TemplateGallery";
+import { api } from "../../api";
 
-const emptyDimensions = { rows: 10, seatsPerRow: 4, aisleAfter: 2 };
+const emptyDimensions = { rows: 10, seatsPerRow: 4, aisleAfter: 2, deckNumber: 1, deckName: "Lower Deck" };
 const emptySeat = {
   busId: "",
   seatNumber: "",
+  deckNumber: 1,
+  deckName: "",
   seatType: "SEAT",
   position: "WINDOW",
   genderPolicy: "ANY",
 };
 const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-function createSeatPreview(busId, dimensions) {
+function createSeatPreview(busId, dimensions, selectedBus) {
   const seats = [];
+  const isDoubleDecker = selectedBus?.deckType === "DOUBLE";
+  const deckPrefix = isDoubleDecker ? (dimensions.deckNumber === 1 ? "L" : "U") : "";
+  
   for (let row = 1; row <= dimensions.rows; row += 1) {
     for (let column = 1; column <= dimensions.seatsPerRow; column += 1) {
       const position =
@@ -25,7 +32,9 @@ function createSeatPreview(busId, dimensions) {
       seats.push({
         localId: `${row}-${column}`,
         busId: Number(busId),
-        seatNumber: `${row}${letters[column - 1] || column}`,
+        seatNumber: `${deckPrefix}${row}${letters[column - 1] || column}`,
+        deckNumber: dimensions.deckNumber,
+        deckName: dimensions.deckName,
         seatType: "SEAT",
         position,
         genderPolicy: "ANY",
@@ -55,6 +64,8 @@ export default function SeatsWorkspace({
   const [dimensions, setDimensions] = useState(emptyDimensions);
   const [previewSeats, setPreviewSeats] = useState([]);
   const [previewMode, setPreviewMode] = useState(false);
+  const [showTemplateGallery, setShowTemplateGallery] = useState(false);
+  const [applyingTemplate, setApplyingTemplate] = useState(false);
   const selectedBus = buses.find((bus) => String(bus.id) === selectedBusId);
   const busSeats = useMemo(
     () => seats.filter((seat) => String(seat.busId) === selectedBusId),
@@ -84,7 +95,9 @@ export default function SeatsWorkspace({
       rows: Number(dimensions.rows),
       seatsPerRow: Number(dimensions.seatsPerRow),
       aisleAfter: Number(dimensions.aisleAfter),
-    });
+      deckNumber: Number(dimensions.deckNumber),
+      deckName: dimensions.deckName,
+    }, selectedBus);
     setPreviewSeats(next);
     setPreviewMode(true);
   };
@@ -143,6 +156,34 @@ export default function SeatsWorkspace({
     setForm({ ...emptySeat, busId: selectedBusId });
   };
 
+  const handleApplyTemplate = async (template) => {
+    if (!selectedBusId) return;
+
+    const hasExistingSeats = busSeats.length > 0;
+    let clearExisting = false;
+
+    if (hasExistingSeats) {
+      const confirmed = window.confirm(
+        `This bus already has ${busSeats.length} seat(s). Do you want to replace them with the template?\n\nClick OK to replace existing seats, or Cancel to keep them and add template seats.`
+      );
+      clearExisting = confirmed;
+    }
+
+    try {
+      setApplyingTemplate(true);
+      setShowTemplateGallery(false);
+
+      // Apply template via API
+      await api.applySeatTemplate(template.id, Number(selectedBusId), clearExisting);
+
+      // Refresh seats by triggering parent to reload
+      window.location.reload(); // Simple approach - you could also use a callback to refresh
+    } catch (err) {
+      alert("Failed to apply template: " + (err.message || "Unknown error"));
+      setApplyingTemplate(false);
+    }
+  };
+
   if (!buses.length)
     return <StateMessage>Add a bus before adding seats.</StateMessage>;
 
@@ -157,7 +198,7 @@ export default function SeatsWorkspace({
             Seats
           </h2>
           <p className="mt-1 text-xs text-muted">
-            Set the bus size, review the layout, and save all seats.
+            Use a pre-built template or manually set bus size and create seats.
           </p>
         </div>
         <label className="grid min-w-[240px] gap-1.5 font-mono text-[10px] uppercase text-muted max-[700px]:mt-[18px]">
@@ -175,20 +216,51 @@ export default function SeatsWorkspace({
           </select>
         </label>
       </div>
+
+      {/* Template Selection Banner */}
+      <div className="mb-6 border-2 border-orange bg-[#fff8f5] p-5">
+        <div className="flex items-center justify-between gap-4 max-[700px]:block">
+          <div>
+            <p className="mb-1 font-display text-[19px] font-semibold text-ink">
+              ✨ Quick Setup with Templates
+            </p>
+            <p className="text-xs text-muted">
+              Choose from 9 professional bus layouts including single-deck,
+              double-decker, sleeper, and luxury coaches. All templates include
+              proper seat numbering and female-reserved seating.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="mt-0 border-0 bg-orange px-5 py-3 font-bold text-white hover:bg-[#d8503d] max-[700px]:mt-4 max-[700px]:w-full"
+            onClick={() => setShowTemplateGallery(true)}
+            disabled={applyingTemplate}
+          >
+            {applyingTemplate ? "Applying..." : "Browse Templates →"}
+          </button>
+        </div>
+      </div>
+
       <div className="mb-6 grid grid-cols-[minmax(200px,.8fr)_1.6fr] items-end gap-6 border border-line bg-[#f4f5ef] p-5 max-[800px]:grid-cols-1">
         <div>
           <p className="mb-3.5 font-mono text-[10px] tracking-[.13em] text-green">
             CREATE MULTIPLE SEATS
           </p>
           <h3 className="mb-1 font-display text-[23px] font-semibold text-ink">
-            Bus dimensions
+            Manual dimensions
           </h3>
           <p className="text-[11px] leading-4 text-muted">
-            Labels are generated automatically. You can edit them before saving.
+            Or create seats manually. Labels are generated automatically. You
+            can edit them before saving.
           </p>
         </div>
         <form
-          className="grid grid-cols-[repeat(3,1fr)_auto] items-end gap-2.5 max-[800px]:grid-cols-3 max-[500px]:grid-cols-1"
+          className="grid items-end gap-2.5 max-[500px]:grid-cols-1"
+          style={{
+            gridTemplateColumns: selectedBus?.deckType === "DOUBLE" 
+              ? "repeat(5, 1fr) auto" 
+              : "repeat(3, 1fr) auto"
+          }}
           onSubmit={generatePreview}
         >
           <label className="grid gap-1.5 font-mono text-[9px] uppercase text-muted">
@@ -233,6 +305,39 @@ export default function SeatsWorkspace({
               }
             />
           </label>
+          {selectedBus?.deckType === "DOUBLE" && (
+            <>
+              <label className="grid gap-1.5 font-mono text-[9px] uppercase text-muted">
+                Deck Number
+                <select
+                  className="border border-line bg-paper p-2 text-ink"
+                  value={dimensions.deckNumber}
+                  onChange={(event) => {
+                    const deckNum = Number(event.target.value);
+                    setDimensions({
+                      ...dimensions,
+                      deckNumber: deckNum,
+                      deckName: deckNum === 1 ? "Lower Deck" : "Upper Deck",
+                    });
+                  }}
+                >
+                  <option value="1">1 - Lower</option>
+                  <option value="2">2 - Upper</option>
+                </select>
+              </label>
+              <label className="grid gap-1.5 font-mono text-[9px] uppercase text-muted">
+                Deck Name
+                <input
+                  className="border border-line bg-paper p-2 text-ink"
+                  type="text"
+                  value={dimensions.deckName}
+                  onChange={(event) =>
+                    setDimensions({ ...dimensions, deckName: event.target.value })
+                  }
+                />
+              </label>
+            </>
+          )}
           <button
             className="border-0 bg-orange px-3 py-3 text-left font-bold text-white max-[800px]:col-span-full max-[500px]:col-auto"
             type="submit"
@@ -278,6 +383,14 @@ export default function SeatsWorkspace({
             />
           </aside>
         </div>
+      )}
+      
+      {/* Template Gallery Modal */}
+      {showTemplateGallery && (
+        <TemplateGallery
+          onSelectTemplate={handleApplyTemplate}
+          onClose={() => setShowTemplateGallery(false)}
+        />
       )}
     </section>
   );
@@ -435,6 +548,31 @@ function SeatEditor({
             placeholder="1A"
             onChange={(event) =>
               onChange({ ...form, seatNumber: event.target.value })
+            }
+          />
+        </label>
+        <label className="grid gap-1.5 font-mono text-[10px] uppercase text-muted">
+          Deck Number
+          <input
+            className="w-full border-0 border-b border-line bg-transparent py-2 text-ink outline-0"
+            type="number"
+            min="1"
+            max="2"
+            value={form.deckNumber || 1}
+            onChange={(event) =>
+              onChange({ ...form, deckNumber: Number(event.target.value) })
+            }
+          />
+        </label>
+        <label className="grid gap-1.5 font-mono text-[10px] uppercase text-muted">
+          Deck Name
+          <input
+            className="w-full border-0 border-b border-line bg-transparent py-2 text-ink outline-0"
+            type="text"
+            placeholder="Lower Deck"
+            value={form.deckName || ""}
+            onChange={(event) =>
+              onChange({ ...form, deckName: event.target.value })
             }
           />
         </label>
