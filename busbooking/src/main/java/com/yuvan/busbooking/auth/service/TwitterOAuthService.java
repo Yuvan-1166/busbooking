@@ -242,7 +242,7 @@ public class TwitterOAuthService {
         HttpEntity<Void> request = new HttpEntity<>(headers);
 
         // Request the fields we need
-        String url = userInfoUrl + "?user.fields=id,name,username,profile_image_url";
+        String url = userInfoUrl + "?user.fields=id,name,username,profile_image_url,email";
 
         try {
             ResponseEntity<String> response = restTemplate.exchange(
@@ -259,12 +259,13 @@ public class TwitterOAuthService {
             String username = data.path("username").asText();
             String name = data.path("name").asText();
             String profileImageUrl = data.path("profile_image_url").asText(null);
+            String email = data.path("email").asText();
 
             if (twitterId.isEmpty()) {
                 throw new IllegalStateException("Twitter user info response missing 'id'");
             }
 
-            return new TwitterUserInfo(twitterId, username, name, profileImageUrl);
+            return new TwitterUserInfo(twitterId, username, name, profileImageUrl, email);
 
         } catch (IllegalStateException e) {
             throw e;
@@ -291,16 +292,18 @@ public class TwitterOAuthService {
             return new LoginResponse(token, "Bearer", 3600L);
         }
 
-        // New user: create account (Twitter users have no password)
-        // Use a synthetic email since Twitter doesn't expose email in the basic API plan
-        String syntheticEmail = buildSyntheticEmail(info.twitterId());
+        // Determine email: use real email from Twitter if available, fall back to synthetic
+        String accountEmail = (info.email() != null && !info.email().isBlank())
+                ? info.email()
+                : buildSyntheticEmail(info.twitterId());
 
-        User user = userRepository.findByEmail(syntheticEmail).orElse(null);
+        // Check if user with this email already exists (link Twitter to existing account)
+        User user = userRepository.findByEmail(accountEmail).orElse(null);
         boolean isNewUser = (user == null);
 
         if (isNewUser) {
             user = new User();
-            user.setEmail(syntheticEmail);
+            user.setEmail(accountEmail);
             user.setPasswordHash(null); // OAuth-only account
             user.setFirstName(extractFirstName(info.name()));
             user.setLastName(extractLastName(info.name()));
@@ -332,7 +335,8 @@ public class TwitterOAuthService {
         String token = jwtService.generateToken(userDetails);
 
         // onboardingRequired tells the frontend to prompt the user to complete their profile
-        return new LoginResponse(token, "Bearer", 3600L, !user.getOnboardingCompleted());
+        // Only for brand-new users; existing users don't need onboarding
+        return new LoginResponse(token, "Bearer", 3600L, isNewUser && !user.getOnboardingCompleted());
     }
 
     // ── PKCE helpers ───────────────────────────────────────────────────────────
@@ -382,8 +386,8 @@ public class TwitterOAuthService {
 
     /**
      * Builds a synthetic email from the Twitter ID so we have a unique, stable
-     * email for the user record.  The Twitter API free tier does not expose the
-     * user's real email address.
+     * email for the user record when Twitter API doesn't return real email
+     * (e.g., free tier API plans).
      */
     private String buildSyntheticEmail(String twitterId) {
         return "twitter_" + twitterId + "@twitter.oauth.local";
@@ -417,6 +421,7 @@ public class TwitterOAuthService {
             String twitterId,
             String username,
             String name,
-            String profileImageUrl
+            String profileImageUrl,
+            String email
     ) {}
 }

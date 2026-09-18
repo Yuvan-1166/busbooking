@@ -17,12 +17,11 @@ import com.yuvan.busbooking.user.repository.RoleRepository;
 import com.yuvan.busbooking.user.repository.UserRepository;
 import com.yuvan.busbooking.user.repository.UserRoleRepository;
 
+import java.util.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Collections;
 
 /**
  * Service for handling Google OAuth2 authentication.
@@ -108,7 +107,7 @@ public class GoogleOAuthService {
             }
 
             // Check if user with this Google sub already exists
-            var existingCredential = googleCredentialRepository.findByGoogleSub(googleSub);
+            Optional<UserGoogleCredential> existingCredential = googleCredentialRepository.findByGoogleSub(googleSub);
             if (existingCredential.isPresent()) {
                 // Update existing credential
                 UserGoogleCredential credential = existingCredential.get();
@@ -162,7 +161,7 @@ public class GoogleOAuthService {
 
             // For JWT generation, assign PASSENGER role temporarily if user has no role yet
             // This allows them to access the onboarding page
-            var existingRole = userRoleRepository.findByUserIdWithRoles(user.getId());
+            List<UserRole> existingRole = userRoleRepository.findByUserIdWithRoles(user.getId());
             if (existingRole.isEmpty()) {
                 Role passengerRole = roleRepository.findByName(RoleName.PASSENGER)
                         .orElseThrow(() -> new IllegalStateException("PASSENGER role not found"));
