@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Response object for authentication endpoints.
- * - onboardingRequired: optional, for Google OAuth users who need onboarding
+ * - onboardingRequired: optional, for Google / Twitter OAuth users who need onboarding
  * - requiresTotp: indicates if TOTP verification is needed (returns tempToken)
  * - tempToken: short-lived token for TOTP verification step
  * - userId: user ID when TOTP verification is pending
