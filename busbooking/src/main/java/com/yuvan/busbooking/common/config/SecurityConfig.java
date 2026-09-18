@@ -60,6 +60,7 @@ public class SecurityConfig {
 
                         // Public auth endpoints (registration, login, verification, password reset)
                         .requestMatchers(
+                                "/api/v1/health",
                                 "/api/v1/auth/register",
                                 "/api/v1/auth/operator/register",
                                 "/api/v1/auth/login",

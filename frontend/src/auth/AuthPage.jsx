@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "./AuthContext";
 import { api } from "../api";
@@ -10,6 +10,9 @@ import {
 } from "./authStorage";
 import { parseApiError, getErrorMessage } from "../utils/errorHandler";
 import ForgotPassword from "../components/auth/ForgotPassword";
+
+const STATE_KEY = "twitter_oauth_state";
+const USER_TYPE_KEY = "twitter_oauth_user_type";
 
 const initialForms = {
   passenger: {
@@ -327,6 +330,46 @@ export default function AuthPage() {
     console.error("Google Sign-In error");
   };
 
+  // ── Twitter OAuth ─────────────────────────────────────────────────────────
+  const handleTwitterSignIn = async () => {
+    setError("");
+    setMessage("");
+    setSubmitting(true);
+    try {
+      // Ask the backend to generate a PKCE authorize URL + state token
+      const { authorizeUrl, state } = await api.getTwitterAuthorizeUrl();
+
+      if (!authorizeUrl || !state) {
+        throw new Error("Failed to get Twitter authorization URL");
+      }
+
+      // Persist state and userType so TwitterCallback can read them after redirect
+      sessionStorage.setItem(STATE_KEY, state);
+      // Pass current registrationType as PASSENGER / OPERATOR
+      const userType = registrationType === "operator" ? "OPERATOR" : "PASSENGER";
+      sessionStorage.setItem(USER_TYPE_KEY, userType);
+
+      // Redirect the browser to Twitter's authorization page
+      window.location.href = authorizeUrl;
+    } catch (twitterError) {
+      const appError = parseApiError(twitterError);
+      let userMessage = getErrorMessage(appError);
+
+      if (appError.statusCode === 0) {
+        userMessage = "Connection error. Please check your internet and try again.";
+      } else if (appError.statusCode === 500) {
+        userMessage = "Twitter sign-in is temporarily unavailable. Please try again later.";
+      } else {
+        userMessage = "Twitter sign-in failed. Please try again or use email/password.";
+      }
+
+      setError(userMessage);
+      console.error("Twitter OAuth error:", twitterError);
+      setSubmitting(false);
+    }
+    // Don't clear submitting=true here — browser is navigating away
+  };
+
   const tabClass = (tab) =>
     `border-b-2 bg-transparent p-2 text-xs ${mode === tab ? "border-ink font-bold text-ink" : "border-transparent text-muted"}`;
   const labelClass = "grid gap-1.5 font-mono text-[10px] uppercase text-muted";
@@ -631,21 +674,66 @@ export default function AuthPage() {
           </div>
           <div className="relative flex justify-center text-xs">
             <span className="bg-paper px-2 text-muted">
-              or continue with google
+              or continue with
             </span>
           </div>
         </div>
 
-        {/* Google Sign-In button */}
-        <div className="my-4 flex justify-center">
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
-            theme="outline"
-            size="large"
-            text={mode === "login" ? "signin_with" : "signup_with"}
-          />
+        {/* Social sign-in buttons */}
+        <div className="my-4 grid gap-2.5">
+          {/* Google */}
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              theme="outline"
+              size="large"
+              text={mode === "login" ? "signin_with" : "signup_with"}
+            />
+          </div>
+
+          {/* Twitter / X */}
+          <button
+            type="button"
+            onClick={handleTwitterSignIn}
+            disabled={submitting}
+            className="flex w-full items-center justify-center gap-2.5 border border-line bg-paper px-4 py-2.5 text-[13px] font-medium text-ink transition-colors hover:bg-[#f5f3ed] disabled:opacity-50"
+            aria-label="Sign in with Twitter"
+          >
+            {/* X (Twitter) logo */}
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+              className="h-[18px] w-[18px] shrink-0 fill-ink"
+            >
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.745l7.73-8.835L1.254 2.25H8.08l4.261 5.632 5.903-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+            {submitting
+              ? "Redirecting…"
+              : mode === "login"
+                ? "Sign in with Twitter"
+                : "Sign up with Twitter"}
+          </button>
         </div>
+
+        {/* Legal links — required by Twitter for OAuth app approval */}
+        <p className="mt-4 text-center text-[10px] leading-5 text-muted">
+          By continuing, you agree to our{" "}
+          <Link
+            to="/terms"
+            className="text-muted underline underline-offset-2 hover:text-ink"
+          >
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link
+            to="/privacy"
+            className="text-muted underline underline-offset-2 hover:text-ink"
+          >
+            Privacy Policy
+          </Link>
+          .
+        </p>
       </section>
     </main>
   );

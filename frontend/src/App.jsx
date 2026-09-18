@@ -26,6 +26,9 @@ import AuthPage from "./auth/AuthPage";
 import OnboardingPage from "./components/auth/OnboardingPage";
 import TotpSetupPage from "./components/auth/TotpSetupPage";
 import TotpVerificationPage from "./components/auth/TotpVerificationPageWrapper";
+import TwitterCallback from "./components/auth/TwitterCallback";
+import PrivacyPolicy from "./components/legal/PrivacyPolicy";
+import TermsOfService from "./components/legal/TermsOfService";
 
 function App() {
   const [locations, setLocations] = useState([]);
@@ -334,6 +337,11 @@ function App() {
               session ? <TotpSetupPage /> : <Navigate to="/login" replace />
             }
           />
+          {/* Twitter OAuth callback — public, no auth guard */}
+          <Route path="/auth/twitter/callback" element={<TwitterCallback />} />
+          {/* Legal pages — public, required by Twitter for OAuth app approval */}
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
           <Route
             path="/login"
             element={
