@@ -396,7 +396,7 @@ export default function OperatorDashboard() {
     saveSeat(() => api.deleteSeat(seatId), "Seat");
 
   return (
-    <main className="mx-auto mb-20 min-h-screen max-w-7xl px-4 sm:px-6">
+    <main className="w-full mx-auto mb-20 min-h-screen max-w-7xl px-4 sm:px-6">
       {/* Header */}
       <section className="mb-8 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100 p-8">
         <div className="flex items-center justify-between gap-6 max-[768px]:flex-col max-[768px]:items-start">
@@ -834,17 +834,14 @@ const SchedulesViewWithForm = ({
 
       <section className="py-8">
         <div className="mb-6 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-ink">Schedules ({schedules.length})</h3>
-          <button
-            onClick={onOpenModal}
-            className="px-4 py-2 bg-orange text-white rounded font-semibold text-sm hover:bg-[#d97e3a] transition-colors"
-          >
+          <h3 className="text-lg font-semibold text-neutral-900">Schedules ({schedules.length})</h3>
+          <button onClick={onOpenModal} className="btn btn-primary">
             + Create Schedule
           </button>
         </div>
 
         {schedules.length === 0 ? (
-          <div className="rounded-lg border border-[#e7e5dc] bg-[#f9f9f7] p-4 text-center text-sm text-muted">
+          <div className="rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-50 p-8 text-center text-sm text-neutral-600">
             No schedules yet. Click "Create Schedule" to get started.
           </div>
         ) : (
@@ -856,55 +853,55 @@ const SchedulesViewWithForm = ({
                 return (
                   <div
                     key={schedule.id}
-                    className="rounded-lg border border-[#e7e5dc] bg-white p-4 hover:shadow-sm transition-shadow"
+                    className="rounded-lg border border-neutral-200 bg-white p-4 transition-all hover:border-neutral-300 hover:shadow-sm"
                   >
-                    <div className="mb-3 pb-3 border-b border-[#e7e5dc]">
-                      <h4 className="font-semibold text-ink text-sm mb-1">
+                    <div className="mb-3 pb-3 border-b border-neutral-200">
+                      <h4 className="mb-1 text-sm font-semibold text-neutral-900">
                         {route?.name || "Unknown Route"}
                       </h4>
-                      <p className="text-xs text-muted">
+                      <p className="text-xs text-neutral-500">
                         {bus?.model || "Unknown Bus"} • Reg: {bus?.registrationNumber || "—"}
                       </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 mb-3 text-xs">
                       <div>
-                        <p className="text-muted font-mono">Departure</p>
-                        <p className="font-semibold text-ink">{schedule.departureTime}</p>
+                        <p className="text-neutral-500">Departure</p>
+                        <p className="font-semibold text-neutral-900">{schedule.departureTime}</p>
                       </div>
                       <div>
-                        <p className="text-muted font-mono">Pricing</p>
-                        <p className="font-semibold text-ink">
+                        <p className="text-neutral-500">Pricing</p>
+                        <p className="font-semibold text-neutral-900">
                           ₹{schedule.baseFare} + ₹{schedule.pricePerKm}/km
                         </p>
                       </div>
                       <div>
-                        <p className="text-muted font-mono">Effective</p>
-                        <p className="font-semibold text-ink text-[11px]">
+                        <p className="text-neutral-500">Effective</p>
+                        <p className="text-[11px] font-semibold text-neutral-900">
                           {schedule.effectiveFrom ? `${schedule.effectiveFrom.substring(5)}` : "—"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-muted font-mono">Status</p>
-                        <p className={`font-semibold text-xs ${schedule.status === "ACTIVE" ? "text-green" : "text-muted"}`}>
+                        <p className="text-neutral-500">Status</p>
+                        <span className={`badge ${schedule.status === "ACTIVE" ? "badge-success" : "badge-neutral"}`}>
                           {schedule.status}
-                        </p>
+                        </span>
                       </div>
                     </div>
 
-                    <div className="flex gap-2 pt-3 border-t border-[#e7e5dc]">
+                    <div className="flex gap-2 pt-3 border-t border-neutral-200">
                       <button
                         onClick={() => {
                           onEditSchedule(schedule);
                           onOpenModal();
                         }}
-                        className="flex-1 px-2 py-1.5 text-xs font-semibold text-orange hover:bg-[#fff6ee] rounded transition-colors"
+                        className="flex-1 rounded px-2 py-1.5 text-xs font-semibold text-primary-600 transition-colors hover:bg-primary-50"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => onDeleteSchedule(schedule.id)}
-                        className="flex-1 px-2 py-1.5 text-xs font-semibold text-[#8c3e2d] hover:bg-[#f7e5df] rounded transition-colors"
+                        className="flex-1 rounded px-2 py-1.5 text-xs font-semibold text-error-600 transition-colors hover:bg-error-50"
                       >
                         Delete
                       </button>
@@ -972,34 +969,34 @@ const TripsViewReadOnly = ({ trips, schedules, routes, buses, onCreateNew, trips
       {/* Cancellation Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="rounded-lg border border-[#e7e5dc] bg-white p-6 max-w-sm w-full mx-4">
-            <h3 className="text-lg font-semibold text-ink mb-4">Cancel Trip</h3>
-            <p className="text-sm text-muted mb-4">
+          <div className="mx-4 w-full max-w-sm rounded-lg border border-neutral-200 bg-white p-6 shadow-xl">
+            <h3 className="mb-4 text-lg font-semibold text-neutral-900">Cancel Trip</h3>
+            <p className="mb-4 text-sm text-neutral-500">
               This will cancel the trip, refund all passengers, and move their bookings to past trips.
             </p>
-            <label className="block mb-4">
-              <span className="text-xs font-mono uppercase text-muted block mb-1">
+            <label className="mb-4 block">
+              <span className="mb-1 block text-sm font-medium text-neutral-700">
                 Reason for Cancellation *
               </span>
               <textarea
                 value={cancellationReason}
                 onChange={(e) => setCancellationReason(e.target.value)}
                 placeholder="e.g., Driver unavailable, Bus breakdown, Route issues"
-                className="w-full border border-[#e7e5dc] rounded p-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
+                className="w-full rounded border border-neutral-300 p-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100"
                 rows={4}
               />
             </label>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowCancelModal(false)}
-                className="flex-1 border border-[#e7e5dc] text-ink py-2 rounded font-semibold hover:bg-[#fafaf8] transition-colors"
+                className="flex-1 rounded border border-neutral-200 py-2 font-semibold text-neutral-900 transition-colors hover:bg-neutral-50"
               >
                 Keep Trip
               </button>
               <button
                 onClick={handleConfirmCancel}
                 disabled={cancelling}
-                className="flex-1 bg-[#8c3e2d] text-white py-2 rounded font-semibold hover:bg-[#6d2f24] disabled:opacity-50 transition-colors"
+                className="flex-1 rounded bg-error-600 py-2 font-semibold text-white transition-colors hover:bg-error-700 disabled:opacity-50"
               >
                 {cancelling ? "Cancelling..." : "Cancel Trip"}
               </button>
@@ -1011,21 +1008,18 @@ const TripsViewReadOnly = ({ trips, schedules, routes, buses, onCreateNew, trips
       <section className="py-8">
         <div className="mb-6 flex items-center justify-between max-[600px]:flex-col max-[600px]:gap-3">
           <div>
-            <h3 className="text-lg font-semibold text-ink mb-2">Published Trips</h3>
-            <p className="text-sm text-muted">
+            <h3 className="mb-2 text-lg font-semibold text-neutral-900">Published Trips</h3>
+            <p className="text-sm text-neutral-500">
               {trips.length} trips • Auto-created from schedules
             </p>
           </div>
-          <button
-            onClick={onCreateNew}
-            className="px-4 py-2 bg-orange text-white rounded font-semibold text-sm hover:bg-[#d97e3a] transition-colors"
-          >
+          <button onClick={onCreateNew} className="btn btn-primary">
             + Create Schedule
           </button>
         </div>
 
         {trips.length === 0 ? (
-          <div className="rounded-lg border border-[#e7e5dc] bg-[#f9f9f7] p-4 text-center text-sm text-muted">
+          <div className="rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-50 p-8 text-center text-sm text-neutral-600">
             No trips published yet. Create a schedule to get started.
           </div>
         ) : (
@@ -1038,39 +1032,37 @@ const TripsViewReadOnly = ({ trips, schedules, routes, buses, onCreateNew, trips
                 return (
                   <div
                     key={trip.id}
-                    className="rounded-lg border border-[#e7e5dc] bg-white p-4 hover:shadow-sm transition-shadow"
+                    className="rounded-lg border border-neutral-200 bg-white p-4 transition-all hover:border-neutral-300 hover:shadow-sm"
                   >
-                    <div className="grid grid-cols-2 gap-4 items-start max-[600px]:grid-cols-1">
+                    <div className="grid items-start gap-4 grid-cols-2 max-[600px]:grid-cols-1">
                       {/* Left: Route & Bus */}
-                      <div className="pb-3 max-[600px]:pb-0 max-[600px]:border-b border-[#e7e5dc]">
-                        <h4 className="font-semibold text-ink text-sm mb-1">
+                      <div className="pb-3 border-b border-neutral-200 max-[600px]:pb-0">
+                        <h4 className="mb-1 text-sm font-semibold text-neutral-900">
                           {route?.name || "Unknown Route"}
                         </h4>
-                        <p className="text-xs text-muted mb-2">
+                        <p className="mb-2 text-xs text-neutral-500">
                           {bus?.model || "Unknown Bus"}
                         </p>
-                        <p className="text-xs text-muted">
+                        <p className="text-xs text-neutral-500">
                           Reg: {bus?.registrationNumber || "—"}
                         </p>
                       </div>
 
                       {/* Right: Trip Details & Actions */}
                       <div>
-                        <div className="flex items-start justify-between mb-2">
+                        <div className="mb-2 flex items-start justify-between">
                           <div>
-                            <p className="text-xs text-muted font-mono mb-1">Trip Date</p>
-                            <p className="font-semibold text-ink text-sm">{trip.tripDate}</p>
-                            <p className="text-xs text-muted mt-1">
+                            <p className="mb-1 text-xs text-neutral-500">Trip Date</p>
+                            <p className="text-sm font-semibold text-neutral-900">{trip.tripDate}</p>
+                            <p className="mt-1 text-xs text-neutral-500">
                               Departure: {schedule?.departureTime || "—"}
                             </p>
                           </div>
-                          <span className="px-2.5 py-1 text-xs font-semibold bg-[#e8f3e0] text-green rounded-full">
-                            Active
-                          </span>
+                          <span className="badge badge-success">Active</span>
                         </div>
                         <button
                           onClick={() => handleCancelClick(trip.id)}
-                          className="w-full mt-2 px-3 py-1.5 text-xs font-semibold text-[#8c3e2d] hover:bg-[#f7e5df] rounded transition-colors border border-[#d79b8b]"
+                          className="mt-2 w-full rounded border border-error-200 px-3 py-1.5 text-xs font-semibold text-error-600 transition-colors hover:bg-error-50"
                         >
                           Cancel Trip
                         </button>

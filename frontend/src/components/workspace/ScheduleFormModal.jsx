@@ -27,13 +27,13 @@ export default function ScheduleFormModal({
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-hidden">
           {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[#e7e5dc]">
-            <h2 className="text-lg font-semibold text-ink">
+          <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-4">
+            <h2 className="text-lg font-semibold text-neutral-900">
               {editingScheduleId ? "Edit Schedule" : "Create Schedule & Publish"}
             </h2>
             <button
               onClick={onClose}
-              className="text-muted hover:text-ink text-2xl leading-none"
+              className="text-2xl leading-none text-neutral-500 hover:text-neutral-900"
               aria-label="Close"
             >
               ×

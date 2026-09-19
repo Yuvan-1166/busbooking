@@ -48,26 +48,26 @@ export default function BusSeatLayout({
 
   return (
     <section
-      className="min-w-0 border border-line bg-[#f4f5ef] p-6"
+      className="min-w-0 rounded-lg border border-neutral-200 bg-white p-6"
       aria-label={`${bus.registrationNumber} seat layout`}
     >
       {/* Header */}
       <div className="mb-6 flex justify-between gap-[18px]">
         <div>
-          <span className="font-mono text-[10px] tracking-[.13em] text-green">
+          <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
             BUS {bus.id}
           </span>
 
-          <h3 className="mb-1 mt-1 font-display text-[23px] font-semibold text-ink">
+          <h3 className="mb-1 mt-1 text-xl font-semibold text-neutral-900">
             {bus.registrationNumber}
             {showDualView && (
-              <span className="ml-2 rounded-full bg-orange px-2 py-1 font-mono text-[10px] font-semibold text-white">
-                🚌 DOUBLE DECKER
+              <span className="badge badge-info ml-2">
+                DOUBLE DECKER
               </span>
             )}
           </h3>
 
-          <p className="m-0 text-[11px] text-muted">
+          <p className="m-0 text-sm text-neutral-500">
             {bus.model} · {seats.length} seats total
             {showDualView &&
               ` · ${seatsByDeck[1]?.length || 0} lower, ${seatsByDeck[2]?.length || 0} upper`}
@@ -75,7 +75,7 @@ export default function BusSeatLayout({
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap items-start gap-2.5 text-[10px] text-muted">
+        <div className="flex flex-wrap items-start gap-2.5 text-xs text-neutral-500">
           <span className="flex items-center gap-1">
             <i className="h-8 w-8 rounded-[7px] border border-[#b7c9ae] bg-[#e4f0df]" />
             Any
@@ -105,7 +105,7 @@ export default function BusSeatLayout({
               return (
                 <div key={deckNum} className="flex flex-col items-center">
                   <div className="mb-3 text-center">
-                    <span className="inline-block rounded-full border-2 border-orange bg-[#fff8f5] px-3 py-1 font-mono text-[11px] font-semibold text-orange">
+                    <span className="inline-block rounded-full border border-primary-200 bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-600">
                       {deckName} ({deckSeats.length} seats)
                     </span>
                   </div>
@@ -143,30 +143,30 @@ export default function BusSeatLayout({
       )}
 
       {/* Seat Statistics */}
-      <div className="flex flex-wrap gap-4 font-mono text-[10px] uppercase text-muted">
+      <div className="flex flex-wrap gap-4 text-xs font-medium text-neutral-500">
         <span>
-          <strong className="mr-1 text-base text-ink">
+          <strong className="mr-1 text-lg font-semibold text-neutral-900">
             {seats.filter((seat) => seat.seatType === "SEAT").length}
           </strong>
           seats
         </span>
 
         <span>
-          <strong className="mr-1 text-base text-ink">
+          <strong className="mr-1 text-lg font-semibold text-neutral-900">
             {seats.filter((seat) => seat.seatType === "SLEEPER").length}
           </strong>
           sleepers
         </span>
 
         <span>
-          <strong className="mr-1 text-base text-ink">
+          <strong className="mr-1 text-lg font-semibold text-neutral-900">
             {seats.filter((seat) => seat.position === "WINDOW").length}
           </strong>
           window
         </span>
 
         <span>
-          <strong className="mr-1 text-base text-ink">
+          <strong className="mr-1 text-lg font-semibold text-neutral-900">
             {seats.filter((seat) => seat.position === "AISLE").length}
           </strong>
           aisle
@@ -178,7 +178,7 @@ export default function BusSeatLayout({
             seat.genderPolicy === "FEMALE_PREFERRED"
         ) && (
           <span>
-            <strong className="mr-1 text-base text-[#6b4e8a]">
+            <strong className="mr-1 text-lg font-semibold text-neutral-900">
               {
                 seats.filter(
                   (seat) =>
@@ -197,7 +197,7 @@ export default function BusSeatLayout({
             seat.genderPolicy === "MALE_PREFERRED"
         ) && (
           <span>
-            <strong className="mr-1 text-base text-[#2a6a9a]">
+            <strong className="mr-1 text-lg font-semibold text-neutral-900">
               {
                 seats.filter(
                   (seat) =>

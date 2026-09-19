@@ -188,26 +188,22 @@ export default function SeatsWorkspace({
     return <StateMessage>Add a bus before adding seats.</StateMessage>;
 
   return (
-    <section className="border border-[#e7e5dc] bg-paper p-7 max-[600px]:p-5">
+    <section className="card p-7 max-[600px]:p-5">
       <div className="mb-[26px] flex items-end justify-between gap-5 max-[700px]:block">
         <div>
-          <p className="mb-3.5 font-mono text-[10px] tracking-[.13em] text-green">
-            SEAT LAYOUT
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+            Seat Layout
           </p>
-          <h2 className="m-0 font-display text-[29px] font-semibold text-ink">
+          <h2 className="m-0 text-2xl font-semibold text-neutral-900">
             Seats
           </h2>
-          <p className="mt-1 text-xs text-muted">
+          <p className="mt-1 text-sm text-neutral-500">
             Use a pre-built template or manually set bus size and create seats.
           </p>
         </div>
-        <label className="grid min-w-[240px] gap-1.5 font-mono text-[10px] uppercase text-muted max-[700px]:mt-[18px]">
-          Bus
-          <select
-            className="border border-line bg-paper p-2.5 text-xs normal-case text-ink"
-            value={selectedBusId}
-            onChange={selectBus}
-          >
+        <label className="grid min-w-[240px] gap-1.5 max-[700px]:mt-[18px]">
+          <span className="text-sm font-medium text-neutral-700">Bus</span>
+          <select className="select" value={selectedBusId} onChange={selectBus}>
             {buses.map((bus) => (
               <option key={bus.id} value={bus.id}>
                 {bus.registrationNumber} · {bus.model}
@@ -218,13 +214,13 @@ export default function SeatsWorkspace({
       </div>
 
       {/* Template Selection Banner */}
-      <div className="mb-6 border-2 border-orange bg-[#fff8f5] p-5">
+      <div className="mb-6 rounded-lg border border-neutral-200 bg-primary-50 p-5">
         <div className="flex items-center justify-between gap-4 max-[700px]:block">
           <div>
-            <p className="mb-1 font-display text-[19px] font-semibold text-ink">
-              ✨ Quick Setup with Templates
+            <p className="mb-1 font-semibold text-neutral-900">
+              Quick Setup with Templates
             </p>
-            <p className="text-xs text-muted">
+            <p className="text-sm text-neutral-600">
               Choose from 9 professional bus layouts including single-deck,
               double-decker, sleeper, and luxury coaches. All templates include
               proper seat numbering and female-reserved seating.
@@ -232,24 +228,21 @@ export default function SeatsWorkspace({
           </div>
           <button
             type="button"
-            className="mt-0 border-0 bg-orange px-5 py-3 font-bold text-white hover:bg-[#d8503d] max-[700px]:mt-4 max-[700px]:w-full"
+            className="btn btn-primary max-[700px]:mt-4 max-[700px]:w-full"
             onClick={() => setShowTemplateGallery(true)}
             disabled={applyingTemplate}
           >
-            {applyingTemplate ? "Applying..." : "Browse Templates →"}
+            {applyingTemplate ? "Applying..." : "Browse Templates"}
           </button>
         </div>
       </div>
 
-      <div className="mb-6 grid grid-cols-[minmax(200px,.8fr)_1.6fr] items-end gap-6 border border-line bg-[#f4f5ef] p-5 max-[800px]:grid-cols-1">
+      <div className="mb-6 grid grid-cols-[minmax(200px,.8fr)_1.6fr] items-end gap-6 rounded-lg border border-neutral-200 bg-neutral-50 p-5 max-[800px]:grid-cols-1">
         <div>
-          <p className="mb-3.5 font-mono text-[10px] tracking-[.13em] text-green">
-            CREATE MULTIPLE SEATS
-          </p>
-          <h3 className="mb-1 font-display text-[23px] font-semibold text-ink">
+          <p className="mb-1 text-sm font-semibold text-neutral-900">
             Manual dimensions
-          </h3>
-          <p className="text-[11px] leading-4 text-muted">
+          </p>
+          <p className="text-xs leading-4 text-neutral-500">
             Or create seats manually. Labels are generated automatically. You
             can edit them before saving.
           </p>
@@ -263,10 +256,10 @@ export default function SeatsWorkspace({
           }}
           onSubmit={generatePreview}
         >
-          <label className="grid gap-1.5 font-mono text-[9px] uppercase text-muted">
+          <label className="grid gap-1.5 text-xs font-medium text-neutral-700">
             Rows
             <input
-              className="border border-line bg-paper p-2 text-ink"
+              className="input"
               type="number"
               min="1"
               max="40"
@@ -276,10 +269,10 @@ export default function SeatsWorkspace({
               }
             />
           </label>
-          <label className="grid gap-1.5 font-mono text-[9px] uppercase text-muted">
+          <label className="grid gap-1.5 text-xs font-medium text-neutral-700">
             Seats per row
             <input
-              className="border border-line bg-paper p-2 text-ink"
+              className="input"
               type="number"
               min="2"
               max="8"
@@ -292,10 +285,10 @@ export default function SeatsWorkspace({
               }
             />
           </label>
-          <label className="grid gap-1.5 font-mono text-[9px] uppercase text-muted">
+          <label className="grid gap-1.5 text-xs font-medium text-neutral-700">
             Aisle after column
             <input
-              className="border border-line bg-paper p-2 text-ink"
+              className="input"
               type="number"
               min="1"
               max={Math.max(1, dimensions.seatsPerRow - 1)}
@@ -307,10 +300,10 @@ export default function SeatsWorkspace({
           </label>
           {selectedBus?.deckType === "DOUBLE" && (
             <>
-              <label className="grid gap-1.5 font-mono text-[9px] uppercase text-muted">
+              <label className="grid gap-1.5 text-xs font-medium text-neutral-700">
                 Deck Number
                 <select
-                  className="border border-line bg-paper p-2 text-ink"
+                  className="select"
                   value={dimensions.deckNumber}
                   onChange={(event) => {
                     const deckNum = Number(event.target.value);
@@ -325,10 +318,10 @@ export default function SeatsWorkspace({
                   <option value="2">2 - Upper</option>
                 </select>
               </label>
-              <label className="grid gap-1.5 font-mono text-[9px] uppercase text-muted">
+              <label className="grid gap-1.5 text-xs font-medium text-neutral-700">
                 Deck Name
                 <input
-                  className="border border-line bg-paper p-2 text-ink"
+                  className="input"
                   type="text"
                   value={dimensions.deckName}
                   onChange={(event) =>
@@ -339,11 +332,11 @@ export default function SeatsWorkspace({
             </>
           )}
           <button
-            className="border-0 bg-orange px-3 py-3 text-left font-bold text-white max-[800px]:col-span-full max-[500px]:col-auto"
+            className="btn btn-primary max-[800px]:col-span-full max-[500px]:col-auto"
             type="submit"
           >
             Preview {Number(dimensions.rows) * Number(dimensions.seatsPerRow)}{" "}
-            seats <span className="float-right text-lg">→</span>
+            seats
           </button>
         </form>
       </div>
@@ -367,7 +360,7 @@ export default function SeatsWorkspace({
               />
             )}
           </div>
-          <aside className="border border-line bg-[#fffaf4] p-6">
+          <aside className="rounded-lg border border-neutral-200 bg-neutral-50 p-6">
             <SeatEditor
               isEditing={isEditing}
               selectedSeat={selectedSeat}
@@ -401,35 +394,31 @@ function BatchPreview({ seats, onChange, onCancel, onSave, saving }) {
     ...new Set(seats.map((seat) => seat.seatNumber.match(/^\d+/)?.[0] || "0")),
   ];
   return (
-    <section className="border border-line bg-[#f4f5ef] p-[22px]">
+    <section className="rounded-lg border border-neutral-200 bg-neutral-50 p-[22px]">
       <div className="mb-5 flex justify-between gap-5 max-[800px]:block">
         <div>
-          <p className="mb-3.5 font-mono text-[10px] tracking-[.13em] text-green">
-            PREVIEW
-          </p>
-          <h3 className="mb-1 font-display text-[23px] font-semibold text-ink">
+          <p className="mb-1 text-sm font-semibold text-neutral-900">
             {seats.length} seats
-          </h3>
-          <p className="text-[11px] text-muted">
+          </p>
+          <p className="text-xs text-neutral-500">
             Review the generated names and seat properties before saving.
           </p>
         </div>
-        <div className="mt-0 flex items-start gap-[15px] max-[800px]:mt-4">
+        <div className="mt-0 flex items-center gap-3 max-[800px]:mt-4">
           <button
             type="button"
-            className="border-0 border-b border-orange bg-transparent p-0 pb-1 text-[11px] text-orange"
+            className="text-sm font-medium text-primary-600 hover:text-primary-700"
             onClick={onCancel}
           >
             Back to layout
           </button>
           <button
             type="button"
-            className="border-0 bg-orange px-3 py-3 text-left font-bold text-white"
+            className="btn btn-primary"
             onClick={onSave}
             disabled={saving}
           >
-            {saving ? "Saving seats..." : "Save all seats"}{" "}
-            <span className="ml-4 text-lg">→</span>
+            {saving ? "Saving seats..." : "Save all seats"}
           </button>
         </div>
       </div>
@@ -439,7 +428,7 @@ function BatchPreview({ seats, onChange, onCancel, onSave, saving }) {
             className="grid min-w-[680px] grid-cols-[55px_repeat(auto-fit,minmax(150px,1fr))] items-stretch gap-2"
             key={row}
           >
-            <span className="self-center font-mono text-[10px] text-muted">
+            <span className="self-center text-xs font-medium text-neutral-500">
               Row {row}
             </span>
             {seats
@@ -448,11 +437,11 @@ function BatchPreview({ seats, onChange, onCancel, onSave, saving }) {
               )
               .map((seat) => (
                 <div
-                  className={`grid gap-1.5 border p-2 ${seat.seatType === "SLEEPER" ? "border-[#d1b875] bg-[#e9e0ca]" : seat.genderPolicy === "FEMALE_ONLY" || seat.genderPolicy === "FEMALE_PREFERRED" ? "border-[#b49ec4] bg-[#ede8f5]" : seat.genderPolicy === "MALE_ONLY" || seat.genderPolicy === "MALE_PREFERRED" ? "border-[#7fb1d4] bg-[#ddeef8]" : "border-[#b7c9ae] bg-[#e4f0df]"}`}
+                  className="grid gap-1.5 rounded-md border border-neutral-200 bg-white p-2"
                   key={seat.localId}
                 >
                   <input
-                    className="w-full border-0 border-b border-[rgba(32,38,34,.18)] bg-transparent p-1 font-mono text-[13px] text-ink outline-0"
+                    className="w-full border-0 border-b border-neutral-200 bg-transparent p-1 text-sm font-medium text-neutral-900 outline-0 focus:border-primary-500"
                     aria-label={`Seat name ${seat.seatNumber}`}
                     value={seat.seatNumber}
                     onChange={(event) =>
@@ -460,7 +449,7 @@ function BatchPreview({ seats, onChange, onCancel, onSave, saving }) {
                     }
                   />
                   <select
-                    className="w-full border-0 border-b border-[rgba(32,38,34,.18)] bg-transparent p-1 text-[10px] text-ink outline-0"
+                    className="w-full border-0 border-b border-neutral-200 bg-transparent p-1 text-xs text-neutral-900 outline-0 focus:border-primary-500"
                     value={seat.seatType}
                     onChange={(event) =>
                       onChange(seat.localId, { seatType: event.target.value })
@@ -470,7 +459,7 @@ function BatchPreview({ seats, onChange, onCancel, onSave, saving }) {
                     <option value="SLEEPER">Sleeper</option>
                   </select>
                   <select
-                    className="w-full border-0 border-b border-[rgba(32,38,34,.18)] bg-transparent p-1 text-[10px] text-ink outline-0"
+                    className="w-full border-0 border-b border-neutral-200 bg-transparent p-1 text-xs text-neutral-900 outline-0 focus:border-primary-500"
                     value={seat.position}
                     onChange={(event) =>
                       onChange(seat.localId, { position: event.target.value })
@@ -481,7 +470,7 @@ function BatchPreview({ seats, onChange, onCancel, onSave, saving }) {
                     <option value="MIDDLE">Middle</option>
                   </select>
                   <select
-                    className="w-full border-0 border-b border-[rgba(32,38,34,.18)] bg-transparent p-1 text-[10px] text-ink outline-0"
+                    className="w-full border-0 border-b border-neutral-200 bg-transparent p-1 text-xs text-neutral-900 outline-0 focus:border-primary-500"
                     value={seat.genderPolicy || "ANY"}
                     onChange={(event) =>
                       onChange(seat.localId, {
@@ -518,19 +507,21 @@ function SeatEditor({
     <>
       <div className="mb-5 flex justify-between gap-[18px]">
         <div>
-          <p className="mb-3.5 font-mono text-[10px] tracking-[.13em] text-green">
-            {isEditing ? "EDIT SEAT" : "ADD ONE SEAT"}
-          </p>
-          <h3 className="m-0 font-display text-[22px] font-semibold text-ink">
+          <p className="mb-1 text-sm font-semibold text-neutral-900">
             {isEditing
               ? `Seat ${selectedSeat.seatNumber || selectedSeat.id}`
               : "Single seat"}
-          </h3>
+          </p>
+          <p className="text-xs text-neutral-500">
+            {isEditing
+              ? "Edit this seat's details."
+              : "Add one seat manually to the selected bus."}
+          </p>
         </div>
         {isEditing && (
           <button
             type="button"
-            className="border-0 bg-transparent text-[22px] text-muted"
+            className="text-xl leading-none text-neutral-500 hover:text-neutral-900"
             onClick={onCancel}
             aria-label="Cancel editing"
           >
@@ -539,10 +530,10 @@ function SeatEditor({
         )}
       </div>
       <form className="grid gap-3.5" onSubmit={onSubmit}>
-        <label className="grid gap-1.5 font-mono text-[10px] uppercase text-muted">
+        <label className="grid gap-1.5 text-xs font-medium text-neutral-700">
           Seat number
           <input
-            className="w-full border-0 border-b border-line bg-transparent py-2 text-ink outline-0"
+            className="w-full border-0 border-b border-neutral-200 bg-transparent py-2 text-sm text-neutral-900 outline-0 focus:border-primary-500"
             required
             value={form.seatNumber}
             placeholder="1A"
@@ -551,10 +542,10 @@ function SeatEditor({
             }
           />
         </label>
-        <label className="grid gap-1.5 font-mono text-[10px] uppercase text-muted">
+        <label className="grid gap-1.5 text-xs font-medium text-neutral-700">
           Deck Number
           <input
-            className="w-full border-0 border-b border-line bg-transparent py-2 text-ink outline-0"
+            className="w-full border-0 border-b border-neutral-200 bg-transparent py-2 text-sm text-neutral-900 outline-0 focus:border-primary-500"
             type="number"
             min="1"
             max="2"
@@ -564,10 +555,10 @@ function SeatEditor({
             }
           />
         </label>
-        <label className="grid gap-1.5 font-mono text-[10px] uppercase text-muted">
+        <label className="grid gap-1.5 text-xs font-medium text-neutral-700">
           Deck Name
           <input
-            className="w-full border-0 border-b border-line bg-transparent py-2 text-ink outline-0"
+            className="w-full border-0 border-b border-neutral-200 bg-transparent py-2 text-sm text-neutral-900 outline-0 focus:border-primary-500"
             type="text"
             placeholder="Lower Deck"
             value={form.deckName || ""}
@@ -576,10 +567,10 @@ function SeatEditor({
             }
           />
         </label>
-        <label className="grid gap-1.5 font-mono text-[10px] uppercase text-muted">
+        <label className="grid gap-1.5 text-xs font-medium text-neutral-700">
           Type
           <select
-            className="w-full border-0 border-b border-line bg-transparent py-2 text-ink outline-0"
+            className="w-full border-0 border-b border-neutral-200 bg-transparent py-2 text-sm text-neutral-900 outline-0 focus:border-primary-500"
             value={form.seatType}
             onChange={(event) =>
               onChange({ ...form, seatType: event.target.value })
@@ -589,10 +580,10 @@ function SeatEditor({
             <option value="SLEEPER">Sleeper</option>
           </select>
         </label>
-        <label className="grid gap-1.5 font-mono text-[10px] uppercase text-muted">
+        <label className="grid gap-1.5 text-xs font-medium text-neutral-700">
           Position
           <select
-            className="w-full border-0 border-b border-line bg-transparent py-2 text-ink outline-0"
+            className="w-full border-0 border-b border-neutral-200 bg-transparent py-2 text-sm text-neutral-900 outline-0 focus:border-primary-500"
             value={form.position}
             onChange={(event) =>
               onChange({ ...form, position: event.target.value })
@@ -603,10 +594,10 @@ function SeatEditor({
             <option value="MIDDLE">Middle</option>
           </select>
         </label>
-        <label className="grid gap-1.5 font-mono text-[10px] uppercase text-muted">
+        <label className="grid gap-1.5 text-xs font-medium text-neutral-700">
           Gender reservation
           <select
-            className="w-full border-0 border-b border-line bg-transparent py-2 text-ink outline-0"
+            className="w-full border-0 border-b border-neutral-200 bg-transparent py-2 text-sm text-neutral-900 outline-0 focus:border-primary-500"
             value={form.genderPolicy || "ANY"}
             onChange={(event) =>
               onChange({ ...form, genderPolicy: event.target.value })
@@ -619,17 +610,13 @@ function SeatEditor({
             <option value="MALE_ONLY">Male only (reserved)</option>
           </select>
         </label>
-        <button
-          className="border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
-          disabled={saving}
-        >
-          {saving ? "Saving..." : isEditing ? "Save changes" : "Add seat"}{" "}
-          <span className="float-right text-lg">→</span>
+        <button className="btn btn-primary w-full" disabled={saving}>
+          {saving ? "Saving..." : isEditing ? "Save changes" : "Add seat"}
         </button>
         {isEditing && (
           <button
             type="button"
-            className="mt-2 w-full border border-[#d79b8b] bg-transparent p-2.5 text-[11px] text-[#8c3e2d]"
+            className="mt-2 w-full rounded border border-error-200 bg-transparent p-2.5 text-sm font-semibold text-error-600 transition-colors hover:bg-error-50"
             onClick={onDelete}
             disabled={saving}
           >
@@ -637,7 +624,7 @@ function SeatEditor({
           </button>
         )}
       </form>
-      <p className="mt-[18px] text-[11px] leading-4 text-muted">
+      <p className="mt-[18px] text-xs leading-4 text-neutral-500">
         Select a seat in the layout to edit it.
       </p>
     </>

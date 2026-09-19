@@ -34,7 +34,7 @@ export default function BusSilhouette({
       {/* Deck Label (for double-decker) */}
       {deckName && (
         <div className="mb-2 flex items-center justify-center border-b border-dashed border-[#b8c5b1] pb-2">
-          <span className="rounded-full bg-orange px-2 py-0.5 font-mono text-[9px] font-semibold text-white">
+          <span className="rounded-full bg-primary-600 px-2 py-0.5 text-[9px] font-semibold text-white">
             {deckName}
           </span>
         </div>
@@ -62,7 +62,7 @@ export default function BusSilhouette({
             />
           ))
         ) : (
-          <div className="self-center text-center text-xs text-muted">
+          <div className="self-center text-center text-xs text-neutral-500">
             No seats in this deck
           </div>
         )}
@@ -188,7 +188,7 @@ function SeatButton({ seat, selected, multiSelect, disabled, onSelect, compact }
   // Determine styling based on seat properties
   const getBaseStyle = () => {
     if (unavailable) {
-      return "cursor-not-allowed border-[#e0ded5] bg-[#e5e3dc] text-[#abaea7]";
+      return "cursor-not-allowed border-neutral-200 bg-neutral-200 text-neutral-400";
     }
     if (isSleeper) {
       return `${compact ? "h-8 rounded-[8px]" : "h-9 rounded-[10px]"} border-[#d1b875] bg-[#e9e0ca] text-[#745e28]`;
@@ -218,7 +218,7 @@ function SeatButton({ seat, selected, multiSelect, disabled, onSelect, compact }
       type="button"
       className={`grid ${compact ? "h-6 w-8 min-w-[32px] rounded-[6px]" : "h-[30px] w-[38px] min-w-[38px] rounded-[7px]"} place-items-center border p-0 font-mono ${compact ? "text-[9px]" : "text-[11px]"} transition ${getBaseStyle()} ${
         selected
-          ? "border-orange bg-orange text-white shadow-[0_0_0_3px_rgba(233,101,69,.16)]"
+          ? "border-primary-600 bg-primary-600 text-white shadow-[0_0_0_3px_rgba(59,130,246,.16)]"
           : ""
       } hover:brightness-[0.97] active:scale-[0.97]`}
       disabled={disabled || unavailable}

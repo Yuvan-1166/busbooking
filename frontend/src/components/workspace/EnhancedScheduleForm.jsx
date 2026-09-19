@@ -79,20 +79,20 @@ export default function EnhancedScheduleForm({
   return (
     <form
       onSubmit={onSaveSchedule}
-      className="w-full rounded-lg border border-[#e7e5dc] bg-white p-7 max-h-[90vh]"
+      className="w-full max-h-[90vh] rounded-lg border border-neutral-200 bg-white p-7"
     >
 
       {/* Row 1: Route & Bus */}
       <div className="grid grid-cols-2 gap-3 mb-7">
         <label className="block">
-          <span className="text-xs font-mono uppercase text-muted block mb-1">
+          <span className="mb-1 block text-sm font-medium text-neutral-700">
             Route *
           </span>
           <select
             value={scheduleForm.routeId}
             onChange={(e) => onScheduleChange("routeId", e.target.value)}
             required
-            className="w-full border-b border-line bg-transparent py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange"
+            className="w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100"
           >
             <option value="">Select</option>
             {routes.map((route) => (
@@ -103,14 +103,14 @@ export default function EnhancedScheduleForm({
           </select>
         </label>
         <label className="block">
-          <span className="text-xs font-mono uppercase text-muted block mb-1">
+          <span className="mb-1 block text-sm font-medium text-neutral-700">
             Bus *
           </span>
           <select
             value={scheduleForm.busId}
             onChange={(e) => onScheduleChange("busId", e.target.value)}
             required
-            className="w-full border-b border-line bg-transparent py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange"
+            className="w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100"
           >
             <option value="">Select</option>
             {buses.map((bus) => (
@@ -125,7 +125,7 @@ export default function EnhancedScheduleForm({
       {/* Row 2: Time & Pricing */}
       <div className="grid grid-cols-3 gap-3 mb-7">
         <label className="block">
-          <span className="text-xs font-mono uppercase text-muted block mb-1">
+          <span className="mb-1 block text-sm font-medium text-neutral-700">
             Time *
           </span>
           <input
@@ -133,11 +133,11 @@ export default function EnhancedScheduleForm({
             value={scheduleForm.departureTime}
             onChange={(e) => onScheduleChange("departureTime", e.target.value)}
             required
-            className="w-full border-b border-line bg-transparent py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange"
+            className="w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100"
           />
         </label>
         <label className="block">
-          <span className="text-xs font-mono uppercase text-muted block mb-1">
+          <span className="mb-1 block text-sm font-medium text-neutral-700">
             Base (₹) *
           </span>
           <input
@@ -146,11 +146,11 @@ export default function EnhancedScheduleForm({
             value={scheduleForm.baseFare}
             onChange={(e) => onScheduleChange("baseFare", e.target.value)}
             required
-            className="w-full border-b border-line bg-transparent py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange"
+            className="w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100"
           />
         </label>
         <label className="block">
-          <span className="text-xs font-mono uppercase text-muted block mb-1">
+          <span className="mb-1 block text-sm font-medium text-neutral-700">
             /KM (₹) *
           </span>
           <input
@@ -159,7 +159,7 @@ export default function EnhancedScheduleForm({
             value={scheduleForm.pricePerKm}
             onChange={(e) => onScheduleChange("pricePerKm", e.target.value)}
             required
-            className="w-full border-b border-line bg-transparent py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange"
+            className="w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100"
           />
         </label>
       </div>
@@ -167,37 +167,37 @@ export default function EnhancedScheduleForm({
       {/* Row 3: Effective Dates */}
       <div className="grid grid-cols-2 gap-5 mb-7">
         <label className="block">
-          <span className="text-xs font-mono uppercase text-muted block mb-1">
+          <span className="mb-1 block text-sm font-medium text-neutral-700">
             From
           </span>
           <input
             type="date"
             value={scheduleForm.effectiveFrom}
             onChange={(e) => onScheduleChange("effectiveFrom", e.target.value)}
-            className="w-full border-b border-line bg-transparent py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange"
+            className="w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100"
           />
         </label>
         <label className="block">
-          <span className="text-xs font-mono uppercase text-muted block mb-1">
+          <span className="mb-1 block text-sm font-medium text-neutral-700">
             Until
           </span>
           <input
             type="date"
             value={scheduleForm.effectiveUntil}
             onChange={(e) => onScheduleChange("effectiveUntil", e.target.value)}
-            className="w-full border-b border-line bg-transparent py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange"
+            className="w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100"
           />
         </label>
       </div>
       <div  className="grid grid-cols-1 gap-3 mb-7">
         <label className="block">
-          <span className="text-xs font-mono uppercase text-muted block mb-1">
+          <span className="mb-1 block text-sm font-medium text-neutral-700">
             Status
           </span>
           <select
             value={scheduleForm.status}
             onChange={(e) => onScheduleChange("status", e.target.value)}
-            className="w-full border-b border-line bg-transparent py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange"
+            className="w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100"
           >
             <option value="ACTIVE">Active</option>
             <option value="INACTIVE">Inactive</option>
@@ -207,7 +207,7 @@ export default function EnhancedScheduleForm({
 
       {/* Operating Days - Compact */}
       <div className="mb-7">
-        <p className="text-xs font-mono uppercase text-muted mb-2">
+        <p className="mb-2 text-sm font-medium text-neutral-700">
           Operating Days
         </p>
         <div className="flex gap-1.5">
@@ -218,26 +218,26 @@ export default function EnhancedScheduleForm({
               onClick={() => onOperatingDayChange(dayKeys[index])}
               className={`h-8 w-8 rounded font-bold text-xs transition-colors ${
                 scheduleForm.operatingDays[dayKeys[index]]
-                  ? "bg-orange text-white"
-                  : "border border-[#e7e5dc] bg-white text-muted hover:bg-[#fafaf8]"
+                  ? "bg-primary-600 text-white"
+                  : "border border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-50"
               }`}
             >
               {day}
             </button>
           ))}
         </div>
-        <p className="text-xs text-muted mt-1.5">
+        <p className="text-xs text-neutral-500 mt-1.5">
           {formatOperatingDays(scheduleForm.operatingDays)}
         </p>
       </div>
 
       {/* Trip Generation - Compact */}
-      <div className="mb-7 border-t border-[#e7e5dc] pt-4">
-        <p className="text-xs font-mono uppercase text-muted mb-2">
+      <div className="mb-7 border-t border-neutral-200 pt-4">
+        <p className="mb-2 text-sm font-medium text-neutral-700">
           Generate Trips
         </p>
         {validationErrors.length > 0 && (
-          <div className="mb-3 text-xs text-[#8c3e2d]">
+          <div className="mb-3 text-xs text-error-600">
             {validationErrors.map((err, i) => (
               <div key={i}>• {err.substring(0, 40)}</div>
             ))}
@@ -245,7 +245,7 @@ export default function EnhancedScheduleForm({
         )}
         <div className="grid grid-cols-2 gap-3 mb-2">
           <label className="block">
-            <span className="text-xs font-mono uppercase text-muted block mb-1">
+            <span className="mb-1 block text-sm font-medium text-neutral-700">
               From *
             </span>
             <input
@@ -254,11 +254,11 @@ export default function EnhancedScheduleForm({
               onChange={(e) =>
                 onScheduleChange("tripGenerationFrom", e.target.value)
               }
-              className="w-full border-b border-line bg-transparent py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange"
+              className="w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100"
             />
           </label>
           <label className="block">
-            <span className="text-xs font-mono uppercase text-muted block mb-1">
+            <span className="mb-1 block text-sm font-medium text-neutral-700">
               To *
             </span>
             <input
@@ -267,20 +267,20 @@ export default function EnhancedScheduleForm({
               onChange={(e) =>
                 onScheduleChange("tripGenerationTo", e.target.value)
               }
-              className="w-full border-b border-line bg-transparent py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-orange"
+              className="w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100"
             />
           </label>
         </div>
 
         {generatedDates.length > 0 && (
-          <div className="flex items-center justify-between text-xs bg-[#e4eee1] border border-[#a5bea0] p-2 rounded mt-2">
-            <span className="text-green font-semibold">
+          <div className="mt-2 flex items-center justify-between rounded border border-success-200 bg-success-50 p-2 text-xs">
+            <span className="font-semibold text-success-700">
               ✓ {generatedDates.length} trips
             </span>
             <button
               type="button"
               onClick={() => setShowPreview(!showPreview)}
-              className="text-[10px] text-green hover:underline"
+              className="text-[10px] text-success-700 hover:underline"
             >
               {showPreview ? "hide" : "preview"}
             </button>
@@ -288,12 +288,12 @@ export default function EnhancedScheduleForm({
         )}
 
         {showPreview && generatedDates.length > 0 && (
-          <div className="mt-2 rounded-md bg-[#f9f9f7] p-2 max-h-[80px] overflow-y-auto">
+          <div className="mt-2 max-h-[80px] overflow-y-auto rounded-md bg-neutral-50 p-2">
             <div className="grid grid-cols-6 gap-1 text-[9px]">
               {generatedDates.slice(0, 12).map((date) => (
                 <div
                   key={date}
-                  className="px-1 py-0.5 bg-white border border-[#e7e5dc] rounded text-center"
+                  className="rounded border border-neutral-200 bg-white px-1 py-0.5 text-center"
                 >
                   {new Date(date).toLocaleDateString("en-IN", {
                     day: "numeric",
@@ -302,7 +302,7 @@ export default function EnhancedScheduleForm({
                 </div>
               ))}
               {generatedDates.length > 12 && (
-                <div className="px-1 py-0.5 text-muted">
+                <div className="px-1 py-0.5 text-neutral-500">
                   +{generatedDates.length - 12} more
                 </div>
               )}
@@ -312,11 +312,11 @@ export default function EnhancedScheduleForm({
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-2 pt-2 border-t border-[#e7e5dc]">
+      <div className="flex gap-2 pt-2 border-t border-neutral-200">
         <button
           type="submit"
           disabled={saving || validationErrors.length > 0}
-          className="flex-1 bg-orange text-white py-2 rounded text-xs font-semibold hover:bg-[#d97e3a] disabled:opacity-50 transition-colors"
+          className="btn btn-primary flex-1"
         >
           {saving ? "Creating..." : editingScheduleId ? "Update" : "Publish"}
         </button>
@@ -324,7 +324,7 @@ export default function EnhancedScheduleForm({
           <button
             type="button"
             onClick={onCancelEdit}
-            className="flex-1 border border-[#e7e5dc] text-ink py-2 rounded text-xs font-semibold hover:bg-[#fafaf8]"
+            className="btn btn-secondary flex-1"
           >
             Cancel
           </button>
