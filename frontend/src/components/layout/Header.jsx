@@ -37,13 +37,23 @@ export default function Header({ email, firstName, lastName, roles }) {
         
         {/* Logo */}
         <Link
-          className="flex items-center gap-3 text-xl font-bold text-neutral-900 no-underline"
+          className="flex items-center gap-3 text-xl font-bold text-neutral-900 no-underline group"
           to={isPassenger ? "/" : isAdmin ? "/admin" : "/operator"}
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 font-bold text-white shadow-lg">
-            B
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg group-hover:shadow-xl transition-all duration-200">
+            <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M4 6h16v2H4zm0 5h16v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6zm2-7h12a2 2 0 012 2v1H4V6a2 2 0 012-2z"/>
+              <circle cx="6" cy="19" r="1"/>
+              <circle cx="18" cy="19" r="1"/>
+              <rect x="7" y="8" width="2" height="2" rx="0.5"/>
+              <rect x="11" y="8" width="2" height="2" rx="0.5"/>
+              <rect x="15" y="8" width="2" height="2" rx="0.5"/>
+            </svg>
           </div>
-          <span className="hidden sm:block">Bus Booking</span>
+          <div className="hidden sm:block">
+            <div className="text-lg font-bold">BusBooking</div>
+            <div className="text-xs text-neutral-500 -mt-1">Travel Smart</div>
+          </div>
         </Link>
 
         {/* Desktop Navigation */}

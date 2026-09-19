@@ -375,8 +375,19 @@ export default function AuthPage() {
       <section className="w-full max-w-[480px] rounded-lg border border-neutral-200 bg-white p-10 shadow-sm max-[600px]:p-6">
         {/* Logo + heading */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-500 text-2xl font-bold text-white">
-            B
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg">
+            <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M4 6h16v2H4zm0 5h16v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6zm2-7h12a2 2 0 012 2v1H4V6a2 2 0 012-2z"/>
+              <circle cx="6" cy="19" r="1"/>
+              <circle cx="18" cy="19" r="1"/>
+              <rect x="7" y="8" width="2" height="2" rx="0.5"/>
+              <rect x="11" y="8" width="2" height="2" rx="0.5"/>
+              <rect x="15" y="8" width="2" height="2" rx="0.5"/>
+            </svg>
+          </div>
+          <div className="mb-4">
+            <div className="text-xl font-bold text-neutral-900">BusBooking</div>
+            <div className="text-sm text-neutral-500">Travel Smart</div>
           </div>
           <h1 className="mb-2 text-3xl font-semibold text-neutral-800">
             {mode === "login"

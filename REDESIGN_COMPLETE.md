@@ -29,10 +29,11 @@
 - **Gradients**: Subtle brand gradients for visual appeal
 
 ### **Typography**
-- **Font Family**: Inter - Modern, highly readable
+- **Font Family**: Zoho Puvi - Authentic Zoho brand experience
+- **Fallback**: Inter for reliability and compatibility
 - **Scale**: Consistent sizing from 12px to 48px
 - **Weights**: 400 (regular), 500 (medium), 600 (semibold), 700 (bold)
-- **Line Heights**: Optimized for readability
+- **Line Heights**: Optimized for readability and digital interfaces
 
 ### **Component Library**
 - **Buttons**: 4 variants, 3 sizes, hover/focus states

@@ -111,15 +111,25 @@ Information, tips
 ### Font Families
 
 ```css
---font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+--font-sans: 'Zoho Puvi', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
 --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
 ```
 
-**Why Inter?**
+**Why Zoho Puvi?**
+- Authentic Zoho brand experience
+- Designed specifically for digital interfaces  
 - Professional, clean, highly readable
-- Excellent for UI (designed for screens)
-- Wide language support
-- Free and open source
+- Perfect for business applications
+- Fallback to Inter ensures reliability
+
+### Font Weights
+
+```css
+font-weight: 400;  /* Regular - Zoho Puvi Regular */
+font-weight: 500;  /* Medium - Zoho Puvi Medium */
+font-weight: 600;  /* Semibold - Zoho Puvi SemiBold */
+font-weight: 700;  /* Bold - Zoho Puvi Bold */
+```
 
 ### Font Sizes
 
