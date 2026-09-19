@@ -123,30 +123,31 @@ export default function OnboardingPage() {
         }),
       };
 
-      await api.completeOnboarding(payload);
+      // Backend returns a fresh JWT with updated roles. Build the new session from
+      // that response so the chosen role takes effect immediately (same mechanism
+      // as Twitter email verification, which preserves twitterEmailPending handling).
+      const response = await api.completeOnboarding(payload);
+      const updatedSession = createSession(response);
+      updatedSession.onboardingRequired = false;
+
+      // Attach fresh profile details for display (never overrides roles/token).
+      try {
+        const updatedUser = await api.getCurrentUser();
+        Object.assign(updatedSession, {
+          id: updatedUser.id ?? updatedSession.id,
+          firstName: updatedUser.firstName ?? updatedSession.firstName,
+          lastName: updatedUser.lastName ?? updatedSession.lastName,
+          phone: updatedUser.phone ?? updatedSession.phone,
+        });
+      } catch (err) {
+        console.error("Failed to fetch updated user details:", err);
+      }
+
+      storeSession(updatedSession);
       setMessage("Profile completed successfully! Redirecting...");
-      
-      // Wait a moment for the backend to complete the onboarding
-      setTimeout(async () => {
-        try {
-          // Fetch updated user details with new roles
-          const updatedUser = await api.getCurrentUser();
-          const updatedSession = {
-            ...session,
-            onboardingRequired: false,
-            ...updatedUser,
-          };
-          storeSession(updatedSession);
-        } catch (err) {
-          console.error("Failed to fetch updated user details:", err);
-          // Even if we can't fetch details, mark onboarding as complete
-          const updatedSession = {
-            ...session,
-            onboardingRequired: false,
-          };
-          storeSession(updatedSession);
-        }
-        
+
+      // Wait a moment for the session-stored event to propagate
+      setTimeout(() => {
         navigate("/", { replace: true });
       }, 500);
     } catch (submitError) {

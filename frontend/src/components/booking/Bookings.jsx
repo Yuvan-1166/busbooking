@@ -1,11 +1,15 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
+import { LoadingPage } from "../common/Loading";
+import Pagination from "../common/Pagination";
 
 const filters = [
   { value: "all", label: "All bookings" },
   { value: "active", label: "Active" },
   { value: "past", label: "Past bookings" },
 ];
+
+const TICKETS_PER_PAGE = 5;
 
 function getTicketStatus(ticket) {
   if (ticket?.ticketStatus) return ticket.ticketStatus.toLowerCase();
@@ -22,23 +26,54 @@ function isPast(ticket) {
 
 export default function Bookings({ tickets, loading, onFind, onCancel }) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const [currentPage, setCurrentPage] = useState(1);
+  
   const selectedFilter = filters.some(
     (filter) => filter.value === searchParams.get("status"),
   )
     ? searchParams.get("status")
     : "all";
-  const visibleTickets = tickets.filter((ticket) =>
-    selectedFilter === "all"
-      ? true
-      : selectedFilter === "active"
-        ? !isPast(ticket)
-        : isPast(ticket),
+  
+  const visibleTickets = useMemo(() => 
+    tickets.filter((ticket) =>
+      selectedFilter === "all"
+        ? true
+        : selectedFilter === "active"
+          ? !isPast(ticket)
+          : isPast(ticket),
+    ),
+    [tickets, selectedFilter]
   );
 
-  const selectFilter = (status) => setSearchParams({ status });
+  // Calculate pagination
+  const totalPages = useMemo(
+    () => Math.ceil(visibleTickets.length / TICKETS_PER_PAGE),
+    [visibleTickets.length]
+  );
+
+  const paginatedTickets = useMemo(() => {
+    const startIndex = (currentPage - 1) * TICKETS_PER_PAGE;
+    const endIndex = startIndex + TICKETS_PER_PAGE;
+    return visibleTickets.slice(startIndex, endIndex);
+  }, [visibleTickets, currentPage]);
+
+  // Reset to page 1 when filter changes
+  useMemo(() => {
+    setCurrentPage(1);
+  }, [visibleTickets.length]);
+
+  const selectFilter = (status) => {
+    setSearchParams({ status });
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
-    <main className="mx-auto mb-20 mt-8 min-h-screen max-w-6xl px-4 sm:px-6">
+    <main className="w-full mx-auto mb-20 mt-8 min-h-screen max-w-6xl px-4 sm:px-6">
       {/* Header */}
       <div className="mb-8">
         <div className="mb-2 flex items-center gap-2">
@@ -88,18 +123,35 @@ export default function Bookings({ tickets, loading, onFind, onCancel }) {
 
       {/* Content */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="spinner mx-auto mb-4"></div>
-            <p className="text-neutral-600">Loading your bookings...</p>
-          </div>
-        </div>
+        <LoadingPage message="Loading Bookings" subMessage="Fetching your ticket history" showLogo={false} />
       ) : visibleTickets.length ? (
-        <div className="grid gap-4">
-          {visibleTickets.map((ticket) => (
-            <BookingTicket ticket={ticket} key={ticket.id} onCancel={onCancel} />
-          ))}
-        </div>
+        <>
+          {/* Results Summary */}
+          <div className="mb-6 flex items-center justify-between">
+            <p className="text-sm text-neutral-600">
+              Showing <span className="font-semibold text-neutral-900">{paginatedTickets.length}</span> of{" "}
+              <span className="font-semibold text-neutral-900">{visibleTickets.length}</span> bookings
+            </p>
+          </div>
+
+          {/* Ticket Cards Grid */}
+          <div className="grid gap-4">
+            {paginatedTickets.map((ticket) => (
+              <BookingTicket ticket={ticket} key={ticket.id} onCancel={onCancel} />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-8">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
+          )}
+        </>
       ) : (
         <div className="rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-50 py-16 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-200">

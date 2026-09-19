@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../../api';
 import { useAuth } from '../../auth/AuthContext';
 import { parseApiError, getErrorMessage } from '../../utils/errorHandler';
+import { LoadingPage } from '../common/Loading';
 import BackupCodesModal from './BackupCodesModal';
 
 export default function TotpSetupPage() {
@@ -141,40 +142,42 @@ export default function TotpSetupPage() {
   };
 
   if (loading) {
-    return (
-      <main className="mx-auto my-[55px] max-w-[520px] px-4">
-        <div className="border border-dashed border-line p-[74px_30px] text-center text-sm text-muted">
-          Setting up 2FA…
-        </div>
-      </main>
-    );
+    return <LoadingPage message="Setting Up 2FA" subMessage="Preparing your authentication" showLogo={false} />;
   }
 
   return (
-    <main className="mx-auto mb-[100px] mt-[55px] max-w-[520px] px-4">
-      {/* ── Back ── */}
+    <main className="mx-auto mb-20 mt-8 min-h-screen max-w-[520px] px-4">
+      {/* Back Button */}
       <button
-        className="border-0 bg-transparent p-0 text-xs text-muted"
+        className="mb-8 inline-flex items-center text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
         onClick={() => navigate("/profile")}
       >
-        ← Back
+        <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to Profile
       </button>
 
-      {/* ── Section ── */}
-      <section className="mt-8 border border-[#e7e5dc] bg-paper p-7">
-        <p className="mb-4 font-mono text-[10px] tracking-[.13em] text-green">
-          TWO-FACTOR AUTHENTICATION
-        </p>
-        <h1 className="mb-2 font-display text-[28px] font-semibold leading-tight text-ink">
+      {/* Section */}
+      <section className="rounded-lg border border-neutral-200 bg-white p-8">
+        <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-primary-50 px-3 py-1">
+          <div className="h-2 w-2 rounded-full bg-primary-600"></div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-primary-600">
+            Security
+          </p>
+        </div>
+        
+        <h1 className="mb-3 text-3xl font-bold text-neutral-900">
           Set Up 2FA
         </h1>
-        <p className="mb-6 text-sm text-muted leading-6">
+        
+        <p className="mb-6 text-neutral-600 leading-7">
           Scan the QR code below with any authenticator app (Google Authenticator, Authy, Microsoft Authenticator, etc.) and enter the 6-digit code to enable two-factor authentication on your account.
         </p>
 
         {error && (
           <div
-            className="mb-5 border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]"
+            className="mb-5 rounded-lg border border-error-200 bg-error-50 px-4 py-3 text-sm text-error-700"
             role="alert"
           >
             {error}
@@ -183,7 +186,7 @@ export default function TotpSetupPage() {
 
         {message && (
           <div
-            className="mb-5 border border-[#a5bea0] bg-[#e4eee1] px-4 py-3 text-xs text-green"
+            className="mb-5 rounded-lg border border-success-200 bg-success-50 px-4 py-3 text-sm text-success-700"
             role="status"
           >
             {message}
@@ -193,68 +196,83 @@ export default function TotpSetupPage() {
         {setupData && (
           <>
             {/* QR Code */}
-            <div className="mb-6 border border-line bg-[#f9f8f5] p-6 text-center">
+            <div className="mb-6 rounded-lg border border-neutral-200 bg-neutral-50 p-6 text-center">
               <img
                 src={`data:image/png;base64,${setupData.qrCodeBase64}`}
                 alt="2FA QR Code"
                 className="mx-auto h-48 w-48"
               />
-              <p className="mt-3 text-[11px] text-muted">Scan with your authenticator app</p>
+              <p className="mt-4 text-sm text-neutral-600">Scan with your authenticator app</p>
             </div>
 
-            {/* Manual Entry */}
+            {/* Manual Entry Toggle */}
             <button
               type="button"
               onClick={() => setShowManualEntry(!showManualEntry)}
-              className="mb-4 border-0 border-b border-orange bg-transparent p-0 text-[11px] text-orange"
+              className="mb-4 inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-700 transition-colors"
             >
-              {showManualEntry ? "Hide manual entry" : "Can't scan? Enter manually"}
+              {showManualEntry ? (
+                <>
+                  <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Hide manual entry
+                </>
+              ) : (
+                <>
+                  <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Can't scan? Enter manually
+                </>
+              )}
             </button>
 
             {showManualEntry && (
-              <div className="mb-6 border border-line bg-[#f9f8f5] p-4">
-                <p className="mb-2 text-[10px] uppercase text-muted">Manual entry code:</p>
-                <code className="block break-all border-0 border-b border-line bg-transparent py-2 font-mono text-sm text-ink">
+              <div className="mb-6 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+                <p className="mb-3 text-xs font-semibold uppercase text-neutral-600">Manual entry code:</p>
+                <code className="block w-full break-all rounded border border-neutral-300 bg-white p-3 font-mono text-sm font-semibold text-neutral-900">
                   {setupData.secret}
                 </code>
-                <p className="mt-3 text-[10px] text-muted">
-                  <strong>Account:</strong> {setupData.accountName}
-                  <br />
-                  <strong>Issuer:</strong> {setupData.issuer}
-                </p>
+                <div className="mt-4 space-y-1 text-sm text-neutral-600">
+                  <p><strong>Account:</strong> {setupData.accountName}</p>
+                  <p><strong>Issuer:</strong> {setupData.issuer}</p>
+                </div>
               </div>
             )}
 
             {/* Verification Form */}
-            <form onSubmit={handleVerify} className="grid gap-5">
-              <label className="grid gap-1.5 font-mono text-[10px] uppercase text-muted">
-                <span>Enter 6-digit code</span>
+            <form onSubmit={handleVerify} className="space-y-5">
+              <div>
+                <label className="block text-sm font-semibold text-neutral-900 mb-3">
+                  Enter 6-digit code
+                </label>
                 <input
                   type="text"
                   value={totpCode}
                   onChange={handleCodeChange}
                   placeholder="000000"
                   maxLength={6}
-                  className="w-full border-0 border-b border-line bg-transparent py-2.5 text-center text-2xl text-ink outline-0 font-mono tracking-widest focus:border-orange"
+                  className="w-full rounded-lg border border-neutral-300 bg-white px-4 py-3 text-center text-3xl font-mono font-semibold tracking-widest text-neutral-900 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 disabled:bg-neutral-100 disabled:cursor-not-allowed transition-all"
                   autoFocus
                   disabled={verifying}
                 />
-              </label>
+                <p className="mt-2 text-xs text-neutral-600">The code from your authenticator app</p>
+              </div>
 
               <button
                 type="submit"
                 disabled={verifying || totpCode.length !== 6}
-                className="mt-2 border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
+                className="w-full rounded-lg bg-primary-600 px-4 py-3 text-sm font-semibold text-white hover:bg-primary-700 disabled:bg-neutral-400 disabled:cursor-not-allowed transition-colors"
               >
                 {verifying ? "Verifying…" : "Verify & Enable 2FA"}
-                <span className="float-right text-lg">→</span>
               </button>
             </form>
 
-            {/* Info */}
-            <div className="mt-6 text-[11px] leading-6 text-muted">
-              <p>
-                <strong>Need help?</strong> Download an authenticator app like Google Authenticator, Authy, or Microsoft Authenticator from your app store. The code changes every 30 seconds.
+            {/* Info Box */}
+            <div className="mt-6 rounded-lg border border-neutral-200 bg-neutral-50 p-4">
+              <p className="text-sm leading-6 text-neutral-700">
+                <strong className="text-neutral-900">Need help?</strong> Download an authenticator app like Google Authenticator, Authy, or Microsoft Authenticator from your app store. The code changes every 30 seconds.
               </p>
             </div>
           </>

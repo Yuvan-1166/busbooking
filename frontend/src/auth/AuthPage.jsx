@@ -371,11 +371,11 @@ export default function AuthPage() {
   };
 
   return (
-    <main className="grid min-h-screen place-items-center bg-neutral-50 px-4 py-12">
-      <section className="w-full max-w-[480px] rounded-lg border border-neutral-200 bg-white p-10 shadow-sm max-[600px]:p-6">
+    <main className="grid min-h-screen place-items-center bg-neutral-50 px-4 py-4">
+      <section className="w-full max-w-[520px] rounded-lg border border-neutral-200 bg-white px-6 py-4 shadow-sm max-[600px]:px-4 max-[600px]:py-3">
         {/* Logo + heading */}
-        <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg">
+        <div className="mb-2 text-center">
+          <div className="mx-auto mb-1 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg">
             <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
               <path d="M4 6h16v2H4zm0 5h16v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6zm2-7h12a2 2 0 012 2v1H4V6a2 2 0 012-2z"/>
               <circle cx="6" cy="19" r="1"/>
@@ -385,11 +385,11 @@ export default function AuthPage() {
               <rect x="15" y="8" width="2" height="2" rx="0.5"/>
             </svg>
           </div>
-          <div className="mb-4">
+          <div className="mb-1">
             <div className="text-xl font-bold text-neutral-900">BusBooking</div>
             <div className="text-sm text-neutral-500">Travel Smart</div>
           </div>
-          <h1 className="mb-2 text-3xl font-semibold text-neutral-800">
+          <h1 className="mb-1 text-3xl font-semibold text-neutral-800">
             {mode === "login"
               ? "Welcome back"
               : mode === "register"
@@ -411,7 +411,7 @@ export default function AuthPage() {
 
         {/* ── Tabs (login / register only) ─────────────────────────────────── */}
         {mode !== "verify" && mode !== "forgot-password" && (
-          <div className="mb-6 flex gap-1 rounded-md bg-neutral-100 p-1">
+          <div className="mb-4 flex gap-1 rounded-md bg-neutral-100 p-1">
             <button
               type="button"
               className={`flex-1 rounded px-4 py-2 text-sm font-medium transition-all ${mode === "login" ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-600 hover:text-neutral-900"}`}
@@ -431,7 +431,7 @@ export default function AuthPage() {
 
         {/* ── Registration type picker ──────────────────────────────────────── */}
         {mode === "register" && (
-          <div className="mb-6 grid grid-cols-2 gap-3 max-[600px]:grid-cols-1">
+          <div className="mb-4 grid grid-cols-2 gap-3 max-[600px]:grid-cols-1">
             <button
               type="button"
               className={`flex flex-col gap-2 rounded-md border-2 p-4 text-left transition-all ${registrationType === "passenger" ? "border-primary-500 bg-primary-50" : "border-neutral-200 bg-white hover:border-neutral-300"}`}
@@ -471,12 +471,12 @@ export default function AuthPage() {
 
         {/* ── Messages ─────────────────────────────────────────────────────── */}
         {message && (
-          <div className="alert alert-success mb-4" role="status">
+          <div className="alert alert-success mb-2" role="status">
             {message}
           </div>
         )}
         {error && (
-          <div className="alert alert-error mb-4" role="alert">
+          <div className="alert alert-error mb-2" role="alert">
             {error}
           </div>
         )}
@@ -487,7 +487,7 @@ export default function AuthPage() {
 
         {/* ── OTP verification form ─────────────────────────────────────────── */}
         {mode === "verify" && (
-          <form className="space-y-5" onSubmit={submitOtp}>
+          <form className="space-y-3" onSubmit={submitOtp}>
             <div className="form-group">
               <label className="form-label">
                 Verification code <span className="text-error-500">*</span>
@@ -539,7 +539,7 @@ export default function AuthPage() {
 
         {/* ── Login / Register form ─────────────────────────────────────────── */}
         {mode !== "verify" && mode !== "forgot-password" && (
-          <form className="space-y-5" onSubmit={submit}>
+          <form className="space-y-3" onSubmit={submit}>
             {mode === "register" && (
               <>
                 <div className="form-group">
@@ -615,7 +615,7 @@ export default function AuthPage() {
               </div>
             )}
             {mode === "register" && registrationType === "operator" && (
-              <div className="space-y-5">
+              <div className="space-y-3">
                 <div className="form-group">
                   <label className="form-label">
                     Business name <span className="text-error-500">*</span>
@@ -684,7 +684,7 @@ export default function AuthPage() {
         {/* Divider */}
         {mode !== "verify" && mode !== "forgot-password" && (
           <>
-            <div className="relative my-6">
+            <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-neutral-200"></div>
               </div>
@@ -734,7 +734,7 @@ export default function AuthPage() {
             </div>
 
             {/* Legal links */}
-            <p className="mt-6 text-center text-xs text-neutral-500">
+            <p className="mt-3 text-center text-xs text-neutral-500">
               By continuing, you agree to our{" "}
               <Link
                 to="/terms"
