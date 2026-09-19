@@ -3104,6 +3104,11 @@ p {
   overflow: hidden;
 }
 
+/* Border utilities */
+.border-3 { 
+  border-width: 3px; 
+}
+
 /* Backdrop utilities */
 .backdrop-overlay {
   background: rgba(0, 0, 0, 0.5);

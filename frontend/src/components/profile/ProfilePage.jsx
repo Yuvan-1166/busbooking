@@ -4,6 +4,7 @@ import { api } from "../../api";
 import { useAuth } from "../../auth/AuthContext";
 import DisableTotpModal from "../../components/auth/DisableTotpModal";
 import { getUserFriendlyErrorMessage } from "../../utils/errorMessages";
+import { LoadingPage } from "../common/Loading";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -412,16 +413,7 @@ export default function ProfilePage({ onLogout }) {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   if (loading) {
-    return (
-      <main className="mx-auto mb-20 mt-8 min-h-screen max-w-5xl px-4 sm:px-6">
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="spinner mx-auto mb-4"></div>
-            <p className="text-neutral-600">Loading your profile...</p>
-          </div>
-        </div>
-      </main>
-    );
+    return <LoadingPage message="Loading Profile" subMessage="Setting up your account information" />;
   }
 
   if (loadError) {

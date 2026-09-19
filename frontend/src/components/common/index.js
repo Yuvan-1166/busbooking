@@ -36,8 +36,10 @@ export { default as Pagination } from './Pagination'
 
 // Loading Components
 export { 
-  default as Spinner,
+  default as LoadingPage,
+  Spinner,
   LoadingOverlay,
+  InlineLoader,
   Skeleton,
   SkeletonCard,
   SkeletonText

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api";
+import { LoadingPage } from "../common/Loading";
 
 const PAYMENT_METHODS = [
   { value: "WALLET", label: "Wallet", description: "Pay from your bus booking wallet balance" },
@@ -69,16 +70,7 @@ export default function PaymentPage({ locations, onPaymentSuccess }) {
   console.log("typeof =", typeof api.getBooking);
 
   if (loading) {
-    return (
-      <main className="mx-auto mb-20 mt-8 min-h-screen max-w-5xl px-4 sm:px-6">
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="spinner mx-auto mb-4"></div>
-            <p className="text-neutral-600">Loading payment details...</p>
-          </div>
-        </div>
-      </main>
-    );
+    return <LoadingPage message="Loading Payment" subMessage="Preparing your secure checkout experience" />;
   }
 
   if (!booking) {

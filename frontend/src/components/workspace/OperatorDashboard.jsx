@@ -5,6 +5,7 @@ import { parseApiError, getErrorMessage } from "../../utils/errorHandler";
 import { generateTripDates, validateTripGeneration } from "../../utils/tripGeneration";
 import StateMessage from "../common/StateMessage";
 import Pagination from "../common/Pagination";
+import { LoadingPage } from "../common/Loading";
 import MetricCard from "./MetricCard";
 import SeatsWorkspace from "./SeatsWorkspace";
 import ScheduleFormModal from "./ScheduleFormModal";
@@ -466,12 +467,7 @@ export default function OperatorDashboard() {
 
       {/* Content */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="spinner mx-auto mb-4"></div>
-            <p className="text-neutral-600">Loading operator data...</p>
-          </div>
-        </div>
+        <LoadingPage message="Loading Dashboard" subMessage="Setting up your operator workspace" showLogo={false} />
       ) : (
         <>
           {view === "overview" && (
