@@ -395,64 +395,83 @@ export default function OperatorDashboard() {
     saveSeat(() => api.deleteSeat(seatId), "Seat");
 
   return (
-    <main className="mx-auto mb-[100px] max-w-[1168px] max-[900px]:mx-[22px] max-[600px]:mx-4">
-      <section className="flex min-h-[300px] items-center justify-between overflow-hidden bg-[#dce5d5] px-[52px] py-[45px] max-[900px]:px-[30px] max-[600px]:block max-[600px]:px-[22px] max-[600px]:py-[35px]">
-        <div>
-          <p className="mb-3.5 font-mono text-[10px] tracking-[.13em] text-green">
-            OPERATOR
-          </p>
-          <h1 className="mb-4 font-display text-[52px] font-semibold leading-[.96] tracking-[-.04em] text-ink max-[600px]:text-[41px]">
-            Manage buses
-            <br />
-            <em className="text-orange">and services.</em>
-          </h1>
-          <p className="max-w-[340px] text-sm leading-6 text-[#606a5d]">
-            Set up buses, add seats, create schedules, and publish trips.
-          </p>
-        </div>
-        <div className="grid h-[170px] w-[170px] place-items-center content-center rounded-full border border-[rgba(32,38,34,.25)] text-center max-[600px]:ml-auto max-[600px]:mt-6 max-[600px]:h-[120px] max-[600px]:w-[120px]">
-          <span className="font-mono text-[10px] text-green">BUSES</span>
-          <strong className="my-2 font-display text-[43px] font-semibold max-[600px]:text-[32px]">
-            {buses.length}
-          </strong>
-          <small className="text-[10px] text-muted">registered</small>
+    <main className="mx-auto mb-20 min-h-screen max-w-7xl px-4 sm:px-6">
+      {/* Header */}
+      <section className="mb-8 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100 p-8">
+        <div className="flex items-center justify-between gap-6 max-[768px]:flex-col max-[768px]:items-start">
+          <div>
+            <div className="mb-2 flex items-center gap-2">
+              <span className="badge badge-success">OPERATOR</span>
+            </div>
+            <h1 className="mb-3 text-4xl font-bold text-neutral-900">
+              Manage Your Fleet
+            </h1>
+            <p className="max-w-md text-neutral-700">
+              Set up buses, add seats, create schedules, and publish trips to passengers.
+            </p>
+          </div>
+          <div className="card flex h-32 w-32 flex-col items-center justify-center bg-white text-center max-[768px]:ml-auto">
+            <div className="mb-1 text-sm font-medium text-neutral-600">Total Buses</div>
+            <div className="text-4xl font-bold text-primary-600">{buses.length}</div>
+            <div className="text-xs text-neutral-500">registered</div>
+          </div>
         </div>
       </section>
-      <nav className="flex gap-7 overflow-x-auto border-b border-line px-0 pt-[18px] max-[600px]:gap-5">
-        <Tab active={view === "overview"} onClick={() => setView("overview")}>
+
+      {/* Navigation Tabs */}
+      <nav className="mb-6 flex gap-1 rounded-lg border border-neutral-200 bg-neutral-50 p-1" aria-label="Dashboard sections">
+        <NavTab active={view === "overview"} onClick={() => setView("overview")}>
+          <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
           Overview
-        </Tab>
-        <Tab active={view === "buses"} onClick={() => setView("buses")}>
+        </NavTab>
+        <NavTab active={view === "buses"} onClick={() => setView("buses")}>
+          <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          </svg>
           Buses
-        </Tab>
-        <Tab active={view === "seats"} onClick={() => setView("seats")}>
+        </NavTab>
+        <NavTab active={view === "seats"} onClick={() => setView("seats")}>
+          <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+          </svg>
           Seats
-        </Tab>
-        <Tab active={view === "schedules"} onClick={() => setView("schedules")}>
+        </NavTab>
+        <NavTab active={view === "schedules"} onClick={() => setView("schedules")}>
+          <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
           Schedules
-        </Tab>
-        <Tab active={view === "trips"} onClick={() => setView("trips")}>
+        </NavTab>
+        <NavTab active={view === "trips"} onClick={() => setView("trips")}>
+          <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
           Trips
-        </Tab>
+        </NavTab>
       </nav>
+
+      {/* Alerts */}
       {error && (
-        <div
-          className="my-4 border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]"
-          role="alert"
-        >
+        <div className="alert alert-error mb-6">
           {error}
         </div>
       )}
       {message && (
-        <div
-          className="my-4 border border-[#a5bea0] bg-[#e4eee1] px-4 py-3 text-xs text-green"
-          role="status"
-        >
+        <div className="alert alert-success mb-6">
           {message}
         </div>
       )}
+
+      {/* Content */}
       {loading ? (
-        <StateMessage>Loading operator data...</StateMessage>
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="spinner mx-auto mb-4"></div>
+            <p className="text-neutral-600">Loading operator data...</p>
+          </div>
+        </div>
       ) : (
         <>
           {view === "overview" && (
@@ -535,13 +554,13 @@ export default function OperatorDashboard() {
   );
 }
 
-// ── Tab Component ──────────────────────────────────────────────────────────
-const Tab = ({ active, onClick, children }) => (
+// ── NavTab Component ───────────────────────────────────────────────────────
+const NavTab = ({ active, onClick, children }) => (
   <button
-    className={`border-b-2 p-2 text-sm font-semibold transition-colors max-[600px]:text-xs ${
+    className={`flex-1 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
       active
-        ? "border-ink text-ink"
-        : "border-transparent text-muted hover:text-ink"
+        ? "bg-white text-primary-600 shadow-sm"
+        : "text-neutral-600 hover:text-neutral-900"
     }`}
     onClick={onClick}
   >
@@ -551,27 +570,52 @@ const Tab = ({ active, onClick, children }) => (
 
 // ── Overview Component ────────────────────────────────────────────────────
 const Overview = ({ buses, seats, schedules, trips, setView }) => (
-  <section className="py-10">
-    <div className="grid grid-cols-4 gap-4 max-[900px]:grid-cols-2 max-[600px]:grid-cols-1">
+  <section className="py-6">
+    <h2 className="mb-6 text-2xl font-semibold text-neutral-900">Dashboard Overview</h2>
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
       <MetricCard
         label="Buses"
         value={buses.length}
         onClick={() => setView("buses")}
+        icon={
+          <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          </svg>
+        }
+        color="primary"
       />
       <MetricCard
         label="Total Seats"
         value={seats.length}
         onClick={() => setView("seats")}
+        icon={
+          <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+          </svg>
+        }
+        color="success"
       />
       <MetricCard
         label="Schedules"
         value={schedules.length}
         onClick={() => setView("schedules")}
+        icon={
+          <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        }
+        color="warning"
       />
       <MetricCard
-        label="Trips"
+        label="Active Trips"
         value={trips.length}
         onClick={() => setView("trips")}
+        icon={
+          <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        }
+        color="info"
       />
     </div>
   </section>
@@ -589,117 +633,159 @@ const BusesView = ({
   onCancelEdit,
   saving,
 }) => (
-  <section className="grid grid-cols-[350px_1fr] gap-8 py-8 max-[900px]:grid-cols-1">
+  <section className="grid gap-6 lg:grid-cols-[400px_1fr]">
     {/* Form */}
-    <form onSubmit={onSaveBus} className="space-y-4 rounded-lg border border-[#e7e5dc] bg-white p-6">
-      <h3 className="text-lg font-semibold text-ink">
+    <form onSubmit={onSaveBus} className="card h-fit">
+      <h3 className="mb-6 text-lg font-semibold text-neutral-900">
         {editingBusId ? "Edit Bus" : "Add New Bus"}
       </h3>
-      <label className="block">
-        <span className="text-xs font-mono uppercase text-muted">Registration Number</span>
-        <input
-          type="text"
-          required
-          value={busForm.registrationNumber}
-          onChange={(e) => onBusChange("registrationNumber", e.target.value)}
-          className="w-full mt-1 border-b border-line bg-transparent py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xs font-mono uppercase text-muted">Model</span>
-        <input
-          type="text"
-          required
-          value={busForm.model}
-          onChange={(e) => onBusChange("model", e.target.value)}
-          className="w-full mt-1 border-b border-line bg-transparent py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
-        />
-      </label>
-      <label className="block">
-        <span className="text-xs font-mono uppercase text-muted">Bus Type</span>
-        <select
-          value={busForm.busType}
-          onChange={(e) => onBusChange("busType", e.target.value)}
-          className="w-full mt-1 border-b border-line bg-transparent py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
-        >
-          <option value="SLEEPER">Sleeper</option>
-          <option value="SEMI_SLEEPER">Semi-Sleeper</option>
-          <option value="AC_SLEEPER">AC Sleeper</option>
-        </select>
-      </label>
-      <label className="block">
-        <span className="text-xs font-mono uppercase text-muted">Deck Type</span>
-        <select
-          value={busForm.deckType}
-          onChange={(e) => onBusChange("deckType", e.target.value)}
-          className="w-full mt-1 border-b border-line bg-transparent py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
-        >
-          <option value="SINGLE">Single Deck</option>
-          <option value="DOUBLE">Double Decker</option>
-        </select>
-      </label>
-      <label className="block">
-        <span className="text-xs font-mono uppercase text-muted">Status</span>
-        <select
-          value={busForm.status}
-          onChange={(e) => onBusChange("status", e.target.value)}
-          className="w-full mt-1 border-b border-line bg-transparent py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange"
-        >
-          <option value="ACTIVE">Active</option>
-          <option value="INACTIVE">Inactive</option>
-        </select>
-      </label>
-      <div className="flex gap-2 pt-4">
-        <button
-          type="submit"
-          disabled={saving}
-          className="flex-1 bg-orange text-white py-2 rounded font-semibold hover:bg-[#d97e3a] disabled:opacity-50"
-        >
-          {saving ? "Saving..." : editingBusId ? "Update" : "Create"}
-        </button>
-        {editingBusId && (
-          <button
-            type="button"
-            onClick={onCancelEdit}
-            className="flex-1 border border-[#e7e5dc] text-ink py-2 rounded font-semibold hover:bg-[#fafaf8]"
+      
+      <div className="space-y-4">
+        <div className="form-group">
+          <label className="form-label">Registration Number *</label>
+          <input
+            type="text"
+            required
+            value={busForm.registrationNumber}
+            onChange={(e) => onBusChange("registrationNumber", e.target.value)}
+            className="input"
+            placeholder="e.g., KA-01-AB-1234"
+          />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Bus Model *</label>
+          <input
+            type="text"
+            required
+            value={busForm.model}
+            onChange={(e) => onBusChange("model", e.target.value)}
+            className="input"
+            placeholder="e.g., Volvo Multi-Axle"
+          />
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Bus Type *</label>
+          <select
+            value={busForm.busType}
+            onChange={(e) => onBusChange("busType", e.target.value)}
+            className="select"
           >
-            Cancel
+            <option value="SLEEPER">Sleeper</option>
+            <option value="SEMI_SLEEPER">Semi-Sleeper</option>
+            <option value="AC_SLEEPER">AC Sleeper</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Deck Type *</label>
+          <select
+            value={busForm.deckType}
+            onChange={(e) => onBusChange("deckType", e.target.value)}
+            className="select"
+          >
+            <option value="SINGLE">Single Deck</option>
+            <option value="DOUBLE">Double Decker</option>
+          </select>
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Status *</label>
+          <select
+            value={busForm.status}
+            onChange={(e) => onBusChange("status", e.target.value)}
+            className="select"
+          >
+            <option value="ACTIVE">Active</option>
+            <option value="INACTIVE">Inactive</option>
+          </select>
+        </div>
+
+        <div className="flex gap-3 pt-2">
+          <button
+            type="submit"
+            disabled={saving}
+            className="btn btn-primary flex-1"
+          >
+            {saving ? (
+              <>
+                <span className="spinner"></span>
+                Saving...
+              </>
+            ) : (
+              editingBusId ? "Update Bus" : "Create Bus"
+            )}
           </button>
-        )}
+          {editingBusId && (
+            <button
+              type="button"
+              onClick={onCancelEdit}
+              className="btn btn-ghost"
+            >
+              Cancel
+            </button>
+          )}
+        </div>
       </div>
     </form>
 
     {/* List */}
-    <div className="space-y-3">
-      <h3 className="text-lg font-semibold text-ink">Your Buses ({buses.length})</h3>
+    <div>
+      <h3 className="mb-4 text-lg font-semibold text-neutral-900">
+        Your Buses ({buses.length})
+      </h3>
       {buses.length === 0 ? (
-        <StateMessage>No buses yet. Create one to get started.</StateMessage>
-      ) : (
-        buses.map((bus) => (
-          <div
-            key={bus.id}
-            className="flex items-center justify-between rounded-lg border border-[#e7e5dc] bg-white p-4"
-          >
-            <div>
-              <h4 className="font-semibold text-ink">{bus.model}</h4>
-              <p className="text-xs text-muted">{bus.registrationNumber} · {bus.busType}</p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => onEditBus(bus)}
-                className="px-3 py-1 text-xs font-semibold text-orange hover:text-[#d97e3a]"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => onDeleteBus(bus.id)}
-                className="px-3 py-1 text-xs font-semibold text-[#8c3e2d] hover:text-red-600"
-              >
-                Delete
-              </button>
-            </div>
+        <div className="rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-50 p-8 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-200">
+            <svg className="h-6 w-6 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
           </div>
-        ))
+          <p className="text-sm text-neutral-600">No buses registered yet. Create one to get started.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {buses.map((bus) => (
+            <div
+              key={bus.id}
+              className="card card-hover flex items-center justify-between"
+            >
+              <div>
+                <h4 className="mb-1 font-semibold text-neutral-900">{bus.model}</h4>
+                <p className="text-sm text-neutral-600">
+                  {bus.registrationNumber} · {bus.busType.replace(/_/g, ' ')}
+                </p>
+                <div className="mt-2 flex items-center gap-2">
+                  <span className={`badge ${bus.status === 'ACTIVE' ? 'badge-success' : 'badge-neutral'}`}>
+                    {bus.status}
+                  </span>
+                  <span className="badge badge-neutral">{bus.deckType} Deck</span>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => onEditBus(bus)}
+                  className="btn-ghost"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Edit
+                </button>
+                <button
+                  onClick={() => onDeleteBus(bus.id)}
+                  className="btn-ghost text-error-600"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   </section>

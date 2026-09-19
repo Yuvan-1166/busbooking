@@ -70,9 +70,12 @@ export default function PaymentPage({ locations, onPaymentSuccess }) {
 
   if (loading) {
     return (
-      <main className="mx-auto mb-[100px] mt-[55px] max-w-[860px] px-4">
-        <div className="border border-dashed border-line p-[74px_30px] text-center text-sm text-muted">
-          Loading payment details...
+      <main className="mx-auto mb-20 mt-8 min-h-screen max-w-5xl px-4 sm:px-6">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="spinner mx-auto mb-4"></div>
+            <p className="text-neutral-600">Loading payment details...</p>
+          </div>
         </div>
       </main>
     );
@@ -80,8 +83,8 @@ export default function PaymentPage({ locations, onPaymentSuccess }) {
 
   if (!booking) {
     return (
-      <main className="mx-auto mb-[100px] mt-[55px] max-w-[860px] px-4">
-        <div className="border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]">
+      <main className="mx-auto mb-20 mt-8 min-h-screen max-w-5xl px-4 sm:px-6">
+        <div className="alert alert-error">
           {error || "Booking not found."}
         </div>
       </main>
@@ -92,54 +95,64 @@ export default function PaymentPage({ locations, onPaymentSuccess }) {
   const to = getLocationName(booking.dropLocationId);
 
   return (
-    <main className="mx-auto mb-[100px] mt-[55px] max-w-[900px] px-4">
+    <main className="mx-auto mb-20 mt-8 min-h-screen max-w-5xl px-4 sm:px-6">
 
-      {/* Back */}
+      {/* Back button */}
       <button
-        className="border-0 bg-transparent p-0 text-xs text-muted"
+        className="btn-ghost mb-6"
         onClick={() => navigate(-1)}
       >
-        ← Back
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Back
       </button>
 
       {/* Page heading */}
-      <div className="mt-[43px] mb-10">
-        <p className="mb-3.5 font-mono text-[10px] tracking-[.13em] text-green">
-          BOOKING · {booking.bookingReference}
-        </p>
-        <h1 className="font-display text-5xl font-semibold leading-[.95] tracking-[-.045em] text-ink max-[600px]:text-[40px]">
-          Review &amp; pay.
+      <div className="mb-8">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <span className="badge badge-info">Booking {booking.bookingReference}</span>
+          <span className="badge badge-neutral">Trip #{booking.tripId}</span>
+        </div>
+        <h1 className="mb-2 text-2xl font-semibold text-neutral-900 sm:text-3xl">
+          Review &amp; Complete Payment
         </h1>
-        <p className="mt-3 text-sm text-muted">
-          Confirm your journey details and complete payment.
+        <p className="text-neutral-600">
+          Confirm your journey details and complete payment securely
         </p>
       </div>
 
-      <div className="grid grid-cols-[1fr_360px] gap-6 max-[860px]:grid-cols-1">
+      <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
 
         {/* ── LEFT COLUMN ── */}
-        <div className="grid gap-5 content-start">
+        <div className="space-y-6">
 
           {/* Journey card */}
-          <section className="border border-[#e7e5dc] bg-paper p-7">
-            <p className="mb-5 font-mono text-[10px] tracking-[.13em] text-green">JOURNEY</p>
+          <section className="card">
+            <div className="mb-6 flex items-center gap-2">
+              <svg className="h-5 w-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+              </svg>
+              <h2 className="text-lg font-semibold text-neutral-900">Journey Details</h2>
+            </div>
 
-            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+            <div className="grid items-center gap-6 md:grid-cols-[1fr_auto_1fr]">
               <div>
-                <p className="mb-1 font-mono text-[9px] uppercase text-muted">From</p>
-                <p className="font-display text-[20px] font-semibold leading-tight text-ink">
+                <p className="mb-1 text-xs font-medium text-neutral-600">From</p>
+                <p className="text-xl font-semibold text-neutral-900">
                   {from}
                 </p>
               </div>
 
-              <div className="flex flex-col items-center gap-1">
-                <span className="font-mono text-[9px] text-muted">Trip #{booking.tripId}</span>
-                <span className="text-xl text-orange">→</span>
+              <div className="flex flex-col items-center gap-2">
+                <svg className="h-6 w-6 text-primary-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
               </div>
 
-              <div className="text-right">
-                <p className="mb-1 font-mono text-[9px] uppercase text-muted">To</p>
-                <p className="font-display text-[20px] font-semibold leading-tight text-ink">
+              <div className="text-right md:text-left">
+                <p className="mb-1 text-xs font-medium text-neutral-600">To</p>
+                <p className="text-xl font-semibold text-neutral-900">
                   {to}
                 </p>
               </div>
@@ -147,32 +160,37 @@ export default function PaymentPage({ locations, onPaymentSuccess }) {
           </section>
 
           {/* Passengers card */}
-          <section className="border border-[#e7e5dc] bg-paper p-7">
-            <p className="mb-5 font-mono text-[10px] tracking-[.13em] text-green">
-              PASSENGERS · {booking.passengers?.length ?? 0}
-            </p>
+          <section className="card">
+            <div className="mb-6 flex items-center gap-2">
+              <svg className="h-5 w-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <h2 className="text-lg font-semibold text-neutral-900">
+                Passengers ({booking.passengers?.length ?? 0})
+              </h2>
+            </div>
 
-            <div className="grid gap-0">
+            <div className="divide-y divide-neutral-200">
               {booking.passengers?.map((p, i) => (
                 <div
                   key={p.id ?? i}
-                  className="flex items-center gap-4 border-b border-line py-3.5 last:border-0"
+                  className="flex items-center gap-4 py-4 first:pt-0 last:pb-0"
                 >
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#e8eee4] font-mono text-[11px] font-bold text-green">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-sm font-semibold text-primary-700">
                     {i + 1}
-                  </span>
+                  </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-ink">
+                    <p className="font-semibold text-neutral-900">
                       {p.firstName} {p.lastName}
                     </p>
-                    <p className="mt-0.5 font-mono text-[10px] text-muted">
-                      {p.gender?.charAt(0) + p.gender?.slice(1).toLowerCase()} · Age {p.age}
+                    <p className="mt-0.5 text-sm text-neutral-600">
+                      {p.gender?.charAt(0) + p.gender?.slice(1).toLowerCase()} · {p.age} years
                     </p>
                   </div>
                   <div className="shrink-0 text-right">
-                    <p className="font-mono text-xs font-semibold text-ink">
+                    <span className="badge badge-neutral">
                       Seat {p.seatNumber}
-                    </p>
+                    </span>
                   </div>
                 </div>
               ))}
@@ -181,24 +199,30 @@ export default function PaymentPage({ locations, onPaymentSuccess }) {
         </div>
 
         {/* ── RIGHT COLUMN ── */}
-        <div className="grid gap-5 content-start">
+        <div className="space-y-6">
 
           {/* Fare summary */}
-          <section className="border border-[#e7e5dc] bg-paper p-7">
-            <p className="mb-4 font-mono text-[10px] tracking-[.13em] text-green">FARE SUMMARY</p>
+          <section className="card bg-neutral-50">
+            <div className="mb-4 flex items-center gap-2">
+              <svg className="h-5 w-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+              <h2 className="text-lg font-semibold text-neutral-900">Fare Summary</h2>
+            </div>
 
-            <div className="grid gap-2.5 font-mono text-[11px]">
-              <div className="flex justify-between text-muted">
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between text-neutral-600">
                 <span>
-                  {booking.passengers?.length ?? 1} passenger
-                  {booking.passengers?.length !== 1 ? "s" : ""}
+                  {booking.passengers?.length ?? 1} passenger{booking.passengers?.length !== 1 ? "s" : ""}
                 </span>
-                <span className="text-ink">{formatCurrency(totalAmount)}</span>
+                <span className="font-medium text-neutral-900">{formatCurrency(totalAmount)}</span>
               </div>
 
-              <div className="flex justify-between border-t border-line pt-2.5">
-                <span className="font-bold text-ink">Total</span>
-                <span className="text-[16px] font-bold text-orange">
+              <div className="divider"></div>
+
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-neutral-900">Total Amount</span>
+                <span className="text-2xl font-bold text-primary-600">
                   {formatCurrency(totalAmount)}
                 </span>
               </div>
@@ -208,98 +232,109 @@ export default function PaymentPage({ locations, onPaymentSuccess }) {
           {/* Wallet balance */}
           {wallet && (
             <section
-              className={`border p-5 transition ${
+              className={`card transition-colors ${
                 paymentMethod === "WALLET"
                   ? canAfford
-                    ? "border-[#a5bea0] bg-[#e4eee1]"
-                    : "border-[#d79b8b] bg-[#f7e5df]"
-                  : "border-[#e7e5dc] bg-paper"
+                    ? "border-2 border-success-500 bg-success-50"
+                    : "border-2 border-error-500 bg-error-50"
+                  : "bg-white"
               }`}
             >
-              <p className="mb-2 font-mono text-[10px] tracking-[.13em] text-green">
-                YOUR WALLET
-              </p>
-              <p className="font-display text-[30px] font-semibold text-ink">
+              <div className="mb-3 flex items-center gap-2">
+                <svg className="h-5 w-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                </svg>
+                <h3 className="text-sm font-semibold text-neutral-900">Wallet Balance</h3>
+              </div>
+              <p className="mb-2 text-3xl font-bold text-neutral-900">
                 {formatCurrency(walletBalance)}
               </p>
 
               {paymentMethod === "WALLET" && canAfford && (
-                <p className="mt-1 font-mono text-[10px] text-green">
-                  Balance after payment:{" "}
-                  <strong>{formatCurrency(walletBalance - totalAmount)}</strong>
+                <p className="text-sm text-success-700">
+                  Balance after payment: <strong>{formatCurrency(walletBalance - totalAmount)}</strong>
                 </p>
               )}
               {paymentMethod === "WALLET" && !canAfford && (
-                <p className="mt-1 text-[11px] text-[#8c3e2d]">
-                  Insufficient balance. You need {formatCurrency(totalAmount)} but
-                  only have {formatCurrency(walletBalance)}.
+                <p className="text-sm text-error-700">
+                  Insufficient balance. You need {formatCurrency(totalAmount)} but only have {formatCurrency(walletBalance)}.
                 </p>
               )}
             </section>
           )}
 
           {/* Payment method selector */}
-          <section className="border border-[#e7e5dc] bg-paper p-7">
-            <p className="mb-4 font-mono text-[10px] tracking-[.13em] text-green">
-              PAYMENT METHOD
-            </p>
+          <section className="card">
+            <div className="mb-4 flex items-center gap-2">
+              <svg className="h-5 w-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+              <h2 className="text-lg font-semibold text-neutral-900">Payment Method</h2>
+            </div>
 
-            <div className="grid gap-2">
+            <div className="space-y-3">
               {PAYMENT_METHODS.map((method) => (
-                <button
+                <label
                   key={method.value}
-                  type="button"
-                  onClick={() => setPaymentMethod(method.value)}
-                  className={`flex items-start gap-3 border p-3.5 text-left transition ${
+                  className={`flex cursor-pointer items-start gap-3 rounded-lg border-2 p-4 transition-all ${
                     paymentMethod === method.value
-                      ? "border-orange bg-[#fff6ee]"
-                      : "border-line bg-transparent hover:border-orange"
+                      ? "border-primary-500 bg-primary-50"
+                      : "border-neutral-200 bg-white hover:border-primary-300"
                   }`}
                 >
-                  {/* Radio dot */}
-                  <span
-                    className={`mt-[3px] h-[14px] w-[14px] shrink-0 rounded-full border-2 transition ${
-                      paymentMethod === method.value
-                        ? "border-orange bg-orange"
-                        : "border-muted bg-transparent"
-                    }`}
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value={method.value}
+                    checked={paymentMethod === method.value}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="mt-1 h-4 w-4 shrink-0 accent-primary-600"
                   />
-                  <div>
-                    <p className="text-[12px] font-bold text-ink">{method.label}</p>
-                    <p className="mt-0.5 text-[10px] leading-4 text-muted">
+                  <div className="flex-1">
+                    <p className="font-semibold text-neutral-900">{method.label}</p>
+                    <p className="mt-0.5 text-sm text-neutral-600">
                       {method.description}
                     </p>
                   </div>
-                </button>
+                </label>
               ))}
             </div>
           </section>
 
-          {/* Inline error */}
+          {/* Error alert */}
           {error && (
-            <div
-              className="border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]"
-              role="alert"
-            >
+            <div className="alert alert-error">
               {error}
             </div>
           )}
 
           {/* Pay button */}
           <button
-            className="w-full border-0 bg-orange px-[17px] py-4 text-left font-bold text-white disabled:cursor-not-allowed disabled:opacity-45"
+            className="btn btn-primary btn-lg w-full transition-smooth hover-scale disabled:opacity-50"
             disabled={paying || (paymentMethod === "WALLET" && !canAfford)}
             onClick={handlePay}
           >
-            {paying
-              ? "Processing…"
-              : `Pay ${formatCurrency(totalAmount)}`}
-            <span className="float-right text-xl">→</span>
+            {paying ? (
+              <span className="flex items-center gap-2 fade-in">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-l-transparent"></div>
+                Processing Payment...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2 transition-colors">
+                Pay {formatCurrency(totalAmount)}
+                <svg className="h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </span>
+            )}
           </button>
 
-          <p className="text-center font-mono text-[10px] text-muted">
-            Simulated payment · For development use only
-          </p>
+          <div className="flex items-center justify-center gap-2 text-xs text-neutral-500">
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span>Simulated payment for development</span>
+          </div>
         </div>
       </div>
     </main>

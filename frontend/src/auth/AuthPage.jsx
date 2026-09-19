@@ -370,55 +370,47 @@ export default function AuthPage() {
     // Don't clear submitting=true here — browser is navigating away
   };
 
-  const tabClass = (tab) =>
-    `border-b-2 bg-transparent p-2 text-xs ${mode === tab ? "border-ink font-bold text-ink" : "border-transparent text-muted"}`;
-  const labelClass = "grid gap-1.5 font-mono text-[10px] uppercase text-muted";
-  const requiredSpan = <span className="text-orange">*</span>;
-  const inputClass =
-    "w-full border-0 border-b border-line bg-transparent py-2.5 text-sm text-ink outline-0";
-
   return (
-    <main className="grid min-h-screen place-items-center bg-[#dce5d5] px-4 py-[30px]">
-      <section className="w-full max-w-[620px] bg-paper p-[38px] shadow-[0_18px_42px_rgba(48,53,43,.12)] max-[600px]:p-6">
+    <main className="grid min-h-screen place-items-center bg-neutral-50 px-4 py-12">
+      <section className="w-full max-w-[480px] rounded-lg border border-neutral-200 bg-white p-10 shadow-sm max-[600px]:p-6">
         {/* Logo + heading */}
-        <div className="text-center">
-          <span className="mx-auto mb-[22px] grid h-[31px] w-[31px] rotate-[-8deg] place-items-center rounded-full bg-ink font-display text-base text-[#f9d66d]">
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-6 flex h-12 w-12 items-center justify-center rounded-lg bg-primary-500 text-2xl font-bold text-white">
             B
-          </span>
-          <p className="mb-3 font-mono text-[10px] tracking-[.13em] text-green">
-            BUS BOOKING
-          </p>
-          <h1 className="mb-3 font-display text-[42px] font-semibold leading-[.98] text-ink max-[600px]:text-4xl">
+          </div>
+          <h1 className="mb-2 text-3xl font-semibold text-neutral-800">
             {mode === "login"
-              ? "Sign in."
+              ? "Welcome back"
               : mode === "register"
-                ? "Create an account."
+                ? "Create your account"
                 : mode === "forgot-password"
-                  ? "Reset password."
-                  : "Verify email."}
+                  ? "Reset password"
+                  : "Verify your email"}
           </h1>
-          <p className="mb-7 text-[13px] leading-6 text-muted">
+          <p className="text-sm text-neutral-500">
             {mode === "login"
-              ? "Sign in as a passenger, operator, or admin."
+              ? "Sign in to continue to your account"
               : mode === "register"
-                ? "Register as a passenger or operator."
+                ? "Get started with your bus booking account"
                 : mode === "forgot-password"
-                  ? "Enter your email to receive a password reset code."
-                  : `We sent a 6-digit code to ${pendingEmail}`}
+                  ? "Enter your email to receive a reset code"
+                  : `Enter the 6-digit code sent to ${pendingEmail}`}
           </p>
         </div>
 
         {/* ── Tabs (login / register only) ─────────────────────────────────── */}
         {mode !== "verify" && mode !== "forgot-password" && (
-          <div className="mb-[22px] grid grid-cols-2 border-b border-line">
+          <div className="mb-6 flex gap-1 rounded-md bg-neutral-100 p-1">
             <button
-              className={tabClass("login")}
+              type="button"
+              className={`flex-1 rounded px-4 py-2 text-sm font-medium transition-all ${mode === "login" ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-600 hover:text-neutral-900"}`}
               onClick={() => switchMode("login")}
             >
               Sign in
             </button>
             <button
-              className={tabClass("register")}
+              type="button"
+              className={`flex-1 rounded px-4 py-2 text-sm font-medium transition-all ${mode === "register" ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-600 hover:text-neutral-900"}`}
               onClick={() => switchMode("register")}
             >
               Register
@@ -428,25 +420,39 @@ export default function AuthPage() {
 
         {/* ── Registration type picker ──────────────────────────────────────── */}
         {mode === "register" && (
-          <div className="mb-5 grid grid-cols-2 gap-2.5 max-[600px]:grid-cols-1">
+          <div className="mb-6 grid grid-cols-2 gap-3 max-[600px]:grid-cols-1">
             <button
               type="button"
-              className={`grid min-h-[90px] gap-1.5 border p-[15px] text-left ${registrationType === "passenger" ? "border-orange bg-[#fff6ee]" : "border-line bg-transparent"}`}
+              className={`flex flex-col gap-2 rounded-md border-2 p-4 text-left transition-all ${registrationType === "passenger" ? "border-primary-500 bg-primary-50" : "border-neutral-200 bg-white hover:border-neutral-300"}`}
               onClick={() => switchRegistrationType("passenger")}
             >
-              <strong className="font-display text-[17px]">Passenger</strong>
-              <span className="text-[11px] leading-4 text-muted">
-                Search trips, reserve seats, and view tickets.
+              <div className="flex items-center gap-2">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-md ${registrationType === "passenger" ? "bg-primary-500 text-white" : "bg-neutral-100 text-neutral-600"}`}>
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <strong className="text-base font-semibold text-neutral-900">Passenger</strong>
+              </div>
+              <span className="text-xs leading-relaxed text-neutral-600">
+                Search and book bus tickets
               </span>
             </button>
             <button
               type="button"
-              className={`grid min-h-[90px] gap-1.5 border p-[15px] text-left ${registrationType === "operator" ? "border-orange bg-[#fff6ee]" : "border-line bg-transparent"}`}
+              className={`flex flex-col gap-2 rounded-md border-2 p-4 text-left transition-all ${registrationType === "operator" ? "border-primary-500 bg-primary-50" : "border-neutral-200 bg-white hover:border-neutral-300"}`}
               onClick={() => switchRegistrationType("operator")}
             >
-              <strong className="font-display text-[17px]">Operator</strong>
-              <span className="text-[11px] leading-4 text-muted">
-                Manage buses, seats, schedules, and trips.
+              <div className="flex items-center gap-2">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-md ${registrationType === "operator" ? "bg-primary-500 text-white" : "bg-neutral-100 text-neutral-600"}`}>
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <strong className="text-base font-semibold text-neutral-900">Operator</strong>
+              </div>
+              <span className="text-xs leading-relaxed text-neutral-600">
+                Manage buses and schedules
               </span>
             </button>
           </div>
@@ -454,18 +460,12 @@ export default function AuthPage() {
 
         {/* ── Messages ─────────────────────────────────────────────────────── */}
         {message && (
-          <div
-            className="mb-4 border border-[#a5bea0] bg-[#e4eee1] p-3 text-xs text-green"
-            role="status"
-          >
+          <div className="alert alert-success mb-4" role="status">
             {message}
           </div>
         )}
         {error && (
-          <div
-            className="mb-4 border border-[#d79b8b] bg-[#f7e5df] p-3 text-xs text-[#8c3e2d]"
-            role="alert"
-          >
+          <div className="alert alert-error mb-4" role="alert">
             {error}
           </div>
         )}
@@ -476,13 +476,13 @@ export default function AuthPage() {
 
         {/* ── OTP verification form ─────────────────────────────────────────── */}
         {mode === "verify" && (
-          <form className="grid gap-[15px]" onSubmit={submitOtp}>
-            <label className={labelClass}>
-              <span>
-              Verification code {requiredSpan}
-              </span>
+          <form className="space-y-5" onSubmit={submitOtp}>
+            <div className="form-group">
+              <label className="form-label">
+                Verification code <span className="text-error-500">*</span>
+              </label>
               <input
-                className={`${inputClass} font-mono text-2xl tracking-[.25em]`}
+                className="input text-center text-2xl tracking-widest"
                 type="text"
                 inputMode="numeric"
                 pattern="\d{6}"
@@ -496,20 +496,20 @@ export default function AuthPage() {
                 autoComplete="one-time-code"
                 autoFocus
               />
-            </label>
+            </div>
 
             <button
-              className="mt-2 border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
+              type="submit"
+              className="btn btn-primary btn-lg w-full"
               disabled={submitting || otp.length !== 6}
             >
               {submitting ? "Verifying…" : "Verify email"}
-              <span className="float-right text-lg">→</span>
             </button>
 
-            <div className="flex items-center justify-between pt-1">
+            <div className="flex items-center justify-between border-t border-neutral-200 pt-4">
               <button
                 type="button"
-                className="border-0 bg-transparent p-0 text-[11px] text-muted underline disabled:opacity-50"
+                className="btn-ghost text-sm"
                 onClick={resendOtp}
                 disabled={resending || submitting}
               >
@@ -517,10 +517,10 @@ export default function AuthPage() {
               </button>
               <button
                 type="button"
-                className="border-0 bg-transparent p-0 text-[11px] text-muted underline"
+                className="btn-ghost text-sm"
                 onClick={() => switchMode("register")}
               >
-                ← Back to register
+                ← Back
               </button>
             </div>
           </form>
@@ -528,40 +528,40 @@ export default function AuthPage() {
 
         {/* ── Login / Register form ─────────────────────────────────────────── */}
         {mode !== "verify" && mode !== "forgot-password" && (
-          <form className="grid gap-[15px]" onSubmit={submit}>
+          <form className="space-y-5" onSubmit={submit}>
             {mode === "register" && (
               <>
-                <label className={labelClass}>
-                  <span>
-                  First name {requiredSpan}
-                  </span>
+                <div className="form-group">
+                  <label className="form-label">
+                    First name <span className="text-error-500">*</span>
+                  </label>
                   <input
-                    className={inputClass}
+                    className="input"
                     required
                     name="firstName"
                     value={form.firstName}
                     onChange={updateField}
                     autoComplete="given-name"
                   />
-                </label>
-                <label className={labelClass}>
-                  Last name
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Last name</label>
                   <input
-                    className={inputClass}
+                    className="input"
                     name="lastName"
                     value={form.lastName}
                     onChange={updateField}
                     autoComplete="family-name"
                   />
-                </label>
+                </div>
               </>
             )}
-            <label className={labelClass}>
-              <span>
-              Email {requiredSpan}
-              </span>
+            <div className="form-group">
+              <label className="form-label">
+                Email <span className="text-error-500">*</span>
+              </label>
               <input
-                className={inputClass}
+                className="input"
                 required
                 type="email"
                 name="email"
@@ -569,14 +569,14 @@ export default function AuthPage() {
                 onChange={updateField}
                 autoComplete="email"
               />
-            </label>
+            </div>
 
-            <label className={labelClass}>
-              <span>
-              Password {requiredSpan}
-              </span>
+            <div className="form-group">
+              <label className="form-label">
+                Password <span className="text-error-500">*</span>
+              </label>
               <input
-                className={inputClass}
+                className="input"
                 required
                 type="password"
                 name="password"
@@ -587,153 +587,161 @@ export default function AuthPage() {
                   mode === "login" ? "current-password" : "new-password"
                 }
               />
-            </label>
+              {mode === "register" && (
+                <p className="form-hint">At least 8 characters</p>
+              )}
+            </div>
             {mode === "register" && (
-              <label className={labelClass}>
-                Phone
+              <div className="form-group">
+                <label className="form-label">Phone</label>
                 <input
-                  className={inputClass}
+                  className="input"
                   name="phone"
                   value={form.phone}
                   onChange={updateField}
                   autoComplete="tel"
                 />
-              </label>
+              </div>
             )}
             {mode === "register" && registrationType === "operator" && (
-              <div className="grid grid-cols-2 gap-[15px] max-[600px]:grid-cols-1">
-                <label className={labelClass}>
-                  <span>
-                  Business name {requiredSpan}
-                  </span>
+              <div className="space-y-5">
+                <div className="form-group">
+                  <label className="form-label">
+                    Business name <span className="text-error-500">*</span>
+                  </label>
                   <input
-                    className={inputClass}
+                    className="input"
                     required
                     name="operatorName"
                     value={form.operatorName}
                     onChange={updateField}
                   />
-                </label>
-                <label className={labelClass}>
-                  <span>
-                  Registration number {requiredSpan}
-                  </span>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">
+                    Registration number <span className="text-error-500">*</span>
+                  </label>
                   <input
-                    className={inputClass}
+                    className="input"
                     required
                     name="registrationNumber"
                     value={form.registrationNumber}
                     onChange={updateField}
                   />
-                </label>
-                <label
-                  className={`${labelClass} col-span-full max-[600px]:col-span-1`}
-                >
-                  <span>
-                  Contact phone {requiredSpan}
-                  </span>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">
+                    Contact phone <span className="text-error-500">*</span>
+                  </label>
                   <input
-                    className={inputClass}
+                    className="input"
                     required
                     name="contactPhone"
                     value={form.contactPhone}
                     onChange={updateField}
                   />
-                </label>
+                </div>
               </div>
             )}
 
             {mode === "login" && (
-              <button
-                type="button"
-                className="border-0 bg-transparent flex justify-start p-0 text-[11px] text-muted underline"
-                onClick={handleForgotPassword}
-              >
-                Forgot password?
-              </button>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  className="btn-ghost text-sm"
+                  onClick={handleForgotPassword}
+                >
+                  Forgot password?
+                </button>
+              </div>
             )}
 
             <button
-              className="mt-2 border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
+              type="submit"
+              className="btn btn-primary btn-lg w-full"
               disabled={submitting}
             >
               {submitting
                 ? "Please wait…"
                 : mode === "login"
-                  ? "Open workspace"
-                  : `Create ${registrationType} account`}
-              <span className="float-right text-lg">→</span>
+                  ? "Sign in"
+                  : "Create account"}
             </button>
           </form>
         )}
 
         {/* Divider */}
-        <div className="relative my-2">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-line"></div>
-          </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="bg-paper px-2 text-muted">
-              or continue with
-            </span>
-          </div>
-        </div>
+        {mode !== "verify" && mode !== "forgot-password" && (
+          <>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-neutral-200"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="bg-white px-3 text-neutral-500">
+                  Or continue with
+                </span>
+              </div>
+            </div>
 
-        {/* Social sign-in buttons */}
-        <div className="my-4 grid gap-2.5">
-          {/* Google */}
-          <div className="flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={handleGoogleError}
-              theme="outline"
-              size="large"
-              text={mode === "login" ? "signin_with" : "signup_with"}
-            />
-          </div>
+            {/* Social sign-in buttons */}
+            <div className="space-y-3">
+              {/* Google */}
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  theme="outline"
+                  size="large"
+                  text={mode === "login" ? "signin_with" : "signup_with"}
+                  width="100%"
+                />
+              </div>
 
-          {/* Twitter / X */}
-          <button
-            type="button"
-            onClick={handleTwitterSignIn}
-            disabled={submitting}
-            className="flex w-full items-center justify-center gap-2.5 border border-line bg-paper px-4 py-2.5 text-[13px] font-medium text-ink transition-colors hover:bg-[#f5f3ed] disabled:opacity-50"
-            aria-label="Sign in with Twitter"
-          >
-            {/* X (Twitter) logo */}
-            <svg
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-              className="h-[18px] w-[18px] shrink-0 fill-ink"
-            >
-              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.745l7.73-8.835L1.254 2.25H8.08l4.261 5.632 5.903-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-            </svg>
-            {submitting
-              ? "Redirecting…"
-              : mode === "login"
-                ? "Sign in with Twitter"
-                : "Sign up with Twitter"}
-          </button>
-        </div>
+              {/* Twitter / X */}
+              <button
+                type="button"
+                onClick={handleTwitterSignIn}
+                disabled={submitting}
+                className="btn btn-secondary w-full"
+                aria-label="Sign in with Twitter"
+              >
+                {/* X (Twitter) logo */}
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                  className="h-4 w-4 shrink-0"
+                >
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.745l7.73-8.835L1.254 2.25H8.08l4.261 5.632 5.903-5.632Zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                </svg>
+                {submitting
+                  ? "Redirecting…"
+                  : mode === "login"
+                    ? "Sign in with Twitter"
+                    : "Sign up with Twitter"}
+              </button>
+            </div>
 
-        {/* Legal links — required by Twitter for OAuth app approval */}
-        <p className="mt-4 text-center text-[10px] leading-5 text-muted">
-          By continuing, you agree to our{" "}
-          <Link
-            to="/terms"
-            className="text-muted underline underline-offset-2 hover:text-ink"
-          >
-            Terms of Service
-          </Link>{" "}
-          and{" "}
-          <Link
-            to="/privacy"
-            className="text-muted underline underline-offset-2 hover:text-ink"
-          >
-            Privacy Policy
-          </Link>
-          .
-        </p>
+            {/* Legal links */}
+            <p className="mt-6 text-center text-xs text-neutral-500">
+              By continuing, you agree to our{" "}
+              <Link
+                to="/terms"
+                className="text-neutral-600 underline underline-offset-2 hover:text-neutral-900"
+              >
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link
+                to="/privacy"
+                className="text-neutral-600 underline underline-offset-2 hover:text-neutral-900"
+              >
+                Privacy Policy
+              </Link>
+              .
+            </p>
+          </>
+        )}
       </section>
     </main>
   );

@@ -12,34 +12,35 @@ export default function SearchForm({
   onSwap,
   onSubmit,
 }) {
-  const fieldClass =
-    "grid gap-1.5 text-[10px] uppercase tracking-[.07em] text-muted";
-  const controlClass =
-    "w-full border-0 border-b border-line bg-transparent py-2.5 text-sm font-semibold text-ink outline-0";
-  
   return (
     <form
-      className="relative mx-auto max-w-[1168px] bg-paper px-[25px] pb-[25px] pt-[21px] shadow-[0_14px_30px_rgba(48,53,43,.08)]"
+      className="card relative z-20 mx-auto max-w-full shadow-lg"
       aria-label="Search bus trips"
       onSubmit={onSubmit}
     >
-      <div className="mb-[18px] flex justify-between font-mono text-[11px] tracking-[.04em] text-ink max-[600px]:flex-col max-[600px]:gap-2">
-        <span>Search trips</span>
-        <span className={`text-[10px] ${matchingRoute ? "text-green" : "text-muted"}`}>
-          <i className={`mr-1 inline-block h-1.5 w-1.5 rounded-full ${matchingRoute ? "bg-[#75a86e]" : "bg-[#c8cdc3]"}`}></i>
-          {matchingRoute ? "Route found" : "Select locations"}
-        </span>
+      <div className="mb-6 flex items-center justify-between">
+        <h2 className="text-lg font-semibold text-neutral-900">Search Bus Tickets</h2>
+        {matchingRoute && (
+          <span className="badge badge-success">
+            <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Route available
+          </span>
+        )}
       </div>
-      <div className="grid grid-cols-[1.1fr_34px_1.1fr_1fr_1.05fr] items-end gap-3 max-[900px]:grid-cols-[1fr_30px_1fr_1fr] max-[600px]:grid-cols-[1fr_30px_1fr]">
-        <label className={fieldClass}>
-          <span>Leaving from</span>
+      
+      <div className="grid grid-cols-[1fr_auto_1fr_1fr_auto] items-end gap-4 max-[900px]:grid-cols-[1fr_auto_1fr] max-[600px]:grid-cols-1">
+        <div className="form-group mb-0">
+          <label className="form-label">From</label>
           <select
-            className={controlClass}
+            className="select"
             required
             value={from}
             onChange={(event) => onFromChange(event.target.value)}
+            disabled={loading}
           >
-            <option value="">Select location</option>
+            <option value="">Select departure city</option>
             {locations.map((location) => (
               <option key={location.id} value={location.id}>
                 {location.name}
@@ -47,24 +48,30 @@ export default function SearchForm({
               </option>
             ))}
           </select>
-        </label>
+        </div>
+        
         <button
           type="button"
-          className="mb-0.5 h-8 w-8 rounded-full border border-line bg-paper text-lg text-orange hover:bg-[#f9f9f7] transition-colors"
+          className="btn btn-ghost mb-2 h-10 w-10 shrink-0 p-0 max-[600px]:hidden"
           onClick={onSwap}
-          aria-label="Swap departure and destination"
+          aria-label="Swap locations"
+          disabled={loading}
         >
-          ⇄
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          </svg>
         </button>
-        <label className={fieldClass}>
-          <span>Going to</span>
+        
+        <div className="form-group mb-0">
+          <label className="form-label">To</label>
           <select
-            className={controlClass}
+            className="select"
             required
             value={to}
             onChange={(event) => onToChange(event.target.value)}
+            disabled={loading}
           >
-            <option value="">Select location</option>
+            <option value="">Select arrival city</option>
             {locations.map((location) => (
               <option key={location.id} value={location.id}>
                 {location.name}
@@ -72,22 +79,38 @@ export default function SearchForm({
               </option>
             ))}
           </select>
-        </label>
-        <label className={fieldClass}>
-          <span>Travel date</span>
+        </div>
+        
+        <div className="form-group mb-0 max-[900px]:col-span-3 max-[600px]:col-span-1">
+          <label className="form-label">Date</label>
           <input
-            className={controlClass}
+            className="input"
             required
             type="date"
             value={date}
             onChange={(event) => onDateChange(event.target.value)}
+            disabled={loading}
           />
-        </label>
+        </div>
+        
         <button
-          className="border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45 hover:bg-[#d97e3a] transition-colors max-[600px]:col-span-3"
+          type="submit"
+          className="btn btn-primary btn-lg mb-2 max-[900px]:col-span-3 max-[600px]:col-span-1 max-[600px]:w-full transition-smooth hover-scale disabled:opacity-50"
+          disabled={searching || loading}
         >
-          {searching ? "Searching..." : "Search"}{" "}
-          <span className="float-right text-lg">→</span>
+          {searching ? (
+            <span className="flex items-center gap-2 fade-in">
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-l-transparent"></div>
+              Searching...
+            </span>
+          ) : (
+            <span className="flex items-center gap-2 transition-colors">
+              Search Buses
+              <svg className="h-5 w-5 transition-transform group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
+          )}
         </button>
       </div>
     </form>

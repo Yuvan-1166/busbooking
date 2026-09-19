@@ -23,40 +23,51 @@ function formatDate(iso) {
 function roleBadge(role) {
   const clean = role?.replace("ROLE_", "") || "USER";
   const colors = {
-    ADMIN: "bg-[#d9e5e7] text-[#2a6a9a]",
-    OPERATOR: "bg-[#dce5d5] text-green",
-    PASSENGER: "bg-[#fff6ee] text-orange",
+    ADMIN: "badge-info",
+    OPERATOR: "badge-success",
+    PASSENGER: "badge-neutral",
   };
-  return colors[clean] || "bg-[#f0f0ec] text-muted";
+  return colors[clean] || "badge-neutral";
 }
 
-// ── Sections ─────────────────────────────────────────────────────────────────
+// ── Helper Components ────────────────────────────────────────────────────────
 
 function SectionLabel({ children }) {
   return (
-    <p className="mb-4 font-mono text-[10px] tracking-[.13em] text-green">
+    <h2 className="mb-4 text-sm font-semibold text-neutral-900">
       {children}
-    </p>
+    </h2>
   );
 }
 
 function Field({ label, children }) {
   return (
-    <label className="grid gap-1.5 font-mono text-[10px] uppercase text-muted">
-      {label}
+    <div className="form-group">
+      <label className="form-label">{label}</label>
       {children}
-    </label>
+    </div>
   );
 }
 
 function TextInput({ value, onChange, ...props }) {
   return (
     <input
-      className="w-full border-0 border-b border-line bg-transparent py-2.5 text-sm text-ink outline-0 focus:border-orange"
+      className="input"
       value={value}
       onChange={onChange}
       {...props}
     />
+  );
+}
+
+function InfoRow({ label, value, mono = false }) {
+  return (
+    <div className="flex justify-between gap-4 border-b border-neutral-200 pb-3 last:border-0 last:pb-0">
+      <dt className="text-sm font-medium text-neutral-600">{label}</dt>
+      <dd className={`text-right text-sm text-neutral-900 ${mono ? "font-mono" : ""}`}>
+        {value}
+      </dd>
+    </div>
   );
 }
 
@@ -341,14 +352,14 @@ export default function ProfilePage({ onLogout }) {
 
   // ── Render ──────────────────────────────────────────────────────────────────
 
-  const tabClass = (active) =>
-    `border-b-2 bg-transparent pb-3.5 text-xs transition ${active ? "border-orange font-bold text-ink" : "border-transparent text-muted hover:text-ink"}`;
-
   if (loading) {
     return (
-      <main className="mx-auto mb-[100px] mt-[55px] max-w-[860px] px-4">
-        <div className="border border-dashed border-line p-[74px_30px] text-center text-sm text-muted">
-          Loading profile…
+      <main className="mx-auto mb-20 mt-8 min-h-screen max-w-5xl px-4 sm:px-6">
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="spinner mx-auto mb-4"></div>
+            <p className="text-neutral-600">Loading your profile...</p>
+          </div>
         </div>
       </main>
     );
@@ -356,8 +367,8 @@ export default function ProfilePage({ onLogout }) {
 
   if (loadError) {
     return (
-      <main className="mx-auto mb-[100px] mt-[55px] max-w-[860px] px-4">
-        <div className="border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]">
+      <main className="mx-auto mb-20 mt-8 min-h-screen max-w-5xl px-4 sm:px-6">
+        <div className="alert alert-error">
           {loadError}
         </div>
       </main>
@@ -370,104 +381,133 @@ export default function ProfilePage({ onLogout }) {
     editForm.phone.trim() !== (user.phone || "").trim();
 
   return (
-    <main className="mx-auto mb-[100px] mt-[55px] max-w-[860px] px-4">
-      {/* ── Back ── */}
+    <main className="mx-auto mb-20 mt-8 min-h-screen max-w-5xl px-4 sm:px-6">
+      {/* Back button */}
       <button
-        className="border-0 bg-transparent p-0 text-xs text-muted"
+        className="btn-ghost mb-6"
         onClick={() => navigate("/")}
       >
-        ← Back
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Back to Home
       </button>
 
-      {/* ── Hero ── */}
-      <section className="mt-[43px] flex items-center gap-7 max-[600px]:flex-col max-[600px]:items-start">
+      {/* Profile Header */}
+      <section className="mb-8 flex flex-col items-start gap-6 sm:flex-row sm:items-center">
         {/* Avatar */}
-        <div className="flex h-[88px] w-[88px] shrink-0 items-center justify-center rounded-full bg-ink font-display text-[32px] font-semibold text-[#f9d66d]">
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-2xl font-bold text-white shadow-lg sm:h-24 sm:w-24 sm:text-3xl">
           {initials(user.firstName, user.lastName)}
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-center gap-3 mb-2">
-            <h1 className="font-display text-[36px] font-semibold leading-none tracking-[-.03em] text-ink">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-semibold text-neutral-900 sm:text-3xl">
               {user.firstName} {user.lastName || ""}
             </h1>
             {session?.roles?.map((role) => (
               <span
                 key={role}
-                className={`rounded px-2 py-0.5 font-mono text-[9px] uppercase tracking-[.1em] ${roleBadge(role)}`}
+                className={`badge ${roleBadge(role)}`}
               >
                 {role.replace("ROLE_", "")}
               </span>
             ))}
           </div>
-          <p className="font-mono text-[12px] text-muted">{user.email}</p>
-          <p className="mt-1 font-mono text-[10px] text-muted">
+          <p className="mb-1 text-neutral-600">{user.email}</p>
+          <p className="text-sm text-neutral-500">
             Member since {formatDate(user.createdAt)}
           </p>
         </div>
       </section>
 
-      {/* ── Tabs ── */}
-      <nav className="mt-8 flex gap-7 border-b border-line">
+      {/* Tabs */}
+      <nav className="mb-6 flex gap-1 rounded-lg border border-neutral-200 bg-neutral-50 p-1" aria-label="Profile sections">
         <button
-          className={tabClass(section === "info")}
+          className={`flex-1 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
+            section === "info"
+              ? "bg-white text-primary-600 shadow-sm"
+              : "text-neutral-600 hover:text-neutral-900"
+          }`}
           onClick={() => setSection("info")}
         >
-          Overview
+          <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          <span className="ml-1">Overview</span>
         </button>
         <button
-          className={tabClass(section === "edit")}
+          className={`flex-1 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
+            section === "edit"
+              ? "bg-white text-primary-600 shadow-sm"
+              : "text-neutral-600 hover:text-neutral-900"
+          }`}
           onClick={() => {
             setSection("edit");
             setSaveError("");
             setSaveSuccess("");
           }}
         >
-          Edit profile
+          <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+          <span className="ml-1">Edit Profile</span>
         </button>
         <button
-          className={tabClass(section === "password")}
+          className={`flex-1 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
+            section === "password"
+              ? "bg-white text-primary-600 shadow-sm"
+              : "text-neutral-600 hover:text-neutral-900"
+          }`}
           onClick={() => {
             setSection("password");
             setPwError("");
             setPwSuccess("");
           }}
         >
-          Change password
+          <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+          </svg>
+          <span className="ml-1">Password</span>
         </button>
         <button
-          className={tabClass(section === "security")}
+          className={`flex-1 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
+            section === "security"
+              ? "bg-white text-primary-600 shadow-sm"
+              : "text-neutral-600 hover:text-neutral-900"
+          }`}
           onClick={() => {
             setSection("security");
             setTotpError("");
             setTotpSuccess("");
           }}
         >
-          Security (2FA)
+          <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+          <span className="ml-1">Security</span>
         </button>
       </nav>
 
-      {/* ── Overview ── */}
+      {/* Overview Section */}
       {section === "info" && (
-        <div className="mt-8 grid grid-cols-2 gap-5 max-[600px]:grid-cols-1">
-          <section className="border border-[#e7e5dc] bg-paper p-7">
-            <SectionLabel>PERSONAL DETAILS</SectionLabel>
-            <dl className="grid gap-5">
+        <div className="grid gap-6 lg:grid-cols-2">
+          <section className="card">
+            <SectionLabel>Personal Details</SectionLabel>
+            <dl className="space-y-3">
               <InfoRow label="First name" value={user.firstName} />
               <InfoRow label="Last name" value={user.lastName || "—"} />
-              <InfoRow label="Email" value={user.email} />
-              <div className="flex justify-between gap-4 border-b border-line pb-4 last:border-0 last:pb-0">
-                <dt className="font-mono text-[10px] uppercase text-muted shrink-0">
-                  Phone
-                </dt>
-                <dd className="text-right text-sm text-ink flex items-center gap-2">
+              <InfoRow label="Email" value={user.email} mono />
+              <div className="flex justify-between gap-4 border-b border-neutral-200 pb-3 last:border-0 last:pb-0">
+                <dt className="text-sm font-medium text-neutral-600">Phone</dt>
+                <dd className="flex items-center gap-2 text-right text-sm text-neutral-900">
                   {user.phone || "—"}
                   {user.phone && (
                     <span
-                      className={`rounded px-1.5 py-0.5 font-mono text-[8px] uppercase tracking-wider ${
+                      className={`badge ${
                         mobileVerified
-                          ? "bg-[#e4eee1] text-green"
-                          : "bg-[#fff6ee] text-orange"
+                          ? "badge-success"
+                          : "badge-warning"
                       }`}
                     >
                       {mobileVerified ? "✓ Verified" : "Unverified"}
@@ -477,35 +517,41 @@ export default function ProfilePage({ onLogout }) {
               </div>
             </dl>
             
-            {/* Mobile Verification Card */}
+            {/* Mobile Verification */}
             {user.phone && !mobileVerified && (
-              <div className="mt-5 pt-5 border-t border-line">
-                <p className="mb-3 text-xs text-muted">
+              <div className="mt-6 rounded-lg border-2 border-warning-200 bg-warning-50 p-4">
+                <p className="mb-3 text-sm text-warning-900">
                   Verify your mobile number to enhance account security.
                 </p>
                 
                 {mobileOtpError && (
-                  <div className="mb-3 border border-[#d79b8b] bg-[#f7e5df] px-3 py-2 text-[10px] text-[#8c3e2d]">
+                  <div className="alert alert-error mb-3">
                     {mobileOtpError}
                   </div>
                 )}
                 {mobileOtpSuccess && (
-                  <div className="mb-3 border border-[#a5bea0] bg-[#e4eee1] px-3 py-2 text-[10px] text-green">
+                  <div className="alert alert-success mb-3">
                     {mobileOtpSuccess}
                   </div>
                 )}
                 
                 {!mobileOtpSent ? (
                   <button
-                    className="w-full border-0 bg-orange px-4 py-2.5 text-left text-xs font-bold text-white disabled:opacity-45"
+                    className="btn btn-primary w-full"
                     onClick={sendMobileOtpHandler}
                     disabled={mobileOtpLoading}
                   >
-                    {mobileOtpLoading ? "Sending OTP..." : "Verify Mobile Number"}
-                    <span className="float-right text-sm">→</span>
+                    {mobileOtpLoading ? (
+                      <>
+                        <span className="spinner"></span>
+                        Sending OTP...
+                      </>
+                    ) : (
+                      "Verify Mobile Number"
+                    )}
                   </button>
                 ) : (
-                  <form onSubmit={verifyMobileOtpHandler} className="grid gap-3">
+                  <form onSubmit={verifyMobileOtpHandler} className="space-y-3">
                     <Field label="Enter OTP">
                       <TextInput
                         type="text"
@@ -521,14 +567,21 @@ export default function ProfilePage({ onLogout }) {
                     <div className="flex gap-2">
                       <button
                         type="submit"
-                        className="flex-1 border-0 bg-green px-4 py-2.5 text-xs font-bold text-white disabled:opacity-45"
+                        className="btn btn-primary flex-1"
                         disabled={mobileOtpLoading}
                       >
-                        {mobileOtpLoading ? "Verifying..." : "Verify OTP"}
+                        {mobileOtpLoading ? (
+                          <>
+                            <span className="spinner"></span>
+                            Verifying...
+                          </>
+                        ) : (
+                          "Verify OTP"
+                        )}
                       </button>
                       <button
                         type="button"
-                        className="border border-line bg-transparent px-4 py-2.5 text-xs font-bold text-muted hover:bg-[#f9f8f5]"
+                        className="btn btn-ghost"
                         onClick={() => {
                           setMobileOtpSent(false);
                           setMobileOtp("");
@@ -546,9 +599,9 @@ export default function ProfilePage({ onLogout }) {
             )}
           </section>
 
-          <section className="border border-[#e7e5dc] bg-paper p-7">
-            <SectionLabel>ACCOUNT</SectionLabel>
-            <dl className="grid gap-5">
+          <section className="card">
+            <SectionLabel>Account Information</SectionLabel>
+            <dl className="space-y-3">
               <InfoRow label="Status" value={user.status} />
               <InfoRow label="Created" value={formatDate(user.createdAt)} />
               <InfoRow
@@ -560,32 +613,26 @@ export default function ProfilePage({ onLogout }) {
         </div>
       )}
 
-      {/* ── Edit profile ── */}
+      {/* Edit Profile Section */}
       {section === "edit" && (
-        <div className="mt-8 max-w-[520px]">
-          <section className="border border-[#e7e5dc] bg-paper p-7">
-            <SectionLabel>EDIT PROFILE</SectionLabel>
+        <div className="mx-auto max-w-2xl">
+          <section className="card">
+            <SectionLabel>Edit Profile</SectionLabel>
 
             {saveError && (
-              <div
-                className="mb-5 border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]"
-                role="alert"
-              >
+              <div className="alert alert-error mb-5">
                 {saveError}
               </div>
             )}
             {saveSuccess && (
-              <div
-                className="mb-5 border border-[#a5bea0] bg-[#e4eee1] px-4 py-3 text-xs text-green"
-                role="status"
-              >
+              <div className="alert alert-success mb-5">
                 {saveSuccess}
               </div>
             )}
 
-            <form className="grid gap-5" onSubmit={submitEdit}>
-              <div className="grid grid-cols-2 gap-5 max-[500px]:grid-cols-1">
-                <Field label="First name">
+            <form className="space-y-4" onSubmit={submitEdit}>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="First name *">
                   <TextInput
                     required
                     value={editForm.firstName}
@@ -620,53 +667,54 @@ export default function ProfilePage({ onLogout }) {
 
               <Field label="Email">
                 <input
-                  className="w-full border-0 border-b border-line bg-transparent py-2.5 text-sm text-muted outline-0 cursor-not-allowed"
+                  className="input cursor-not-allowed opacity-60"
                   value={user.email}
                   disabled
-                  title="Email cannot be changed here"
+                  title="Email cannot be changed"
                 />
+                <p className="form-hint">Email address cannot be changed</p>
               </Field>
 
               <button
-                className="mt-2 border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:cursor-not-allowed disabled:opacity-45"
+                className="btn btn-primary btn-lg transition-smooth hover-scale disabled:opacity-50"
                 disabled={saving || !hasChanges}
               >
-                {saving ? "Saving…" : "Save changes"}
-                <span className="float-right text-lg">→</span>
+                {saving ? (
+                  <span className="flex items-center gap-2 fade-in">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-l-transparent"></div>
+                    Saving Changes...
+                  </span>
+                ) : (
+                  "Save Changes"
+                )}
               </button>
             </form>
           </section>
         </div>
       )}
 
-      {/* ── Change password ── */}
+      {/* Password Section */}
       {section === "password" && (
-        <div className="mt-8 max-w-[520px]">
-          <section className="border border-[#e7e5dc] bg-paper p-7">
-            <SectionLabel>CHANGE PASSWORD</SectionLabel>
+        <div className="mx-auto max-w-2xl">
+          <section className="card">
+            <SectionLabel>Change Password</SectionLabel>
 
             {pwError && (
-              <div
-                className="mb-5 border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]"
-                role="alert"
-              >
+              <div className="alert alert-error mb-5">
                 {pwError}
               </div>
             )}
             {pwSuccess && (
-              <div
-                className="mb-5 border border-[#a5bea0] bg-[#e4eee1] px-4 py-3 text-xs text-green"
-                role="status"
-              >
+              <div className="alert alert-success mb-5">
                 {pwSuccess}
               </div>
             )}
 
             <form
-              className="grid gap-5"
+              className="space-y-4"
               onSubmit={showResetForm ? handleReset : requestOtp}
             >
-              <Field label="New password">
+              <Field label="New password *">
                 <TextInput
                   type="password"
                   required
@@ -680,7 +728,7 @@ export default function ProfilePage({ onLogout }) {
                   placeholder="Minimum 8 characters"
                 />
               </Field>
-              <Field label="Confirm new password">
+              <Field label="Confirm new password *">
                 <TextInput
                   type="password"
                   required
@@ -696,7 +744,7 @@ export default function ProfilePage({ onLogout }) {
               </Field>
 
               {showResetForm && (
-                <Field label="OTP">
+                <Field label="Verification Code *">
                   <TextInput
                     type="text"
                     inputMode="numeric"
@@ -707,119 +755,148 @@ export default function ProfilePage({ onLogout }) {
                     disabled={pwSaving}
                     placeholder="Enter the 6-digit OTP"
                   />
+                  <p className="form-hint">Enter the code sent to your email</p>
                 </Field>
               )}
 
-              <div className="mt-1 text-[11px] leading-5 text-muted">
-                <p>Password requirements:</p>
-                <ul className="mt-1 list-inside list-disc space-y-0.5">
-                  <li
-                    className={pwForm.password.length >= 8 ? "text-green" : ""}
-                  >
+              <div className="rounded-lg bg-neutral-50 p-4 text-sm text-neutral-700">
+                <p className="mb-2 font-medium">Password requirements:</p>
+                <ul className="space-y-1">
+                  <li className="flex items-center gap-2">
+                    {pwForm.password.length >= 8 ? (
+                      <svg className="h-4 w-4 text-success-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg className="h-4 w-4 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    )}
                     At least 8 characters
                   </li>
-                  <li
-                    className={
-                      pwForm.password && pwForm.password === pwForm.confirm
-                        ? "text-green"
-                        : ""
-                    }
-                  >
+                  <li className="flex items-center gap-2">
+                    {pwForm.password && pwForm.password === pwForm.confirm ? (
+                      <svg className="h-4 w-4 text-success-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg className="h-4 w-4 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                      </svg>
+                    )}
                     Passwords match
                   </li>
                 </ul>
               </div>
 
               <button
-                className="mt-2 border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:cursor-not-allowed disabled:opacity-45"
+                className="btn btn-primary btn-lg"
                 disabled={pwSaving}
               >
-                {pwSaving
-                  ? showResetForm
-                    ? "Resetting…"
-                    : "Sending OTP…"
-                  : showResetForm
-                    ? "Verify OTP & Reset Password"
-                    : "Send OTP"}
-                <span className="float-right text-lg">→</span>
+                {pwSaving ? (
+                  <>
+                    <span className="spinner"></span>
+                    {showResetForm ? "Resetting..." : "Sending OTP..."}
+                  </>
+                ) : (
+                  showResetForm ? "Verify & Reset Password" : "Send OTP to Email"
+                )}
               </button>
             </form>
           </section>
         </div>
       )}
 
-      {/* ── Security (2FA) ── */}
+      {/* Security Section */}
       {section === "security" && (
-        <div className="mt-8 max-w-[620px]">
-          <section className="border border-[#e7e5dc] bg-paper p-7">
-            <SectionLabel>TWO-FACTOR AUTHENTICATION (2FA)</SectionLabel>
+        <div className="mx-auto max-w-2xl">
+          <section className="card">
+            <SectionLabel>Two-Factor Authentication (2FA)</SectionLabel>
 
-            <p className="mb-5 text-sm leading-6 text-muted">
+            <p className="mb-6 text-neutral-700">
               Add an extra layer of security to your account by enabling
               two-factor authentication. You'll need an authenticator app like
-              Zoho OneAuth, Google Authenticator, Microsoft Authenticator or Authy.
+              Zoho OneAuth, Google Authenticator, Microsoft Authenticator, or Authy.
             </p>
 
             {totpError && (
-              <div
-                className="mb-5 border border-[#d79b8b] bg-[#f7e5df] px-4 py-3 text-xs text-[#8c3e2d]"
-                role="alert"
-              >
+              <div className="alert alert-error mb-5">
                 {totpError}
               </div>
             )}
             {totpSuccess && (
-              <div
-                className="mb-5 border border-[#a5bea0] bg-[#e4eee1] px-4 py-3 text-xs text-green"
-                role="status"
-              >
+              <div className="alert alert-success mb-5">
                 {totpSuccess}
               </div>
             )}
 
-            {/* Show current status */}
-            <div className="mb-6 flex items-center gap-3 rounded border border-line bg-[#f9f8f5] p-4">
-              <div
-                className={`h-2.5 w-2.5 rounded-full ${totpEnabled ? "bg-green" : "bg-muted"}`}
-              ></div>
-              <span className="text-sm">
-                2FA is currently{" "}
-                <strong>{totpEnabled ? "enabled" : "disabled"}</strong>
-              </span>
+            {/* Current Status */}
+            <div className={`mb-6 flex items-center gap-3 rounded-lg border-2 p-4 ${
+              totpEnabled
+                ? "border-success-200 bg-success-50"
+                : "border-neutral-200 bg-neutral-50"
+            }`}>
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm">
+                {totpEnabled ? (
+                  <svg className="h-6 w-6 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                  </svg>
+                ) : (
+                  <svg className="h-6 w-6 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                )}
+              </div>
+              <div>
+                <p className="font-semibold text-neutral-900">
+                  2FA is currently {totpEnabled ? "enabled" : "disabled"}
+                </p>
+                <p className="text-sm text-neutral-600">
+                  {totpEnabled
+                    ? "Your account is protected with two-factor authentication"
+                    : "Enable 2FA for enhanced security"}
+                </p>
+              </div>
             </div>
 
-            {/* Not enabled - show setup button */}
-            {!totpEnabled && !setupMode && (
+            {/* Action Buttons */}
+            {!totpEnabled ? (
               <button
-                className="border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
+                className="btn btn-primary btn-lg"
                 onClick={() => navigate("/totp/setup")}
               >
-                Enable 2FA
-                <span className="float-right text-lg">→</span>
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                Enable Two-Factor Authentication
               </button>
-            )}
-
-            {/* Enabled - show disable button */}
-            {totpEnabled && (
+            ) : (
               <button
-                className="border-0 bg-[#8c3e2d] px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
+                className="btn btn-danger btn-lg"
                 onClick={() => setShowDisableTotpModal(true)}
               >
-                Disable 2FA
-                <span className="float-right text-lg">×</span>
+                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Disable Two-Factor Authentication
               </button>
             )}
           </section>
         </div>
       )}
 
-      {/* Sign out */}
-      <button
-        className="border-0 border-b border-orange bg-transparent px-0 py-0.5 font-mono text-[11px] text-orange"
-        onClick={onLogout}
-      >
-        Sign out
-      </button>
+      {/* Sign Out Button */}
+      <div className="mt-8 border-t border-neutral-200 pt-6">
+        <button
+          className="btn-ghost text-error-600"
+          onClick={onLogout}
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+          </svg>
+          Sign Out
+        </button>
+      </div>
 
       {/* Disable 2FA Modal */}
       <DisableTotpModal
@@ -831,16 +908,4 @@ export default function ProfilePage({ onLogout }) {
   );
 }
 
-// ── Info row ──────────────────────────────────────────────────────────────────
-function InfoRow({ label, value, mono = false }) {
-  return (
-    <div className="flex justify-between gap-4 border-b border-line pb-4 last:border-0 last:pb-0">
-      <dt className="font-mono text-[10px] uppercase text-muted shrink-0">
-        {label}
-      </dt>
-      <dd className={`text-right text-sm text-ink ${mono ? "font-mono" : ""}`}>
-        {value}
-      </dd>
-    </div>
-  );
-}
+

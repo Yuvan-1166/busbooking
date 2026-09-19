@@ -38,39 +38,61 @@ export default function Bookings({ tickets, loading, onFind, onCancel }) {
   const selectFilter = (status) => setSearchParams({ status });
 
   return (
-    <main className="mx-auto mb-[100px] mt-[55px] max-w-[1168px] max-[600px]:mx-4">
-      <div className="mb-10">
-        <p className="mb-3.5 font-mono text-[10px] tracking-[.13em] text-green">
-          TICKETS AND BOOKINGS
-        </p>
-        <h1 className="mb-3.5 font-display text-5xl font-semibold leading-[.95] tracking-[-.045em] text-ink max-[600px]:text-[40px]">
-          Bookings
-        </h1>
-        <p className="text-sm text-muted">
-          Your tickets, travel dates, and booking history.
+    <main className="mx-auto mb-20 mt-8 min-h-screen max-w-6xl px-4 sm:px-6">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="mb-2 flex items-center gap-2">
+          <svg className="h-6 w-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+          </svg>
+          <h1 className="text-2xl font-semibold text-neutral-900 sm:text-3xl">
+            My Bookings
+          </h1>
+        </div>
+        <p className="text-neutral-600">
+          View and manage your bus tickets and booking history
         </p>
       </div>
-      <nav className="mb-7 flex gap-7 overflow-x-auto border-b border-line" aria-label="Booking filters">
-        {filters.map((filter) => (
-          <button
-            className={`shrink-0 border-b-2 bg-transparent pb-3 text-xs ${selectedFilter === filter.value ? "border-orange font-bold text-ink" : "border-transparent text-muted"}`}
-            key={filter.value}
-            onClick={() => selectFilter(filter.value)}
-          >
-            {filter.label}
-            <span className="ml-1.5 font-mono text-[10px]">
-              {filter.value === "all"
-                ? tickets.length
-                : tickets.filter((ticket) =>
-                  filter.value === "active" ? !isPast(ticket) : isPast(ticket),
-                  ).length}
-            </span>
-          </button>
-        ))}
+
+      {/* Filter Tabs */}
+      <nav className="mb-6 flex gap-1 rounded-lg border border-neutral-200 bg-neutral-50 p-1" aria-label="Booking filters">
+        {filters.map((filter) => {
+          const count = filter.value === "all"
+            ? tickets.length
+            : tickets.filter((ticket) =>
+                filter.value === "active" ? !isPast(ticket) : isPast(ticket)
+              ).length;
+          
+          return (
+            <button
+              className={`flex-1 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
+                selectedFilter === filter.value
+                  ? "bg-white text-primary-600 shadow-sm"
+                  : "text-neutral-600 hover:text-neutral-900"
+              }`}
+              key={filter.value}
+              onClick={() => selectFilter(filter.value)}
+            >
+              {filter.label}
+              <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${
+                selectedFilter === filter.value
+                  ? "bg-primary-100 text-primary-700"
+                  : "bg-neutral-200 text-neutral-600"
+              }`}>
+                {count}
+              </span>
+            </button>
+          );
+        })}
       </nav>
+
+      {/* Content */}
       {loading ? (
-        <div className="border border-dashed border-line p-[74px_30px] text-center text-sm text-muted">
-          Loading your tickets...
+        <div className="flex items-center justify-center py-20">
+          <div className="text-center">
+            <div className="spinner mx-auto mb-4"></div>
+            <p className="text-neutral-600">Loading your bookings...</p>
+          </div>
         </div>
       ) : visibleTickets.length ? (
         <div className="grid gap-4">
@@ -79,21 +101,28 @@ export default function Bookings({ tickets, loading, onFind, onCancel }) {
           ))}
         </div>
       ) : (
-        <div className="border border-dashed border-line p-[74px_30px] text-center">
-          <div className="text-2xl text-orange">—</div>
-          <h2 className="my-4 font-display text-[30px] font-semibold leading-none text-ink">
+        <div className="rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-50 py-16 text-center">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-200">
+            <svg className="h-8 w-8 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+            </svg>
+          </div>
+          <h2 className="mb-2 text-xl font-semibold text-neutral-900">
             No bookings found
-            <br />
-            for this filter.
           </h2>
-          <p className="mb-6 text-[13px] text-muted">
-            Complete a booking to see its ticket here.
+          <p className="mb-6 text-neutral-600">
+            {selectedFilter === "all"
+              ? "Start your journey by booking your first bus ticket"
+              : `You don't have any ${selectedFilter} bookings`}
           </p>
           <button
-            className="border-0 bg-orange px-[17px] py-3.5 font-bold text-white"
+            className="btn btn-primary"
             onClick={onFind}
           >
-            Find a ride <span className="ml-[18px] text-lg">→</span>
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            Find Buses
           </button>
         </div>
       )}
@@ -124,83 +153,167 @@ function BookingTicket({ ticket, onCancel }) {
     }
   };
 
+  const statusConfig = {
+    active: { color: "badge-success", icon: "✓", text: "Active" },
+    expired: { color: "badge-warning", icon: "⏱", text: "Expired" },
+    used: { color: "badge-neutral", icon: "✓", text: "Used" },
+    cancelled: { color: "badge-error", icon: "✕", text: "Cancelled" },
+  };
+
+  const currentStatus = statusConfig[status] || statusConfig.active;
+
   return (
-    <article className="border border-[#e7e5dc] bg-paper">
-      <div className="flex justify-between p-[18px_25px] font-mono text-[10px] text-muted max-[600px]:block max-[600px]:leading-8">
-        <span className={status === "active" ? "text-green" : "text-orange"}>
-          ● {status}
-        </span>
-        <span>
-          Reference: <strong>{ticket.bookingReference}</strong>
-        </span>
-      </div>
-      <div className="grid grid-cols-[1fr_1.5fr_1fr] items-center border-y border-dashed border-line px-[25px] py-[30px] max-[600px]:grid-cols-2 max-[600px]:gap-5">
-        <div>
-          <small className="block font-mono text-[9px] text-muted">BOOKING ID</small>
-          <strong className="block font-mono text-xl">#{ticket.bookingReference}</strong>
-          <span className="font-mono text-[9px] text-muted">Trip #{ticket.tripId}</span>
+    <article className="card card-hover overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b border-neutral-200 bg-neutral-50 px-6 py-3">
+        <div className="flex items-center gap-3">
+          <span className={`badge ${currentStatus.color}`}>
+            {currentStatus.icon} {currentStatus.text}
+          </span>
+          <span className="text-sm text-neutral-600">
+            Ref: <span className="font-mono font-semibold text-neutral-900">{ticket.bookingReference}</span>
+          </span>
         </div>
-        <div className="text-center max-[600px]:hidden">✦ ───────── ✦</div>
-        <div className="text-right">
-          <small className="block font-mono text-[9px] text-muted">TICKET</small>
-          <strong className="block font-mono text-xl">{ticket.ticketNumber}</strong>
-          <span className="font-mono text-[9px] text-muted">{ticket.tripDate || "Date unavailable"}</span>
+        <span className="text-sm font-medium text-neutral-900">
+          {formatCurrency(ticket.totalAmount)}
+        </span>
+      </div>
+
+      {/* Main Content */}
+      <div className="p-6">
+        <div className="mb-6 grid gap-6 md:grid-cols-3">
+          {/* Booking ID */}
+          <div>
+            <div className="mb-2 text-xs font-medium text-neutral-600">Booking ID</div>
+            <div className="font-mono text-xl font-bold text-neutral-900">
+              #{ticket.bookingReference}
+            </div>
+            <div className="mt-1 text-sm text-neutral-600">Trip #{ticket.tripId}</div>
+          </div>
+
+          {/* Ticket Number */}
+          <div className="text-center">
+            <div className="mb-2 text-xs font-medium text-neutral-600">Ticket Number</div>
+            <div className="font-mono text-xl font-bold text-primary-600">
+              {ticket.ticketNumber}
+            </div>
+            <div className="mt-1 text-sm text-neutral-600">{ticket.tripDate || "—"}</div>
+          </div>
+
+          {/* Passengers */}
+          <div className="text-right">
+            <div className="mb-2 text-xs font-medium text-neutral-600">Passengers</div>
+            <div className="text-xl font-bold text-neutral-900">
+              {ticket.passengers?.length || 0}
+            </div>
+            <div className="mt-1 text-sm text-neutral-600">
+              {ticket.passengers?.length === 1 ? "passenger" : "passengers"}
+            </div>
+          </div>
         </div>
+
+        {/* Expiration Info */}
+        {ticket.expiresAt && (
+          <div className="flex items-center gap-2 rounded-lg bg-neutral-50 px-4 py-3 text-sm">
+            <svg className="h-5 w-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span className="text-neutral-600">
+              Valid until <span className="font-medium text-neutral-900">{new Date(ticket.expiresAt).toLocaleString()}</span>
+            </span>
+          </div>
+        )}
       </div>
-      <div className="flex justify-between gap-4 p-[18px_25px] font-mono text-[10px] text-muted max-[600px]:block max-[600px]:leading-7">
-        <span>{ticket.passengers?.length || 0} passenger(s)</span>
-        <span className="text-right">Total paid <strong className="ml-1 text-sm text-ink">{formatCurrency(ticket.totalAmount)}</strong><br />{ticket.expiresAt ? `Valid until ${new Date(ticket.expiresAt).toLocaleString()}` : "Expiration unavailable"}</span>
-      </div>
+
+      {/* Cancel Button */}
       {status === "active" && ticket.bookingId && !showCancellation && (
-        <div className="border-t border-line p-[15px_25px] text-right">
+        <div className="border-t border-neutral-200 px-6 py-4 text-right">
           <button
-            className="border-0 border-b border-orange bg-transparent p-0 pb-1 text-[11px] text-orange"
+            className="btn-ghost text-error-600 hover:bg-error-50"
             type="button"
             onClick={() => setShowCancellation(true)}
           >
-            Cancel booking
+            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Cancel Booking
           </button>
         </div>
       )}
+
+      {/* Cancellation Form */}
       {status === "active" && ticket.bookingId && showCancellation && (
-        <form className="grid gap-3 border-t border-line bg-[#fffaf4] p-[18px_25px]" onSubmit={submitCancellation}>
-          <div>
-            <p className="m-0 font-mono text-[10px] uppercase tracking-[.08em] text-orange">Need to cancel?</p>
-            <p className="mt-1 text-[11px] text-muted">Your payment will be refunded after the server confirms cancellation.</p>
+        <form className="border-t border-warning-200 bg-warning-50 p-6" onSubmit={submitCancellation}>
+          <div className="mb-4">
+            <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-warning-900">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              Cancel this booking?
+            </div>
+            <p className="text-sm text-warning-800">
+              Your payment will be refunded after the cancellation is confirmed by the server.
+            </p>
           </div>
-          <label className="grid gap-1.5 font-mono text-[10px] uppercase text-muted">
-            Reason <span className="font-sans normal-case text-[10px]">(optional)</span>
+
+          <div className="form-group">
+            <label className="form-label">
+              Reason for cancellation <span className="text-neutral-500">(optional)</span>
+            </label>
             <textarea
-              className="min-h-[66px] w-full resize-y border border-line bg-paper p-2.5 text-xs text-ink outline-0 focus:border-orange"
+              className="input min-h-[80px] resize-y"
               maxLength="500"
               value={reason}
               onChange={(event) => setReason(event.target.value)}
-              placeholder="Tell us why you are cancelling"
+              placeholder="Let us know why you're cancelling..."
               disabled={cancelling}
             />
-          </label>
-          {cancelError && <p className="m-0 text-xs text-[#8c3e2d]" role="alert">{cancelError}</p>}
-          <button className="justify-self-start border-0 bg-orange px-3.5 py-2.5 text-left text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50" disabled={cancelling} type="submit">
-            {cancelling ? "Cancelling and refunding..." : "Cancel booking"}
-            <span className="ml-5 text-base">→</span>
-          </button>
-          {!cancelling && (
-            <button
-              className="justify-self-start border-0 border-b border-line bg-transparent p-0 pb-1 text-[11px] text-muted"
-              type="button"
-              onClick={() => {
-                setShowCancellation(false);
-                setCancelError("");
-              }}
-            >
-              Keep booking
-            </button>
+          </div>
+
+          {cancelError && (
+            <div className="alert alert-error mb-4">
+              {cancelError}
+            </div>
           )}
+
+          <div className="flex gap-3">
+            <button 
+              className="btn btn-danger" 
+              disabled={cancelling} 
+              type="submit"
+            >
+              {cancelling ? (
+                <>
+                  <span className="spinner"></span>
+                  Cancelling...
+                </>
+              ) : (
+                "Confirm Cancellation"
+              )}
+            </button>
+            {!cancelling && (
+              <button
+                className="btn btn-ghost"
+                type="button"
+                onClick={() => {
+                  setShowCancellation(false);
+                  setCancelError("");
+                }}
+              >
+                Keep Booking
+              </button>
+            )}
+          </div>
         </form>
       )}
+
+      {/* Refund Success */}
       {refund !== null && (
-        <div className="border-t border-[#a5bea0] bg-[#e4eee1] p-[15px_25px] text-xs text-green" role="status">
-          Booking cancelled. Refund initiated: <strong>{refund}</strong>
+        <div className="alert alert-success border-t-0 rounded-t-none">
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          Booking cancelled successfully. Refund initiated: <strong>{formatCurrency(refund)}</strong>
         </div>
       )}
     </article>

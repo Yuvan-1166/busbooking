@@ -1,3 +1,9 @@
+/**
+ * Pagination Component
+ * 
+ * Navigate through pages of content with modern styling.
+ */
+
 export default function Pagination({
   currentPage,
   totalPages,
@@ -26,15 +32,17 @@ export default function Pagination({
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-center gap-2 py-8 max-[600px]:gap-1">
+    <div className="flex items-center justify-center gap-2 py-6">
       {/* Previous Button */}
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1 || isLoading}
-        className="rounded-md border border-[#e7e5dc] bg-white px-3 py-2 text-sm font-semibold text-ink hover:bg-[#fafaf8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors max-[600px]:px-2 max-[600px]:py-1.5 max-[600px]:text-xs"
+        className="btn-ghost"
         aria-label="Previous page"
       >
-        ←
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
       </button>
 
       {/* First Page (if not visible) */}
@@ -43,12 +51,12 @@ export default function Pagination({
           <button
             onClick={() => onPageChange(1)}
             disabled={isLoading}
-            className="rounded-md border border-[#e7e5dc] bg-white px-3 py-2 text-sm font-semibold text-ink hover:bg-[#fafaf8] disabled:opacity-50 transition-colors max-[600px]:px-2 max-[600px]:py-1.5 max-[600px]:text-xs"
+            className="btn-ghost min-w-[2.5rem]"
           >
             1
           </button>
           {startPage > 2 && (
-            <span className="px-2 text-muted font-mono text-[10px]">...</span>
+            <span className="px-2 text-neutral-500">...</span>
           )}
         </>
       )}
@@ -59,10 +67,10 @@ export default function Pagination({
           key={page}
           onClick={() => onPageChange(page)}
           disabled={isLoading}
-          className={`rounded-md px-3 py-2 text-sm font-semibold transition-colors max-[600px]:px-2 max-[600px]:py-1.5 max-[600px]:text-xs ${
+          className={`min-w-[2.5rem] rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
             currentPage === page
-              ? "bg-orange text-white"
-              : "border border-[#e7e5dc] bg-white text-ink hover:bg-[#fafaf8] disabled:opacity-50"
+              ? "bg-primary-600 text-white hover:bg-primary-700"
+              : "text-neutral-700 hover:bg-neutral-100"
           }`}
           aria-current={currentPage === page ? "page" : undefined}
         >
@@ -74,12 +82,12 @@ export default function Pagination({
       {endPage < totalPages && (
         <>
           {endPage < totalPages - 1 && (
-            <span className="px-2 text-muted font-mono text-[10px]">...</span>
+            <span className="px-2 text-neutral-500">...</span>
           )}
           <button
             onClick={() => onPageChange(totalPages)}
             disabled={isLoading}
-            className="rounded-md border border-[#e7e5dc] bg-white px-3 py-2 text-sm font-semibold text-ink hover:bg-[#fafaf8] disabled:opacity-50 transition-colors max-[600px]:px-2 max-[600px]:py-1.5 max-[600px]:text-xs"
+            className="btn-ghost min-w-[2.5rem]"
           >
             {totalPages}
           </button>
@@ -90,14 +98,16 @@ export default function Pagination({
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages || isLoading}
-        className="rounded-md border border-[#e7e5dc] bg-white px-3 py-2 text-sm font-semibold text-ink hover:bg-[#fafaf8] disabled:opacity-50 disabled:cursor-not-allowed transition-colors max-[600px]:px-2 max-[600px]:py-1.5 max-[600px]:text-xs"
+        className="btn-ghost"
         aria-label="Next page"
       >
-        →
+        <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+        </svg>
       </button>
 
       {/* Page Info */}
-      <span className="ml-4 font-mono text-[11px] text-muted max-[600px]:ml-2 max-[600px]:text-[10px]">
+      <span className="ml-4 text-sm text-neutral-600">
         Page {currentPage} of {totalPages}
       </span>
     </div>

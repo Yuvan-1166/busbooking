@@ -30,6 +30,7 @@ export default function SearchResults({
 }) {
   const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   // Calculate max price from trips
   const maxPrice = useMemo(() => {
@@ -161,120 +162,201 @@ export default function SearchResults({
   };
 
   return (
-    <main id="top">
-      <section className="relative mx-auto min-h-[240px] max-w-full overflow-hidden rounded-[3px] bg-[#dce5d5] px-[34px] pb-[32px] pt-[42px] max-[600px]:min-h-[290px] max-[600px]:px-6 max-[600px]:py-[32px]">
-        <div className="relative z-[2]">
-          <p className="mb-3.5 font-mono text-[10px] tracking-[.13em] text-green">
-            SEARCH RESULTS
-          </p>
-          <h1 className="mb-3.5 font-display text-[48px] font-semibold leading-[1] tracking-[-.045em] text-ink max-[600px]:text-[36px]">
-            Available
-            <br />
-            <em className="text-orange">trips</em>
-          </h1>
-          <p className="mt-4 max-w-[320px] text-sm leading-6 text-[#606a5d]">
-            Showing available buses for your selected route and date.
-          </p>
+    <main id="top" className="min-h-screen bg-neutral-50">
+      {/* Header with Search Form */}
+      <section className="border-b border-neutral-200 bg-white px-4 py-6 sm:px-6 sm:py-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-6">
+            <h1 className="mb-2 text-xl font-semibold text-neutral-900 sm:text-2xl">Search Results</h1>
+            <p className="text-sm text-neutral-600">
+              {matchingRoute ? `Route: ${matchingRoute.name}` : "Select your journey"}
+            </p>
+          </div>
+          
+          <SearchForm
+            locations={availableLocations}
+            from={from}
+            to={to}
+            date={date}
+            loading={loading}
+            searching={searching}
+            matchingRoute={matchingRoute}
+            onFromChange={onFromChange}
+            onToChange={onToChange}
+            onDateChange={onDateChange}
+            onSwap={onSwap}
+            onSubmit={onSubmit}
+          />
         </div>
       </section>
 
-      <SearchForm
-        locations={availableLocations}
-        from={from}
-        to={to}
-        date={date}
-        loading={loading}
-        searching={searching}
-        matchingRoute={matchingRoute}
-        onFromChange={onFromChange}
-        onToChange={onToChange}
-        onDateChange={onDateChange}
-        onSwap={onSwap}
-        onSubmit={onSubmit}
-      />
-
       {/* Sidebar + Content Layout */}
-      <div className="flex min-h-[calc(100vh-400px)] bg-white">
-        {/* Sidebar - Independent Scroll */}
-        <FilterSidebar
-          trips={trips}
-          filters={filters}
-          onFilterChange={setFilters}
-          getTripFare={getTripFare}
-        />
+      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+        {/* Mobile Filter Toggle */}
+        <div className="mb-4 lg:hidden">
+          <button
+            className="btn btn-secondary w-full"
+            onClick={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+          >
+            <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707v6.586a1 1 0 01-1.447.894l-4-2A1 1 0 018 18.586v-4.586a1 1 0 00-.293-.707L1.293 7.293A1 1 0 011 6.586V4z" />
+            </svg>
+            Filters {filteredTrips.length !== trips.length ? `(${Object.values(filters).flat().filter(Boolean).length})` : ''}
+          </button>
+        </div>
 
-        {/* Main Content - Independent Scroll */}
-        <section
-          id="trips-container"
-          className="flex-1 overflow-y-auto border-l border-[#e7e5dc] max-[900px]:border-l-0"
-        >
-          <div className="mx-auto max-w-[1168px] px-6 py-8">
-            {loading ? (
-              <StateMessage>Loading locations and routes...</StateMessage>
-            ) : trips.length ? (
-              <>
-                {/* Results Summary */}
-                <div className="mb-8">
-                  <div className="mb-4 flex items-center gap-3 max-[600px]:flex-wrap">
-                    <p className="font-mono text-[10px] tracking-[.13em] text-green font-semibold">
-                      {date || "SELECT A DATE"}
-                    </p>
-                    {matchingRoute && (
-                      <span className="inline-block rounded-full bg-[#e8f3e0] px-3 py-1 font-mono text-[10px] font-semibold text-green">
-                        {matchingRoute.name}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 max-[600px]:flex-col max-[600px]:items-start">
-                    <div className="inline-block rounded-full bg-[#e8f0e3] px-4 py-2 font-mono text-[11px] font-semibold text-green">
-                      {trips.length} {trips.length === 1 ? "trip" : "trips"} total
-                    </div>
-                    {filteredTrips.length !== trips.length && (
-                      <div className="inline-block rounded-full bg-[#fff4e6] px-4 py-2 font-mono text-[11px] font-semibold text-[#d97e3a]">
-                        {filteredTrips.length} showing
+        
+        <div className="lg:flex lg:gap-6">
+          {/* Sidebar - Filters */}
+          <aside className={`${mobileFiltersOpen ? 'block mb-6' : 'hidden'} lg:block w-full lg:w-64 lg:shrink-0`}>
+            <FilterSidebar
+              trips={trips}
+              filters={filters}
+              onFilterChange={setFilters}
+              getTripFare={getTripFare}
+            />
+          </aside>
+
+          {/* Main Content */}
+          <section id="trips-container" className="min-w-0 flex-1">
+          {loading ? (
+            <div className="space-y-4">
+              {/* Skeleton loading for trip cards */}
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className={`card fade-in stagger-${Math.min(i + 1, 4)}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="mb-2 flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-neutral-200 skeleton-shimmer"></div>
+                        <div className="h-4 w-32 rounded bg-neutral-200 skeleton-shimmer"></div>
                       </div>
-                    )}
+                      <div className="mb-4 flex items-center gap-8">
+                        <div className="text-center">
+                          <div className="h-6 w-16 rounded bg-neutral-200 skeleton-shimmer mb-1"></div>
+                          <div className="h-3 w-20 rounded bg-neutral-200 skeleton-shimmer"></div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full bg-neutral-200 skeleton-shimmer"></div>
+                          <div className="h-1 w-16 rounded bg-neutral-200 skeleton-shimmer"></div>
+                          <div className="h-2 w-2 rounded-full bg-neutral-200 skeleton-shimmer"></div>
+                        </div>
+                        <div className="text-center">
+                          <div className="h-6 w-16 rounded bg-neutral-200 skeleton-shimmer mb-1"></div>
+                          <div className="h-3 w-20 rounded bg-neutral-200 skeleton-shimmer"></div>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="ml-6 text-right">
+                      <div className="h-8 w-20 rounded bg-neutral-200 skeleton-shimmer mb-2"></div>
+                      <div className="h-9 w-24 rounded bg-neutral-200 skeleton-shimmer"></div>
+                    </div>
                   </div>
                 </div>
+              ))}
+            </div>
+          ) : trips.length ? (
+            <>
+              {/* Results Summary */}
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-neutral-600">
+                    <span className="font-semibold text-neutral-900">{filteredTrips.length}</span> of{" "}
+                    <span className="font-semibold text-neutral-900">{trips.length}</span> buses available
+                  </p>
+                  {date && (
+                    <p className="mt-1 text-xs text-neutral-500">
+                      Travel date: {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </p>
+                  )}
+                </div>
+                {filteredTrips.length !== trips.length && (
+                  <button
+                    onClick={() => setFilters({
+                      busType: [],
+                      busModel: [],
+                      priceRange: [0, maxPrice],
+                      departureTime: [],
+                      operatorName: [],
+                      duration: [],
+                      femaleSeats: false,
+                    })}
+                    className="btn-ghost text-sm"
+                  >
+                    Clear filters
+                  </button>
+                )}
+              </div>
 
-                {/* Trip Cards */}
-                {paginatedTrips.length > 0 ? (
-                  <>
-                    <div className="grid gap-4 mb-8">
-                      {paginatedTrips.map((trip) => (
-                        <TripCard
-                          key={trip.id}
-                          trip={{ ...trip, startingFare: getTripFare(trip) }}
-                          onSelect={() => onTripSelect(trip)}
-                        />
-                      ))}
-                    </div>
+              {/* Trip Cards */}
+              {paginatedTrips.length > 0 ? (
+                <>
+                  <div className="space-y-4">
+                    {paginatedTrips.map((trip) => (
+                      <TripCard
+                        key={trip.id}
+                        trip={{ ...trip, startingFare: getTripFare(trip) }}
+                        onSelect={() => onTripSelect(trip)}
+                      />
+                    ))}
+                  </div>
 
-                    {/* Pagination */}
-                    {totalPages > 1 && (
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="mt-8">
                       <Pagination
                         currentPage={currentPage}
                         totalPages={totalPages}
                         onPageChange={handlePageChange}
                         isLoading={searching}
                       />
-                    )}
-                  </>
-                ) : (
-                  <StateMessage>
-                    No trips match your filters. Try adjusting your criteria.
-                  </StateMessage>
-                )}
-              </>
-            ) : (
-              <StateMessage>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="card text-center">
+                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
+                    <svg className="h-8 w-8 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </div>
+                  <h3 className="mb-2 text-lg font-semibold text-neutral-900">No buses match your filters</h3>
+                  <p className="mb-4 text-sm text-neutral-600">Try adjusting your filters or search criteria</p>
+                  <button
+                    onClick={() => setFilters({
+                      busType: [],
+                      busModel: [],
+                      priceRange: [0, maxPrice],
+                      departureTime: [],
+                      operatorName: [],
+                      duration: [],
+                      femaleSeats: false,
+                    })}
+                    className="btn btn-secondary"
+                  >
+                    Clear all filters
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="card text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
+                <svg className="h-8 w-8 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-neutral-900">
+                {searching ? "Searching for buses..." : "No buses found"}
+              </h3>
+              <p className="text-sm text-neutral-600">
                 {searching
-                  ? "Fetching trips..."
-                  : "No trips available for the selected route and date. Try adjusting your search criteria."}
-              </StateMessage>
-            )}
-          </div>
-        </section>
+                  ? "Please wait while we fetch available buses"
+                  : "No trips available for the selected route and date. Try different search criteria."}
+              </p>
+            </div>
+          )}
+          </section>
+        </div>
       </div>
     </main>
   );
