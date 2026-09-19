@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../../api'
 import MetricCard from './MetricCard'
 import StateMessage from '../common/StateMessage'
+import { LoadingPage } from '../common/Loading'
 
 export default function AdminDashboard() {
   const [data, setData] = useState({ users: [], operators: [], locations: [], routes: [] })
@@ -100,12 +101,7 @@ export default function AdminDashboard() {
 
       {/* Content */}
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="text-center">
-            <div className="spinner mx-auto mb-4"></div>
-            <p className="text-neutral-600">Loading platform data...</p>
-          </div>
-        </div>
+        <LoadingPage message="Loading Admin Panel" subMessage="Gathering platform data and metrics" showLogo={false} />
       ) : view === 'overview' ? (
         <OverviewView data={data} setView={setView} locationForm={locationForm} setLocationForm={setLocationForm} saving={saving} createResource={createResource} />
       ) : view === 'users' ? (

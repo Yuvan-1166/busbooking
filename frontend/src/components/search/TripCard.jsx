@@ -39,10 +39,10 @@ export default function TripCard({ trip, onSelect }) {
   };
 
   return (
-    <article className="card card-hover group fade-in-up transition-smooth hover-lift">
-      <div className="flex items-start justify-between gap-6 max-[600px]:flex-col max-[600px]:gap-4">
-        {/* Left: Time & Operator */}
-        <div className="flex flex-1 items-start gap-4">
+    <article className="card card-hover group fade-in-up transition-smooth hover-lift overflow-hidden">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        {/* Left: Operator & Bus Info */}
+        <div className="flex items-start gap-4 min-w-0 flex-1">
           {/* Operator Badge */}
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-primary-100 text-xl font-bold text-primary-600 transition-transform group-hover:scale-105">
             {operatorDetails?.name?.[0] || "B"}
@@ -54,11 +54,11 @@ export default function TripCard({ trip, onSelect }) {
               {operatorDetails?.name || (loading ? "Loading..." : "Bus Operator")}
             </h3>
             <div className="flex flex-wrap items-center gap-2 text-xs text-neutral-600">
-              <span className="badge badge-neutral transition-colors">
+              <span className="badge badge-neutral transition-colors shrink-0">
                 {busDetails ? getBusTypeLabel(busDetails.busType) : "—"}
               </span>
               {busDetails?.registrationNumber && (
-                <span className="text-neutral-500">
+                <span className="text-neutral-500 truncate">
                   {busDetails.registrationNumber}
                 </span>
               )}
@@ -67,26 +67,26 @@ export default function TripCard({ trip, onSelect }) {
         </div>
 
         {/* Middle: Journey Info */}
-        <div className="flex flex-1 items-center gap-4 max-[600px]:w-full">
+        <div className="flex items-center justify-between gap-4 w-full sm:w-auto sm:flex-none">
           {/* Departure */}
           <div className="text-center">
-            <div className="mb-1 text-2xl font-bold text-neutral-900">
+            <div className="text-lg sm:text-2xl font-bold text-neutral-900">
               {trip.departureTime || "—"}
             </div>
             <div className="text-xs text-neutral-500">Departure</div>
           </div>
 
-          {/* Duration */}
-          <div className="flex flex-1 flex-col items-center">
-            <div className="mb-1 h-px w-full bg-neutral-300"></div>
+          {/* Duration - Hidden on mobile */}
+          <div className="hidden sm:flex flex-col items-center gap-1">
+            <div className="h-px w-12 bg-neutral-300"></div>
             <div className="text-xs font-medium text-neutral-600">
               {trip.duration || "—"}
             </div>
           </div>
 
-          {/* Arrival (if available) */}
+          {/* Arrival */}
           <div className="text-center">
-            <div className="mb-1 text-2xl font-bold text-neutral-900">
+            <div className="text-lg sm:text-2xl font-bold text-neutral-900">
               {trip.arrivalTime || "—"}
             </div>
             <div className="text-xs text-neutral-500">Arrival</div>
@@ -94,15 +94,15 @@ export default function TripCard({ trip, onSelect }) {
         </div>
 
         {/* Right: Price & Action */}
-        <div className="flex shrink-0 flex-col items-end gap-3 max-[600px]:w-full max-[600px]:flex-row max-[600px]:items-center max-[600px]:justify-between">
-          <div className="text-right max-[600px]:text-left">
-            <div className="mb-1 text-xs text-neutral-500">Starting from</div>
-            <div className="text-2xl font-bold text-primary-600">
+        <div className="flex items-center justify-between gap-3 w-full sm:w-auto sm:flex-col sm:items-end">
+          <div className="text-left sm:text-right">
+            <div className="text-xs text-neutral-500">Starting from</div>
+            <div className="text-xl sm:text-2xl font-bold text-primary-600">
               {formatCurrency(trip.startingFare)}
             </div>
             {trip.availableSeats != null && (
               <div className="mt-1 text-xs text-neutral-500">
-                {trip.availableSeats} seats left
+                {trip.availableSeats} seats
               </div>
             )}
           </div>
@@ -110,16 +110,17 @@ export default function TripCard({ trip, onSelect }) {
           <button
             onClick={onSelect}
             disabled={loading}
-            className="btn btn-primary max-[600px]:flex-1 transition-smooth hover-scale disabled:opacity-50"
+            className="btn btn-primary sm:whitespace-nowrap transition-smooth hover-scale disabled:opacity-50"
           >
             {loading ? (
               <span className="flex items-center gap-2">
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-l-transparent"></div>
-                Loading...
+                <span className="hidden sm:inline">Loading...</span>
               </span>
             ) : (
-              "Select Seats"
+              <span className="hidden sm:inline">Select Seats</span>
             )}
+            {!loading && <span className="sm:hidden">Select</span>}
           </button>
         </div>
       </div>

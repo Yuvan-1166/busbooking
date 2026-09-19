@@ -43,10 +43,10 @@ export default function DualRangeSlider({
           type="range"
           min={minLimit}
           max={maxLimit}
-          step="0.01"
+          step="1"
           value={minValue}
           onChange={handleMinChange}
-          className="absolute w-full h-1 top-5 pointer-events-none appearance-none bg-transparent cursor-pointer accent-orange"
+          className="absolute w-full h-1 top-5 appearance-none bg-transparent cursor-pointer accent-orangepointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-moz-range-thumb]:pointer-events-auto"
           style={{
             zIndex: minValue > maxLimit - (maxLimit - minLimit) / 2 ? 5 : 3,
           }}
@@ -57,10 +57,10 @@ export default function DualRangeSlider({
           type="range"
           min={minLimit}
           max={maxLimit}
-          step="0.01"
+          step="1"
           value={maxValue}
           onChange={handleMaxChange}
-          className="absolute w-full h-1 top-5 pointer-events-none appearance-none bg-transparent cursor-pointer accent-orange"
+          className="absolute w-full h-1 top-5 appearance-none bg-transparent cursor-pointer accent-orange pointer-events-none [&::-webkit-slider-thumb]:pointer-events-auto [&::-moz-range-thumb]:pointer-events-auto"
           style={{
             zIndex: maxValue < minLimit + (maxLimit - minLimit) / 2 ? 3 : 5,
           }}
@@ -95,7 +95,7 @@ export default function DualRangeSlider({
           <label className="text-xs font-mono text-muted mb-1 block">Min</label>
           <input
             type="number"
-            step="0.01"
+            step="1"
             min={minLimit}
             max={maxValue}
             value={minValue}
@@ -110,7 +110,7 @@ export default function DualRangeSlider({
           <label className="text-xs font-mono text-muted mb-1 block">Max</label>
           <input
             type="number"
-            step="0.01"
+            step="1"
             min={minValue}
             max={maxLimit}
             value={maxValue}

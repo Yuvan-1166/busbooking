@@ -19,3 +19,11 @@ createRoot(document.getElementById('root')).render(
     </GoogleOAuthProvider>
   </StrictMode>,
 )
+
+// Remove initial loading screen after React renders
+setTimeout(() => {
+  const loadingEl = document.getElementById('app-loading')
+  if (loadingEl) {
+    loadingEl.remove()
+  }
+}, 100)

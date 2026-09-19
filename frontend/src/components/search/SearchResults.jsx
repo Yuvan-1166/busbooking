@@ -165,7 +165,7 @@ export default function SearchResults({
     <main id="top" className="min-h-screen bg-neutral-50">
       {/* Header with Search Form */}
       <section className="border-b border-neutral-200 bg-white px-4 py-6 sm:px-6 sm:py-8">
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-7xl">
           <div className="mb-6">
             <h1 className="mb-2 text-xl font-semibold text-neutral-900 sm:text-2xl">Search Results</h1>
             <p className="text-sm text-neutral-600">
@@ -191,7 +191,7 @@ export default function SearchResults({
       </section>
 
       {/* Sidebar + Content Layout */}
-      <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">
         {/* Mobile Filter Toggle */}
         <div className="mb-4 lg:hidden">
           <button
@@ -205,20 +205,21 @@ export default function SearchResults({
           </button>
         </div>
 
-        
-        <div className="lg:flex lg:gap-6">
+        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
           {/* Sidebar - Filters */}
-          <aside className={`${mobileFiltersOpen ? 'block mb-6' : 'hidden'} lg:block w-full lg:w-64 lg:shrink-0`}>
-            <FilterSidebar
-              trips={trips}
-              filters={filters}
-              onFilterChange={setFilters}
-              getTripFare={getTripFare}
-            />
+          <aside className={`${mobileFiltersOpen ? 'block' : 'hidden'} lg:block`}>
+            <div className="sticky top-6">
+              <FilterSidebar
+                trips={trips}
+                filters={filters}
+                onFilterChange={setFilters}
+                getTripFare={getTripFare}
+              />
+            </div>
           </aside>
 
           {/* Main Content */}
-          <section id="trips-container" className="min-w-0 flex-1">
+          <section id="trips-container" className="w-full">
           {loading ? (
             <div className="space-y-4">
               {/* Skeleton loading for trip cards */}

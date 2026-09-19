@@ -159,32 +159,32 @@ export default function FilterSidebar({
   }, [filters, maxPrice]);
 
   return (
-    <aside className="h-screen overflow-y-auto border-r border-[#e7e5dc] bg-white p-5 max-[900px]:hidden w-80">
+    <aside className="border border-neutral-200 rounded-lg bg-white p-5 overflow-y-auto max-h-[calc(100vh-120px)]">
       {/* Header */}
-      <div className="mb-6 flex items-center justify-between sticky top-0 bg-white py-2 z-10">
-        <h3 className="font-semibold text-ink">Filters</h3>
+      <div className="mb-6 flex items-center justify-between sticky top-0 bg-white pb-3 z-10 border-b border-neutral-200">
+        <h3 className="font-semibold text-neutral-900">Filters</h3>
         {activeFilterCount > 0 && (
           <button
             onClick={clearAllFilters}
-            className="text-xs text-orange hover:text-[#d97e3a] font-semibold"
+            className="text-xs text-primary-600 hover:text-primary-700 font-semibold"
           >
-            Clear all ({activeFilterCount})
+            Clear ({activeFilterCount})
           </button>
         )}
       </div>
 
       <div className="space-y-4">
         {/* Price Range */}
-        <div>
+        <div className="border-b border-neutral-200 pb-4">
           <button
             onClick={() => toggleGroup("price")}
-            className="mb-2 flex w-full items-center justify-between font-semibold text-ink hover:text-orange"
+            className="mb-3 flex w-full items-center justify-between font-semibold text-neutral-900 hover:text-primary-600 transition-colors"
           >
             <span>Price</span>
             <span className="text-lg">{expandedGroups.price ? "−" : "+"}</span>
           </button>
           {expandedGroups.price && (
-            <div className="space-y-3 pl-2">
+            <div className="space-y-3">
               <DualRangeSlider
                 minValue={filters.priceRange[0]}
                 maxValue={filters.priceRange[1]}
@@ -198,44 +198,44 @@ export default function FilterSidebar({
 
         {/* Departure Time */}
         {departureSlots.length > 0 && (
-          <div>
-            <button
-              onClick={() => toggleGroup("departure")}
-              className="mb-2 flex w-full items-center justify-between font-semibold text-ink hover:text-orange"
-            >
-              <span>Departure Time</span>
-              <span className="text-lg">
-                {expandedGroups.departure ? "−" : "+"}
-              </span>
-            </button>
-            {expandedGroups.departure && (
-              <div className="space-y-2 pl-2">
-                {departureSlots.map((slot) => (
-                  <label
-                    key={slot.value}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={filters.departureTime.includes(slot.value)}
-                      onChange={() =>
-                        handleFilterChange("departureTime", slot.value)
-                      }
-                      className="h-4 w-4 rounded border-[#c8cdc3] text-orange"
-                    />
-                    <span className="text-sm text-[#606a5d]">{slot.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
+        <div className="border-b border-neutral-200 pb-4">
+          <button
+            onClick={() => toggleGroup("departure")}
+            className="mb-3 flex w-full items-center justify-between font-semibold text-neutral-900 hover:text-primary-600 transition-colors"
+          >
+            <span>Departure Time</span>
+            <span className="text-lg">
+              {expandedGroups.departure ? "−" : "+"}
+            </span>
+          </button>
+          {expandedGroups.departure && (
+            <div className="space-y-2">
+              {departureSlots.map((slot) => (
+                <label
+                  key={slot.value}
+                  className="flex items-center gap-2 cursor-pointer hover:text-primary-600 transition-colors"
+                >
+                  <input
+                    type="checkbox"
+                    checked={filters.departureTime.includes(slot.value)}
+                    onChange={() =>
+                      handleFilterChange("departureTime", slot.value)
+                    }
+                    className="h-4 w-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+                  />
+                  <span className="text-sm text-neutral-600">{slot.label}</span>
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
         )}
 
         {/* Journey Duration */}
         <div>
           <button
             onClick={() => toggleGroup("duration")}
-            className="mb-2 flex w-full items-center justify-between font-semibold text-ink hover:text-orange"
+            className="mb-2 flex w-full items-center justify-between font-semibold text-neutral-900 hover:text-primary-600"
           >
             <span>Journey Duration</span>
             <span className="text-lg">
@@ -253,9 +253,9 @@ export default function FilterSidebar({
                     type="checkbox"
                     checked={filters.duration.includes(range.value)}
                     onChange={() => handleFilterChange("duration", range.value)}
-                    className="h-4 w-4 rounded border-[#c8cdc3] text-orange"
+                    className="h-4 w-4 rounded border-neutral-300 text-primary-600"
                   />
-                  <span className="text-sm text-[#606a5d]">{range.label}</span>
+                  <span className="text-sm text-neutral-600">{range.label}</span>
                 </label>
               ))}
             </div>
@@ -267,11 +267,11 @@ export default function FilterSidebar({
           <div>
             <button
               onClick={() => toggleGroup("busType")}
-              className="mb-2 flex w-full items-center justify-between font-semibold text-ink hover:text-orange"
+              className="mb-2 flex w-full items-center justify-between font-semibold text-neutral-900 hover:text-primary-600"
             >
               <span>Bus Type</span>
               {filters.busType.length > 0 && (
-                <span className="text-xs font-mono bg-orange text-white px-2 py-0.5 rounded-full">
+                <span className="text-xs font-mono bg-primary-600 text-white px-2 py-0.5 rounded-full">
                   {filters.busType.length}
                 </span>
               )}
@@ -290,9 +290,9 @@ export default function FilterSidebar({
                       type="checkbox"
                       checked={filters.busType.includes(type)}
                       onChange={() => handleFilterChange("busType", type)}
-                      className="h-4 w-4 rounded border-[#c8cdc3] text-orange"
+                      className="h-4 w-4 rounded border-neutral-300 text-primary-600"
                     />
-                    <span className="text-sm text-[#606a5d]">
+                    <span className="text-sm text-neutral-600">
                       {getBusTypeLabel(type)}
                     </span>
                   </label>
@@ -307,11 +307,11 @@ export default function FilterSidebar({
           <div>
             <button
               onClick={() => toggleGroup("busModel")}
-              className="mb-2 flex w-full items-center justify-between font-semibold text-ink hover:text-orange"
+              className="mb-2 flex w-full items-center justify-between font-semibold text-neutral-900 hover:text-primary-600"
             >
               <span>Bus Model</span>
               {filters.busModel.length > 0 && (
-                <span className="text-xs font-mono bg-orange text-white px-2 py-0.5 rounded-full">
+                <span className="text-xs font-mono bg-primary-600 text-white px-2 py-0.5 rounded-full">
                   {filters.busModel.length}
                 </span>
               )}
@@ -343,9 +343,9 @@ export default function FilterSidebar({
                           onChange={() =>
                             handleFilterChange("busModel", model)
                           }
-                          className="h-4 w-4 rounded border-[#c8cdc3] text-orange"
+                          className="h-4 w-4 rounded border-neutral-300 text-primary-600"
                         />
-                        <span className="text-sm text-[#606a5d] truncate">
+                        <span className="text-sm text-neutral-600 truncate">
                           {model}
                         </span>
                       </label>
@@ -364,11 +364,11 @@ export default function FilterSidebar({
           <div>
             <button
               onClick={() => toggleGroup("operator")}
-              className="mb-2 flex w-full items-center justify-between font-semibold text-ink hover:text-orange"
+              className="mb-2 flex w-full items-center justify-between font-semibold text-neutral-900 hover:text-primary-600"
             >
               <span>Operator</span>
               {filters.operatorName.length > 0 && (
-                <span className="text-xs font-mono bg-orange text-white px-2 py-0.5 rounded-full">
+                <span className="text-xs font-mono bg-primary-600 text-white px-2 py-0.5 rounded-full">
                   {filters.operatorName.length}
                 </span>
               )}
@@ -400,9 +400,9 @@ export default function FilterSidebar({
                           onChange={() =>
                             handleFilterChange("operatorName", op)
                           }
-                          className="h-4 w-4 rounded border-[#c8cdc3] text-orange"
+                          className="h-4 w-4 rounded border-neutral-300 text-primary-600"
                         />
-                        <span className="text-sm text-[#606a5d] truncate">
+                        <span className="text-sm text-neutral-600 truncate">
                           {op}
                         </span>
                       </label>
@@ -421,7 +421,7 @@ export default function FilterSidebar({
           <div>
             <button
               onClick={() => toggleGroup("femaleSeats")}
-              className="mb-2 flex w-full items-center justify-between font-semibold text-ink hover:text-orange"
+              className="mb-2 flex w-full items-center justify-between font-semibold text-neutral-900 hover:text-primary-600"
             >
               <span>Women Safety</span>
               <span className="text-lg">
@@ -437,9 +437,9 @@ export default function FilterSidebar({
                     onChange={(e) =>
                       handleFilterChange("femaleSeats", e.target.checked)
                     }
-                    className="h-4 w-4 rounded border-[#c8cdc3] text-orange"
+                    className="h-4 w-4 rounded border-neutral-300 text-primary-600"
                   />
-                  <span className="text-sm text-[#606a5d]">
+                  <span className="text-sm text-neutral-600">
                     Female reserved seats ({hasFemaleSeatsCount})
                   </span>
                 </label>
