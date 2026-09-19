@@ -1,8 +1,11 @@
 package com.yuvan.busbooking.user.service;
 
 import com.yuvan.busbooking.auth.dto.VerifyTwitterEmailRequest;
+import com.yuvan.busbooking.auth.dto.VerifyTwitterEmailResponse;
 import com.yuvan.busbooking.auth.entity.OtpPurpose;
+import com.yuvan.busbooking.auth.service.JwtService;
 import com.yuvan.busbooking.auth.service.OtpService;
+import com.yuvan.busbooking.auth.service.CustomUserDetailsService;
 import com.yuvan.busbooking.common.exception.ResourceNotFoundException;
 import com.yuvan.busbooking.common.util.SecurityUtils;
 import com.yuvan.busbooking.user.dto.UserRequest;
@@ -11,6 +14,7 @@ import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.entity.UserStatus;
 import com.yuvan.busbooking.user.repository.UserRepository;
 
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,11 +28,21 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final OtpService otpService;
+    private final JwtService jwtService;
+    private final CustomUserDetailsService userDetailsService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder, OtpService otpService) {
+    public UserService(
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            OtpService otpService,
+            JwtService jwtService,
+            CustomUserDetailsService userDetailsService
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.otpService = otpService;
+        this.jwtService = jwtService;
+        this.userDetailsService = userDetailsService;
     }
 
     public UserResponse create(UserRequest request) {
@@ -194,12 +208,15 @@ public class UserService {
      *   <li>Verify OTP matches the email</li>
      *   <li>Check email isn't already registered</li>
      *   <li>Update user's email and clear twitterEmailPending flag</li>
+     *   <li>Generate a NEW JWT with the new email in the subject claim</li>
+     *   <li>Return the JWT and updated user data</li>
      * </ol>
      *
      * @param request {@link VerifyTwitterEmailRequest} with email and OTP
+     * @return {@link VerifyTwitterEmailResponse} with new JWT and user data
      * @throws IllegalArgumentException if email is already taken or OTP is invalid
      */
-    public UserResponse verifyTwitterEmail(VerifyTwitterEmailRequest request) {
+    public VerifyTwitterEmailResponse verifyTwitterEmail(VerifyTwitterEmailRequest request) {
         // Get current authenticated user
         String currentEmail = SecurityUtils.getCurrentUserEmail();
         User user = userRepository.findByEmail(currentEmail)
@@ -223,7 +240,17 @@ public class UserService {
         user.setTwitterEmailPending(false);
         User updated = userRepository.save(user);
 
-        return toResponse(updated);
+        // Generate NEW JWT with the updated email in the subject claim
+        UserDetails userDetails = userDetailsService.loadUserByUsername(updated.getEmail());
+        String newAccessToken = jwtService.generateToken(userDetails);
+
+        return new VerifyTwitterEmailResponse(
+                newAccessToken,
+                "Bearer",
+                3600L,
+                updated.getEmail(),
+                updated.getTwitterEmailPending()
+        );
     }
 
     private UserResponse toResponse(User user) {

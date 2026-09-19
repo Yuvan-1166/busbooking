@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/AuthContext";
 import { api } from "../../api";
 import { parseApiError, getErrorMessage } from "../../utils/errorHandler";
-import { storeSession } from "../../auth/authStorage";
+import { createSession, storeSession } from "../../auth/authStorage";
 
 export default function OnboardingPage() {
   const navigate = useNavigate();
@@ -75,12 +75,9 @@ export default function OnboardingPage() {
       const response = await api.verifyTwitterEmail(twitterEmailForm.email, twitterEmailForm.otp);
       setMessage("Email verified successfully! Completing onboarding...");
       
-      // Update session to clear twitterEmailPending flag
-      const updatedSession = {
-        ...session,
-        twitterEmailPending: false,
-      };
-      storeSession(updatedSession);
+      // Replace session with new JWT that has the verified email in the subject claim
+      const newSession = createSession(response);
+      storeSession(newSession);
 
       // Proceed to profile completion
       setTimeout(() => {

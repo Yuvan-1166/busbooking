@@ -9,6 +9,7 @@ import com.yuvan.busbooking.common.exception.ResourceNotFoundException;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.entity.UserStatus;
 import com.yuvan.busbooking.user.repository.UserRepository;
+import com.yuvan.busbooking.common.util.SecurityUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -142,11 +143,17 @@ public class OtpService {
      */
     @Transactional
     public void generateAndSend(String email, OtpPurpose purpose) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found: " + email));
+        
+        String currentEmail = SecurityUtils.getCurrentUserEmail();
 
-        if (user.getStatus() == UserStatus.ACTIVE) {
+        User user = userRepository.findByEmail(currentEmail)
+                    .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                            "User not found" + currentEmail
+                        )
+                    );
+
+        if (!user.getTwitterEmailPending() && user.getStatus() == UserStatus.ACTIVE) {
             throw new IllegalStateException("Email is already verified");
         }
 
@@ -255,9 +262,14 @@ public class OtpService {
         record.setVerifiedAt(LocalDateTime.now());
         otpRepository.save(record);
 
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found: " + email));
+        String currentEmail = SecurityUtils.getCurrentUserEmail();
+
+        User user = userRepository.findByEmail(currentEmail)
+                    .orElseThrow(
+                        () -> new ResourceNotFoundException(
+                            "User not found: " + currentEmail
+                        )
+                    );
 
         // Activate user immediately after OTP verification
         // TOTP 2FA setup is now optional and done from profile page
