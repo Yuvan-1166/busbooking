@@ -169,40 +169,63 @@ export default function OnboardingPage() {
     return <div className="p-4">Loading...</div>;
   }
 
+  // ── Shared bits (Zoho-inspired design) ────────────────────────────────────
+  const logo = (
+    <div className="mx-auto mb-1 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg">
+      <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M4 6h16v2H4zm0 5h16v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6zm2-7h12a2 2 0 012 2v1H4V6a2 2 0 012-2z"/>
+        <circle cx="6" cy="19" r="1"/>
+        <circle cx="18" cy="19" r="1"/>
+        <rect x="7" y="8" width="2" height="2" rx="0.5"/>
+        <rect x="11" y="8" width="2" height="2" rx="0.5"/>
+        <rect x="15" y="8" width="2" height="2" rx="0.5"/>
+      </svg>
+    </div>
+  );
+
+  const card = "w-full max-w-[520px] rounded-lg border border-neutral-200 bg-white px-6 py-6 shadow-sm max-[600px]:px-4 max-[600px]:py-4";
+
+  const heading = ({ title, subtitle }) => (
+    <div className="mb-6 text-center">
+      {logo}
+      <div className="mb-4">
+        <div className="text-xl font-bold text-neutral-900">BusBooking</div>
+        <div className="text-sm text-neutral-500">Travel Smart</div>
+      </div>
+      <h1 className="mb-1 text-3xl font-semibold text-neutral-800">{title}</h1>
+      <p className="text-sm text-neutral-500">{subtitle}</p>
+    </div>
+  );
+
   // ── Twitter Email Verification Mode ─────────────────────────────────────
   if (emailVerificationMode === "email" && isTwitterUser) {
-    const labelClass = "grid gap-1.5 font-mono text-[10px] uppercase text-muted";
-    const inputClass =
-      "w-full border-0 border-b border-line bg-transparent py-2.5 text-sm text-ink outline-0";
-
     return (
-      <main className="grid min-h-screen place-items-center bg-[#dce5d5] px-4 py-[30px]">
-        <section className="w-full max-w-[620px] bg-paper p-[38px] shadow-[0_18px_42px_rgba(48,53,43,.12)] max-[600px]:p-6">
-          <div className="text-center mb-8">
-            <h1 className="mb-3 font-display text-[42px] font-semibold leading-[.98] text-ink max-[600px]:text-4xl">
-              Verify Your Email
-            </h1>
-            <p className="mb-7 text-[13px] leading-6 text-muted">
-              Twitter sign-in doesn't provide your email. Please add one to complete your profile.
-            </p>
-          </div>
+      <main className="grid min-h-screen place-items-center bg-neutral-50 px-4 py-4">
+        <section className={card}>
+          {heading({
+            title: "Verify Your Email",
+            subtitle:
+              "Twitter sign-in doesn't provide your email. Please add one to complete your profile.",
+          })}
 
           {message && (
-            <div className="mb-4 border border-[#a5bea0] bg-[#e4eee1] p-3 text-xs text-green" role="status">
+            <div className="alert alert-success mb-2" role="status">
               {message}
             </div>
           )}
           {error && (
-            <div className="mb-4 border border-[#d79b8b] bg-[#f7e5df] p-3 text-xs text-[#8c3e2d]" role="alert">
+            <div className="alert alert-error mb-2" role="alert">
               {error}
             </div>
           )}
 
-          <form className="grid gap-[15px]" onSubmit={emailOtpSent ? verifyTwitterEmail : (e) => { e.preventDefault(); sendTwitterEmailOtp(); }}>
-            <label className={labelClass}>
-              <span>Email Address *</span>
+          <form className="space-y-3" onSubmit={emailOtpSent ? verifyTwitterEmail : (e) => { e.preventDefault(); sendTwitterEmailOtp(); }}>
+            <div className="form-group">
+              <label className="form-label">
+                Email Address <span className="text-error-500">*</span>
+              </label>
               <input
-                className={inputClass}
+                className="input"
                 required
                 type="email"
                 name="email"
@@ -211,13 +234,15 @@ export default function OnboardingPage() {
                 placeholder="your@email.com"
                 disabled={emailOtpSent}
               />
-            </label>
+            </div>
 
             {emailOtpSent && (
-              <label className={labelClass}>
-                <span>Verification Code *</span>
+              <div className="form-group">
+                <label className="form-label">
+                  Verification Code <span className="text-error-500">*</span>
+                </label>
                 <input
-                  className={`${inputClass} font-mono text-2xl tracking-[.25em]`}
+                  className="input text-center text-2xl tracking-widest"
                   required
                   type="text"
                   inputMode="numeric"
@@ -232,28 +257,28 @@ export default function OnboardingPage() {
                     }))
                   }
                   placeholder="000000"
+                  autoComplete="one-time-code"
                   autoFocus
                 />
-              </label>
+              </div>
             )}
 
             <button
               type="submit"
+              className="btn btn-primary btn-lg w-full"
               disabled={submitting || (emailOtpSent && twitterEmailForm.otp.length !== 6)}
-              className="mt-2 border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
             >
               {submitting
                 ? "Please wait…"
                 : emailOtpSent
                   ? "Verify Email"
                   : "Send Verification Code"}
-              <span className="float-right text-lg">→</span>
             </button>
 
             {emailOtpSent && (
               <button
                 type="button"
-                className="border-0 bg-transparent p-0 text-[11px] text-muted underline"
+                className="btn-ghost w-full text-sm"
                 onClick={() => {
                   setEmailOtpSent(false);
                   setTwitterEmailForm(prev => ({ ...prev, otp: "" }));
@@ -269,63 +294,78 @@ export default function OnboardingPage() {
     );
   }
 
-  const labelClass = "grid gap-1.5 font-mono text-[10px] uppercase text-muted";
-  const inputClass =
-    "w-full border-0 border-b border-line bg-transparent py-2.5 text-sm text-ink outline-0";
-
   return (
-    <main className="grid min-h-screen place-items-center bg-[#dce5d5] px-4 py-[30px]">
-      <section className="w-full max-w-[620px] bg-paper p-[38px] shadow-[0_18px_42px_rgba(48,53,43,.12)] max-[600px]:p-6">
-        <div className="text-center mb-8">
-          <h1 className="mb-3 font-display text-[42px] font-semibold leading-[.98] text-ink max-[600px]:text-4xl">
-            Complete Your Profile
-          </h1>
-          <p className="mb-7 text-[13px] leading-6 text-muted">
-            Select your role and fill in your details to get started.
-          </p>
-        </div>
+    <main className="grid min-h-screen place-items-center bg-neutral-50 px-4 py-4">
+      <section className={card}>
+        {heading({
+          title: "Complete Your Profile",
+          subtitle: "Select your role and fill in your details to get started.",
+        })}
 
         {message && (
-          <div className="mb-4 border border-[#a5bea0] bg-[#e4eee1] p-3 text-xs text-green" role="status">
+          <div className="alert alert-success mb-2" role="status">
             {message}
           </div>
         )}
         {error && (
-          <div className="mb-4 border border-[#d79b8b] bg-[#f7e5df] p-3 text-xs text-[#8c3e2d]" role="alert">
+          <div className="alert alert-error mb-2" role="alert">
             {error}
           </div>
         )}
 
-        <form className="grid gap-[15px]" onSubmit={handleSubmit}>
+        <form className="space-y-3" onSubmit={handleSubmit}>
           {/* Role Selection */}
-          <div>
-            <p className={labelClass + " mb-3"}>Select Your Role:</p>
-            <div className="grid grid-cols-2 gap-2.5">
+          <div className="mb-4">
+            <label className="form-label mb-2 block">Select your role</label>
+            <div className="grid grid-cols-2 gap-3 max-[600px]:grid-cols-1">
               <button
                 type="button"
                 onClick={() => setSelectedRole("passenger")}
-                className={`grid min-h-[90px] gap-1.5 border p-[15px] text-left ${
+                className={`flex flex-col gap-2 rounded-md border-2 p-4 text-left transition-all ${
                   selectedRole === "passenger"
-                    ? "border-orange bg-[#fff6ee]"
-                    : "border-line bg-transparent"
+                    ? "border-primary-500 bg-primary-50"
+                    : "border-neutral-200 bg-white hover:border-neutral-300"
                 }`}
               >
-                <strong className="font-display text-[17px]">🧑‍💼 Passenger</strong>
-                <span className="text-[11px] leading-4 text-muted">
+                <div className="flex items-center gap-2">
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-md ${
+                    selectedRole === "passenger"
+                      ? "bg-primary-500 text-white"
+                      : "bg-neutral-100 text-neutral-600"
+                  }`}>
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <strong className="text-base font-semibold text-neutral-900">Passenger</strong>
+                </div>
+                <span className="text-xs leading-relaxed text-neutral-600">
                   Search trips, reserve seats, and view tickets.
                 </span>
               </button>
+
               <button
                 type="button"
                 onClick={() => setSelectedRole("operator")}
-                className={`grid min-h-[90px] gap-1.5 border p-[15px] text-left ${
+                className={`flex flex-col gap-2 rounded-md border-2 p-4 text-left transition-all ${
                   selectedRole === "operator"
-                    ? "border-orange bg-[#fff6ee]"
-                    : "border-line bg-transparent"
+                    ? "border-primary-500 bg-primary-50"
+                    : "border-neutral-200 bg-white hover:border-neutral-300"
                 }`}
               >
-                <strong className="font-display text-[17px]">🚌 Operator</strong>
-                <span className="text-[11px] leading-4 text-muted">
+                <div className="flex items-center gap-2">
+                  <div className={`flex h-8 w-8 items-center justify-center rounded-md ${
+                    selectedRole === "operator"
+                      ? "bg-primary-500 text-white"
+                      : "bg-neutral-100 text-neutral-600"
+                  }`}>
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                  </div>
+                  <strong className="text-base font-semibold text-neutral-900">Operator</strong>
+                </div>
+                <span className="text-xs leading-relaxed text-neutral-600">
                   Manage buses, seats, schedules, and trips.
                 </span>
               </button>
@@ -333,54 +373,57 @@ export default function OnboardingPage() {
           </div>
 
           {/* Common Fields */}
-          <label className={labelClass}>
-            First Name *
+          <div className="form-group">
+            <label className="form-label">
+              First name <span className="text-error-500">*</span>
+            </label>
             <input
-              className={inputClass}
+              className="input"
               required
               type="text"
               name="firstName"
               value={formData.firstName}
               onChange={updateField}
               placeholder="Your first name"
+              autoComplete="given-name"
             />
-          </label>
+          </div>
 
-          <label className={labelClass}>
-            Last Name
+          <div className="form-group">
+            <label className="form-label">Last name</label>
             <input
-              className={inputClass}
+              className="input"
               type="text"
               name="lastName"
               value={formData.lastName}
               onChange={updateField}
               placeholder="Your last name"
+              autoComplete="family-name"
             />
-          </label>
+          </div>
 
-          <label className={labelClass}>
-            Phone
+          <div className="form-group">
+            <label className="form-label">Phone</label>
             <input
-              className={inputClass}
+              className="input"
               type="tel"
               name="phone"
               value={formData.phone}
               onChange={updateField}
               placeholder="Your phone number"
+              autoComplete="tel"
             />
-          </label>
+          </div>
 
           {/* Operator-specific Fields */}
           {selectedRole === "operator" && (
-            <>
-              <div className="my-2 text-xs font-mono uppercase text-muted">
-                Operator Details
-              </div>
-
-              <label className={labelClass}>
-                Business Name *
+            <div className="space-y-3">
+              <div className="form-group">
+                <label className="form-label">
+                  Business Name <span className="text-error-500">*</span>
+                </label>
                 <input
-                  className={inputClass}
+                  className="input"
                   required
                   type="text"
                   name="operatorName"
@@ -388,12 +431,14 @@ export default function OnboardingPage() {
                   onChange={updateField}
                   placeholder="Your business name"
                 />
-              </label>
+              </div>
 
-              <label className={labelClass}>
-                Registration Number *
+              <div className="form-group">
+                <label className="form-label">
+                  Registration Number <span className="text-error-500">*</span>
+                </label>
                 <input
-                  className={inputClass}
+                  className="input"
                   required
                   type="text"
                   name="registrationNumber"
@@ -401,29 +446,28 @@ export default function OnboardingPage() {
                   onChange={updateField}
                   placeholder="Business registration number"
                 />
-              </label>
+              </div>
 
-              <label className={labelClass}>
-                Contact Phone
+              <div className="form-group">
+                <label className="form-label">Contact Phone</label>
                 <input
-                  className={inputClass}
+                  className="input"
                   type="tel"
                   name="contactPhone"
                   value={formData.contactPhone}
                   onChange={updateField}
                   placeholder="Business contact phone"
                 />
-              </label>
-            </>
+              </div>
+            </div>
           )}
 
           <button
             type="submit"
+            className="btn btn-primary btn-lg w-full"
             disabled={submitting}
-            className="mt-4 border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
           >
-            {submitting ? "Completing..." : "Complete Profile"}
-            <span className="float-right text-lg">→</span>
+            {submitting ? "Completing…" : "Complete Profile"}
           </button>
         </form>
       </section>

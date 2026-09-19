@@ -57,6 +57,9 @@
     sans-serif;
   --font-mono:
     ui-monospace, "JetBrains Mono", "Fira Code", "Courier New", monospace;
+  --font-display:
+    "Zoho Puvi", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    sans-serif;
 
   /* Primary Colors (Blue - Professional & Trustworthy) */
   --color-primary-50: #eff6ff;
@@ -125,13 +128,7 @@
 }
 
 :root {
-  font-family:
-    "Inter",
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
-    sans-serif;
+  font-family: "Zoho Puvi", "Inter", sans-serif;
   color: #1f2831;
   background: #fafbfc;
   font-synthesis: none;
@@ -513,15 +510,15 @@ p {
   margin-left: auto;
   color: var(--green);
   font:
-    9px "DM Mono",
+    9px "Zoho Puvi",
     monospace;
   text-transform: uppercase;
 }
 
 :root {
-  font-family: "DM Sans", sans-serif;
+  font-family: "Zoho Puvi", "Inter", sans-serif;
   color: #202622;
-  background: #f5f2eb;
+  background: #fafbfc;
   font-synthesis: none;
   --ink: #202622;
   --muted: #70766d;
@@ -536,7 +533,7 @@ p {
 }
 body {
   margin: 0;
-  background: #f5f2eb;
+  background: #fafbfc;
 }
 button,
 input,
@@ -578,8 +575,8 @@ button {
   background: var(--ink);
   color: #f9d66d;
   font:
-    700 16px "Playfair Display",
-    serif;
+    700 16px "Zoho Puvi",
+    sans-serif;
   transform: rotate(-8deg);
 }
 .main-nav {
@@ -640,7 +637,7 @@ button {
   margin: 0 0 14px;
   color: var(--green);
   font:
-    500 10px "DM Mono",
+    500 10px "Zoho Puvi",
     monospace;
   letter-spacing: 0.13em;
 }
@@ -655,8 +652,8 @@ p {
 .bookings-heading h1 {
   margin-bottom: 14px;
   font:
-    600 56px/0.95 "Playfair Display",
-    serif;
+    600 56px/0.95 "Zoho Puvi",
+    sans-serif;
   letter-spacing: -0.045em;
 }
 .hero-section h1 em {
@@ -728,8 +725,8 @@ p {
   background: var(--orange);
   color: white;
   font:
-    700 20px "Playfair Display",
-    serif;
+    700 20px "Zoho Puvi",
+    sans-serif;
   box-shadow: 0 7px 0 #bf583e;
 }
 .search-panel {
@@ -746,7 +743,7 @@ p {
   margin-bottom: 18px;
   color: var(--ink);
   font:
-    500 11px "DM Mono",
+    500 11px "Zoho Puvi",
     monospace;
   letter-spacing: 0.04em;
 }
@@ -777,7 +774,7 @@ p {
 .field-label {
   color: var(--muted);
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -844,8 +841,8 @@ p {
 .section-heading h2 {
   margin: 0;
   font:
-    600 29px "Playfair Display",
-    serif;
+    600 29px "Zoho Puvi",
+    sans-serif;
   letter-spacing: -0.03em;
 }
 .filter-button {
@@ -885,8 +882,8 @@ p {
   height: 45px;
   border-radius: 50%;
   font:
-    600 13px "Playfair Display",
-    serif;
+    600 13px "Zoho Puvi",
+    sans-serif;
 }
 .operator-badge.coral {
   background: #f0b9a9;
@@ -910,7 +907,7 @@ p {
 .trip-meta span {
   color: var(--muted);
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
 }
 .timing {
@@ -922,7 +919,7 @@ p {
 .timing strong {
   display: block;
   font:
-    600 20px "DM Mono",
+    600 20px "Zoho Puvi",
     monospace;
   letter-spacing: -0.08em;
 }
@@ -951,7 +948,7 @@ p {
   margin: 0;
   white-space: nowrap;
   font:
-    9px "DM Mono",
+    9px "Zoho Puvi",
     monospace;
 }
 .trip-action {
@@ -962,14 +959,14 @@ p {
   margin-bottom: 8px;
   color: var(--green);
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
 }
 .trip-action strong {
   display: block;
   margin-bottom: 9px;
   font:
-    600 20px "DM Mono",
+    600 20px "Zoho Puvi",
     monospace;
 }
 .trip-action button {
@@ -995,8 +992,8 @@ p {
 .why-card h3 {
   margin: 25px 0 13px;
   font:
-    600 27px/0.98 "Playfair Display",
-    serif;
+    600 27px/0.98 "Zoho Puvi",
+    sans-serif;
 }
 .why-card p {
   color: #6c5e32;
@@ -1013,7 +1010,7 @@ p {
 .stats strong {
   display: block;
   font:
-    600 19px "DM Mono",
+    600 19px "Zoho Puvi",
     monospace;
 }
 .stats small {
@@ -1048,7 +1045,7 @@ p {
 .booking-route strong {
   display: block;
   font:
-    600 20px "DM Mono",
+    600 20px "Zoho Puvi",
     monospace;
 }
 .booking-route strong span {
@@ -1060,7 +1057,7 @@ p {
   margin-top: 8px;
   color: var(--muted);
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
 }
 .booking-grid {
@@ -1083,8 +1080,8 @@ p {
 .card-heading h2 {
   margin: 0 0 6px;
   font:
-    600 22px "Playfair Display",
-    serif;
+    600 22px "Zoho Puvi",
+    sans-serif;
 }
 .section-title p,
 .card-heading p {
@@ -1113,7 +1110,7 @@ p {
   background: #e8f0e4;
   color: #55704e;
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
 }
 .seat.selected {
@@ -1145,7 +1142,7 @@ p {
   color: #a2a89d;
   text-align: center;
   font:
-    9px "DM Mono",
+    9px "Zoho Puvi",
     monospace;
 }
 .driver span {
@@ -1177,7 +1174,7 @@ p {
   background: var(--ink);
   color: white;
   font:
-    11px "DM Mono",
+    11px "Zoho Puvi",
     monospace;
 }
 .passenger-card label {
@@ -1185,7 +1182,7 @@ p {
   margin-top: 22px;
   color: var(--muted);
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
   text-transform: uppercase;
 }
@@ -1206,7 +1203,7 @@ p {
   padding-top: 17px;
   border-top: 1px solid var(--line);
   font:
-    11px "DM Mono",
+    11px "Zoho Puvi",
     monospace;
 }
 .fare-line strong {
@@ -1245,8 +1242,8 @@ p {
 .empty-bookings h2 {
   margin: 16px 0 10px;
   font:
-    600 30px/0.99 "Playfair Display",
-    serif;
+    600 30px/0.99 "Zoho Puvi",
+    sans-serif;
 }
 .empty-bookings p {
   margin-bottom: 24px;
@@ -1264,7 +1261,7 @@ p {
   padding: 18px 25px;
   color: var(--muted);
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
 }
 .confirmed {
@@ -1283,15 +1280,15 @@ p {
   display: block;
   color: var(--muted);
   font:
-    9px "DM Mono",
+    9px "Zoho Puvi",
     monospace;
 }
 .ticket-route strong {
   display: block;
   margin: 8px 0;
   font:
-    600 27px "Playfair Display",
-    serif;
+    600 27px "Zoho Puvi",
+    sans-serif;
 }
 .ticket-route > div:last-child {
   text-align: right;
@@ -1478,7 +1475,7 @@ p {
   gap: 8px;
   color: var(--muted);
   font:
-    9px "DM Mono",
+    9px "Zoho Puvi",
     monospace;
   text-transform: uppercase;
 }
@@ -1491,7 +1488,7 @@ p {
   background: transparent;
   color: var(--ink);
   font:
-    11px "DM Sans",
+    11px "Zoho Puvi",
     sans-serif;
   text-transform: none;
 }
@@ -1520,7 +1517,7 @@ p {
   margin: -8px 0 22px;
   color: var(--muted);
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
   text-transform: uppercase;
 }
@@ -1547,7 +1544,7 @@ p {
   padding: 0 5px;
   color: var(--green);
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
 }
 .passenger-fields input,
@@ -1598,7 +1595,7 @@ p {
   gap: 10px;
   color: var(--muted);
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
 }
 .profile-email {
@@ -1646,8 +1643,8 @@ p {
 .auth-heading h1 {
   margin-bottom: 12px;
   font:
-    600 42px/0.98 "Playfair Display",
-    serif;
+    600 42px/0.98 "Zoho Puvi",
+    sans-serif;
 }
 .auth-heading > p:last-child {
   margin-bottom: 28px;
@@ -1683,7 +1680,7 @@ p {
   gap: 6px;
   color: var(--muted);
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
   text-transform: uppercase;
 }
@@ -1696,7 +1693,7 @@ p {
   background: transparent;
   color: var(--ink);
   font:
-    14px "DM Sans",
+    14px "Zoho Puvi",
     sans-serif;
   text-transform: none;
 }
@@ -1718,8 +1715,8 @@ p {
 .access-denied h1 {
   margin-bottom: 12px;
   font:
-    600 42px/0.98 "Playfair Display",
-    serif;
+    600 42px/0.98 "Zoho Puvi",
+    sans-serif;
 }
 .access-denied p:last-child {
   color: var(--muted);
@@ -1770,8 +1767,8 @@ p {
 }
 .type-card strong {
   font:
-    600 17px "Playfair Display",
-    serif;
+    600 17px "Zoho Puvi",
+    sans-serif;
 }
 .type-card span {
   color: var(--muted);
@@ -1811,8 +1808,8 @@ p {
 .workspace-hero h1 {
   margin-bottom: 15px;
   font:
-    600 52px/0.96 "Playfair Display",
-    serif;
+    600 52px/0.96 "Zoho Puvi",
+    sans-serif;
   letter-spacing: -0.04em;
 }
 .workspace-hero h1 em {
@@ -1837,15 +1834,15 @@ p {
 .workspace-orbit span {
   color: var(--green);
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
   letter-spacing: 0.1em;
 }
 .workspace-orbit strong {
   margin: 8px 0 2px;
   font:
-    600 43px "Playfair Display",
-    serif;
+    600 43px "Zoho Puvi",
+    sans-serif;
 }
 .workspace-orbit small {
   color: var(--muted);
@@ -1898,19 +1895,19 @@ p {
 .metric-card small {
   color: var(--muted);
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
   text-transform: uppercase;
 }
 .metric-card strong {
   align-self: center;
   font:
-    600 38px "Playfair Display",
-    serif;
+    600 38px "Zoho Puvi",
+    sans-serif;
 }
 .metric-card small {
   text-transform: none;
-  font-family: "DM Sans", sans-serif;
+  font-family: "Zoho Puvi", sans-serif;
 }
 .workspace-grid {
   display: grid;
@@ -1934,13 +1931,13 @@ p {
 .panel-heading h2 {
   margin: 0;
   font:
-    600 25px "Playfair Display",
-    serif;
+    600 25px "Zoho Puvi",
+    sans-serif;
 }
 .panel-index {
   color: var(--orange);
   font:
-    11px "DM Mono",
+    11px "Zoho Puvi",
     monospace;
 }
 .text-button {
@@ -1960,7 +1957,7 @@ p {
   gap: 6px;
   color: var(--muted);
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
   text-transform: uppercase;
 }
@@ -1974,7 +1971,7 @@ p {
   background: transparent;
   color: var(--ink);
   font:
-    13px "DM Sans",
+    13px "Zoho Puvi",
     sans-serif;
   text-transform: none;
 }
@@ -2002,7 +1999,7 @@ p {
   background: #e8eee4;
   color: var(--green);
   font:
-    11px "DM Mono",
+    11px "Zoho Puvi",
     monospace;
 }
 .list-row > div {
@@ -2024,7 +2021,7 @@ p {
 .status-dot {
   color: var(--green);
   font:
-    9px "DM Mono",
+    9px "Zoho Puvi",
     monospace;
   text-transform: uppercase;
 }
@@ -2107,8 +2104,8 @@ p {
 .seat-workspace-toolbar h2 {
   margin: 0 0 5px;
   font:
-    600 29px "Playfair Display",
-    serif;
+    600 29px "Zoho Puvi",
+    sans-serif;
 }
 .seat-workspace-toolbar p:last-child {
   margin: 0;
@@ -2121,7 +2118,7 @@ p {
   min-width: 240px;
   color: var(--muted);
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
   text-transform: uppercase;
 }
@@ -2153,8 +2150,8 @@ p {
 .bus-seat-map-header h3 {
   margin: 0 0 4px;
   font:
-    600 23px "Playfair Display",
-    serif;
+    600 23px "Zoho Puvi",
+    sans-serif;
 }
 .bus-seat-map-header p {
   margin: 0;
@@ -2185,7 +2182,7 @@ p {
   background: #e4f0df;
   color: #4c6746;
   font:
-    11px "DM Mono",
+    11px "Zoho Puvi",
     monospace;
   transition:
     transform 0.15s ease,
@@ -2235,7 +2232,7 @@ p {
   justify-content: space-between;
   color: #929d8e;
   font:
-    9px "DM Mono",
+    9px "Zoho Puvi",
     monospace;
 }
 .bus-front {
@@ -2283,7 +2280,7 @@ p {
   gap: 16px;
   color: var(--muted);
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
   text-transform: uppercase;
 }
@@ -2300,8 +2297,8 @@ p {
 .seat-editor h3 {
   margin: 0;
   font:
-    600 22px "Playfair Display",
-    serif;
+    600 22px "Zoho Puvi",
+    sans-serif;
 }
 .seat-editor .panel-heading {
   margin-bottom: 20px;
@@ -2372,8 +2369,8 @@ p {
 .batch-preview h3 {
   margin: 0 0 5px;
   font:
-    600 23px "Playfair Display",
-    serif;
+    600 23px "Zoho Puvi",
+    sans-serif;
 }
 .seat-setup-panel p:last-child,
 .batch-preview p:last-child {
@@ -2393,7 +2390,7 @@ p {
   gap: 6px;
   color: var(--muted);
   font:
-    9px "DM Mono",
+    9px "Zoho Puvi",
     monospace;
   text-transform: uppercase;
 }
@@ -2443,7 +2440,7 @@ p {
   align-self: center;
   color: var(--muted);
   font:
-    10px "DM Mono",
+    10px "Zoho Puvi",
     monospace;
 }
 .batch-seat {
@@ -2467,12 +2464,12 @@ p {
   background: transparent;
   color: var(--ink);
   font:
-    10px "DM Sans",
+    10px "Zoho Puvi",
     sans-serif;
 }
 .batch-seat input {
   font:
-    600 13px "DM Mono",
+    600 13px "Zoho Puvi",
     monospace;
 }
 @media (max-width: 800px) {
