@@ -4,8 +4,6 @@ import com.yuvan.busbooking.auth.dto.ForgotPasswordRequest;
 import com.yuvan.busbooking.auth.dto.LoginRequest;
 import com.yuvan.busbooking.auth.dto.LoginResponse;
 import com.yuvan.busbooking.auth.dto.OnboardingCompleteRequest;
-import com.yuvan.busbooking.auth.dto.OperatorRegisterRequest;
-import com.yuvan.busbooking.auth.dto.OperatorRegisterResponse;
 import com.yuvan.busbooking.auth.dto.OtpVerifyResponse;
 import com.yuvan.busbooking.auth.dto.RegisterRequest;
 import com.yuvan.busbooking.auth.dto.RegisterResponse;
@@ -18,6 +16,7 @@ import com.yuvan.busbooking.auth.entity.OtpPurpose;
 import com.yuvan.busbooking.auth.service.AuthService;
 import com.yuvan.busbooking.auth.service.OnboardingService;
 import com.yuvan.busbooking.auth.service.OtpService;
+import com.yuvan.busbooking.auth.service.RegistrationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -29,11 +28,18 @@ public class AuthController {
     private final AuthService authService;
     private final OtpService otpService;
     private final OnboardingService onboardingService;
+    private final RegistrationService registrationService;
 
-    public AuthController(AuthService authService, OtpService otpService, OnboardingService onboardingService) {
+    public AuthController(
+            AuthService authService,
+            OtpService otpService,
+            OnboardingService onboardingService,
+            RegistrationService registrationService
+    ) {
         this.authService = authService;
         this.otpService = otpService;
         this.onboardingService = onboardingService;
+        this.registrationService = registrationService;
     }
 
     @PostMapping("/register")
@@ -41,15 +47,7 @@ public class AuthController {
     public RegisterResponse register(
             @Valid @RequestBody RegisterRequest request
     ) {
-        return authService.register(request);
-    }
-
-    @PostMapping("/operator/register")
-    @ResponseStatus(HttpStatus.CREATED)
-    public OperatorRegisterResponse registerOperator(
-            @Valid @RequestBody OperatorRegisterRequest request
-    ) {
-        return authService.registerOperator(request);
+        return registrationService.register(request);
     }
 
     @PostMapping("/login")
@@ -137,10 +135,7 @@ public class AuthController {
     public LoginResponse completeOnboarding(
             @Valid @RequestBody OnboardingCompleteRequest request
     ) {
-        System.out.println("=== Onboarding Complete Endpoint ===");
-        LoginResponse response = onboardingService.completeOnboarding(request);
-        System.out.println("=== Onboarding Complete Endpoint Returning ===");
-        return response;
+        return onboardingService.completeOnboarding(request);
     }
 
     /**

@@ -8,35 +8,23 @@
 
 
 ### POST /api/v1/auth/register
-**Purpose:** Register a new passenger account \
+**Purpose:** Register a new passenger or operator account (unified endpoint, dispatched by `userType` via registration strategies) \
 **Access:** Public \
 **Request Body:**
-- `email` (string) - User email
-- `password` (string) - Password (min 8 chars)
-- `firstName` (string) - First name
-- `lastName` (string) - Last name
-- `phone` (string) - Phone number
-
-**Response:**
 ```json
 {
-  "id": 1,
-  "email": "user@example.com",
-  "firstName": "string",
-  "lastName": "string",
-  "phone": "string"
+    "userType": "PASSENGER",
+    "email": "string",
+    "password": "string",
+    "firstName": "string",
+    "lastName": "string",
+    "phone": "string"
 }
 ```
-
----
-
-
-### POST /api/v1/auth/operator/register
-**Purpose:** Register a new operator account \
-**Access:** Public \
-**Request Body:**
+For an operator account, `userType` is `"OPERATOR"` and the operator-specific fields are required:
 ```json
 {
+    "userType": "OPERATOR",
     "email": "string",
     "password": "string",
     "firstName": "string",
@@ -51,11 +39,12 @@
 **Response:**
 ```json
 {
-  "id": 1,
-  "email": "operator@example.com",
-  "firstName": "string",
-  "lastName": "string",
-  "operatorName": "string"
+    "userId": 1,
+    "operatorId": null,
+    "email": "user@example.com",
+    "firstName": "string",
+    "operatorName": null,
+    "message": "Registration successful. Check your email for a verification code."
 }
 ```
 

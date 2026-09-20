@@ -87,7 +87,6 @@ src/main/java/com/yuvan/busbooking/
 ## Auth
 
 - POST /api/v1/auth/register
-- POST /api/v1/auth/operator/register
 - POST /api/v1/auth/reset-password
 - POST /api/v1/auth/forgot-password
 - POST /api/v1/auth/oauth/authorize

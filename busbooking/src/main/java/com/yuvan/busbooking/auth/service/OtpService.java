@@ -144,14 +144,7 @@ public class OtpService {
     @Transactional
     public void generateAndSend(String email, OtpPurpose purpose) {
         
-        String currentEmail = SecurityUtils.getCurrentUserEmail();
-
-        User user = userRepository.findByEmail(currentEmail)
-                    .orElseThrow(
-                        () -> new ResourceNotFoundException(
-                            "User not found" + currentEmail
-                        )
-                    );
+        User user = getUser(email);
 
         if (!user.getTwitterEmailPending() && user.getStatus() == UserStatus.ACTIVE) {
             throw new IllegalStateException("Email is already verified");
@@ -262,14 +255,7 @@ public class OtpService {
         record.setVerifiedAt(LocalDateTime.now());
         otpRepository.save(record);
 
-        String currentEmail = SecurityUtils.getCurrentUserEmail();
-
-        User user = userRepository.findByEmail(currentEmail)
-                    .orElseThrow(
-                        () -> new ResourceNotFoundException(
-                            "User not found: " + currentEmail
-                        )
-                    );
+        User user = getUser(email);
 
         // Activate user immediately after OTP verification
         // TOTP 2FA setup is now optional and done from profile page
@@ -282,5 +268,27 @@ public class OtpService {
 
     private String generateSixDigitOtp() {
         return String.format("%06d", RANDOM.nextInt(1_000_000));
+    }
+
+    private User getUser(String email) {
+        String currentEmail = SecurityUtils.getCurrentUserEmail();
+
+        User user;
+        
+        if(currentEmail.startsWith("twitter"))
+            user = userRepository.findByEmail(currentEmail)
+                            .orElseThrow(
+                                () -> new ResourceNotFoundException(
+                                    "User not found with email " + currentEmail
+                                )
+                            );
+        else
+            user = userRepository.findByEmail(email)
+                            .orElseThrow(
+                                () -> new ResourceNotFoundException(
+                                    "User not found with email " + email
+                                )
+                            );
+        return user;
     }
 }

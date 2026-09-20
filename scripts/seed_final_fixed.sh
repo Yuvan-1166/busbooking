@@ -923,11 +923,11 @@ seed_operators() {
         log "Registering operator: $company_name ($email)"
 
         # IMPORTANT:
-        # /auth/operator/register is a public endpoint.
+        # /auth/register with userType OPERATOR is a public endpoint.
         # Do NOT use admin authentication here.
         ACCESS_TOKEN=""
 
-        api_post "/auth/operator/register" "$(
+        api_post "/auth/register" "$(
             jq -cn \
                 --arg email "$email" \
                 --arg password "$password" \
@@ -936,6 +936,7 @@ seed_operators() {
                 --arg contactPhone "$phone" \
                 --arg operatorName "$company_name" \
                 '{
+                    userType: "OPERATOR",
                     email: $email,
                     password: $password,
                     firstName: $firstName,
@@ -1633,11 +1634,12 @@ seed_passengers() {
             jq -cn \
                 --arg email "$email" \
                 --arg password "$SEED_PASSENGER_PASSWORD" \
-                --arg name "$name" \
+                --arg firstName "$name" \
                 --arg phone "$phone" '{
+                    userType: "PASSENGER",
                     email: $email,
                     password: $password,
-                    name: $name,
+                    firstName: $firstName,
                     phone: $phone
                 }'
         )"

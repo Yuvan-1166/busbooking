@@ -550,6 +550,7 @@ seed_passengers() {
             --arg lastName "$last" \
             --arg phone "$phone" \
             '{
+                userType:"PASSENGER",
                 email:$email,
                 password:$password,
                 firstName:$firstName,
@@ -617,6 +618,7 @@ seed_operators() {
             --arg registrationNumber "$reg" \
             --arg contactPhone "$phone" \
             '{
+                userType:"OPERATOR",
                 email:$email,
                 password:$password,
                 firstName:$firstName,
@@ -627,7 +629,7 @@ seed_operators() {
                 contactPhone:$contactPhone
             }')"
 
-        if response="$(api_create /auth/operator/register "$body" 2>/dev/null)"; then
+        if response="$(api_create /auth/register "$body" 2>/dev/null)"; then
             id="$(extract_id <<<"$response")"
             [[ -n "$id" ]] || id="$(jq -r '.operatorId // empty' <<<"$response")"
         else

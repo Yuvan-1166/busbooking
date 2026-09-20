@@ -896,7 +896,7 @@ seed_operators() {
     log "Seeding operators..."
 
     # Operator registration is public. Do not accidentally carry the admin
-    # JWT from the route-stop stage into /auth/operator/register.
+    # JWT from the route-stop stage into /auth/register.
     ACCESS_TOKEN=""
 
     local index=0
@@ -919,7 +919,7 @@ seed_operators() {
         registration_number="SEED-OP-${index}"
         password="$SEED_OPERATOR_PASSWORD"
 
-        api_post "/auth/operator/register" "$(
+        api_post "/auth/register" "$(
             jq -cn \
                 --arg email "$email" \
                 --arg password "$password" \
@@ -928,6 +928,7 @@ seed_operators() {
                 --arg contactPhone "$phone" \
                 --arg operatorName "$company_name" \
                 '{
+                    userType: "OPERATOR",
                     email: $email,
                     password: $password,
                     firstName: $firstName,
@@ -1726,11 +1727,12 @@ seed_passengers() {
             jq -cn \
                 --arg email "$email" \
                 --arg password "$SEED_PASSENGER_PASSWORD" \
-                --arg name "$name" \
+                --arg firstName "$name" \
                 --arg phone "$phone" '{
+                    userType: "PASSENGER",
                     email: $email,
                     password: $password,
-                    name: $name,
+                    firstName: $firstName,
                     phone: $phone
                 }'
         )"

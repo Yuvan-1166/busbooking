@@ -905,19 +905,24 @@ seed_operators() {
             continue
         fi
 
-        api_post "/auth/operator/register" "$(
+        api_post "/auth/register" "$(
             jq -cn \
                 --arg email "$email" \
                 --arg password "$SEED_OPERATOR_PASSWORD" \
-                --arg name "$name" \
+                --arg firstName "$name" \
                 --arg phone "$phone" \
-                --arg companyName "$company_name" \
+                --arg operatorName "$company_name" \
+                --arg registrationNumber "SEED-OP-${index}" \
+                --arg contactPhone "$phone" \
                 '{
+                    userType: "OPERATOR",
                     email: $email,
                     password: $password,
-                    name: $name,
+                    firstName: $firstName,
                     phone: $phone,
-                    companyName: $companyName
+                    operatorName: $operatorName,
+                    registrationNumber: $registrationNumber,
+                    contactPhone: $contactPhone
                 }'
         )"
 
@@ -1694,11 +1699,12 @@ seed_passengers() {
             jq -cn \
                 --arg email "$email" \
                 --arg password "$SEED_PASSENGER_PASSWORD" \
-                --arg name "$name" \
+                --arg firstName "$name" \
                 --arg phone "$phone" '{
+                    userType: "PASSENGER",
                     email: $email,
                     password: $password,
-                    name: $name,
+                    firstName: $firstName,
                     phone: $phone
                 }'
         )"

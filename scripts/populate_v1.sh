@@ -80,6 +80,7 @@ create_user() {
             --arg first "$first" \
             --arg phone "$(printf '90000%05d' "$index")" \
             '{
+                userType: "PASSENGER",
                 email: $email,
                 password: $password,
                 firstName: $first,

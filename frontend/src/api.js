@@ -61,8 +61,7 @@ async function request(path, options = {}) {
 
 export const api = {
   login: (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
-  registerPassenger: (details) => request('/auth/register', { method: 'POST', body: JSON.stringify(details) }),
-  registerOperator: (details) => request('/auth/operator/register', { method: 'POST', body: JSON.stringify(details) }),
+  register: (userType, details) => request('/auth/register', { method: 'POST', body: JSON.stringify({ userType, ...details }) }),
   // Unified OAuth (Google, Twitter, …) – provider selected in the request body
   oauthAuthorize: (provider, userType = 'PASSENGER') => request('/auth/oauth/authorize', { method: 'POST', body: JSON.stringify({ provider, userType }) }),
   oauthCallback: (payload) => request('/auth/oauth/callback', { method: 'POST', body: JSON.stringify(payload) }),

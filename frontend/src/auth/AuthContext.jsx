@@ -65,9 +65,7 @@ export function AuthProvider({ children }) {
     return nextSession
   }
 
-  const register = (details, registrationType) => registrationType === 'operator'
-    ? api.registerOperator(details)
-    : api.registerPassenger(details)
+  const register = (details, registrationType) => api.register(registrationType === 'operator' ? 'OPERATOR' : 'PASSENGER', details)
 
   const logout = () => {
     clearStoredSession()
