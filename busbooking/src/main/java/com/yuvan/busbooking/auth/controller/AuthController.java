@@ -1,7 +1,6 @@
 package com.yuvan.busbooking.auth.controller;
 
 import com.yuvan.busbooking.auth.dto.ForgotPasswordRequest;
-import com.yuvan.busbooking.auth.dto.GoogleOAuthRequest;
 import com.yuvan.busbooking.auth.dto.LoginRequest;
 import com.yuvan.busbooking.auth.dto.LoginResponse;
 import com.yuvan.busbooking.auth.dto.OnboardingCompleteRequest;
@@ -17,7 +16,6 @@ import com.yuvan.busbooking.auth.dto.TotpVerifyRequest;
 import com.yuvan.busbooking.auth.dto.VerifyOtpRequest;
 import com.yuvan.busbooking.auth.entity.OtpPurpose;
 import com.yuvan.busbooking.auth.service.AuthService;
-import com.yuvan.busbooking.auth.service.GoogleOAuthService;
 import com.yuvan.busbooking.auth.service.OnboardingService;
 import com.yuvan.busbooking.auth.service.OtpService;
 import jakarta.validation.Valid;
@@ -30,13 +28,11 @@ public class AuthController {
 
     private final AuthService authService;
     private final OtpService otpService;
-    private final GoogleOAuthService googleOAuthService;
     private final OnboardingService onboardingService;
 
-    public AuthController(AuthService authService, OtpService otpService, GoogleOAuthService googleOAuthService, OnboardingService onboardingService) {
+    public AuthController(AuthService authService, OtpService otpService, OnboardingService onboardingService) {
         this.authService = authService;
         this.otpService = otpService;
-        this.googleOAuthService = googleOAuthService;
         this.onboardingService = onboardingService;
     }
 
@@ -144,19 +140,6 @@ public class AuthController {
         System.out.println("=== Onboarding Complete Endpoint ===");
         LoginResponse response = onboardingService.completeOnboarding(request);
         System.out.println("=== Onboarding Complete Endpoint Returning ===");
-        return response;
-    }
-    @PostMapping("/google")
-    public LoginResponse googleOAuth(
-            @Valid @RequestBody GoogleOAuthRequest request
-    ) {
-        System.out.println("=== Google OAuth Endpoint Called ===");
-        System.out.println("Request: " + request);
-        System.out.println("User Type: " + request.userType());
-        System.out.println("Token: " + (request.idToken() != null ? request.idToken().substring(0, Math.min(50, request.idToken().length())) + "..." : "NULL"));
-        
-        LoginResponse response = googleOAuthService.authenticateWithGoogle(request.idToken(), request.userType());
-        System.out.println("=== Google OAuth Endpoint Returning ===");
         return response;
     }
 

@@ -90,7 +90,8 @@ src/main/java/com/yuvan/busbooking/
 - POST /api/v1/auth/operator/register
 - POST /api/v1/auth/reset-password
 - POST /api/v1/auth/forgot-password
-- POST /api/v1/auth/google
+- POST /api/v1/auth/oauth/authorize
+- POST /api/v1/auth/oauth/callback
 - POST /api/v1/auth/login
 - POST /api/v1/auth/login/request-otp-fallback
 - POST /api/v1/auth/login/verify-otp-fallback

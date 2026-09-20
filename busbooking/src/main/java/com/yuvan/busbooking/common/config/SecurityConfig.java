@@ -73,10 +73,9 @@ public class SecurityConfig {
                                 "/api/v1/auth/verify/confirm",
                                 "/api/v1/auth/forgot-password",
                                 "/api/v1/auth/reset-password",
-                                "/api/v1/auth/google",
-                                // Twitter (X) OAuth 2.0 PKCE endpoints
-                                "/api/v1/auth/twitter/authorize",
-                                "/api/v1/auth/twitter/callback"
+                                // Unified OAuth 2.0 endpoints (Google, Twitter, …)
+                                "/api/v1/auth/oauth/authorize",
+                                "/api/v1/auth/oauth/callback"
                         ).permitAll()
 
                         // Authenticated endpoints (onboarding, TOTP management)

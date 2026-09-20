@@ -284,9 +284,13 @@ export default function AuthPage() {
       }
 
       console.log("Google OAuth success, sending token to backend...");
-      // Call backend Google OAuth endpoint - role will be selected in onboarding
+      // Call backend OAuth endpoint - role will be selected in onboarding
       // Send default PASSENGER type - will be overridden during onboarding
-      const loginResponse = await api.googleOAuthCallback(idToken, "PASSENGER");
+      const loginResponse = await api.oauthCallback({
+        provider: "GOOGLE",
+        idToken,
+        userType: "PASSENGER",
+      });
       console.log("Backend response:", loginResponse);
 
       // Create session from the LoginResponse and store it
@@ -337,7 +341,7 @@ export default function AuthPage() {
     setSubmitting(true);
     try {
       // Ask the backend to generate a PKCE authorize URL + state token
-      const { authorizeUrl, state } = await api.getTwitterAuthorizeUrl();
+      const { authorizeUrl, state } = await api.oauthAuthorize("TWITTER");
 
       if (!authorizeUrl || !state) {
         throw new Error("Failed to get Twitter authorization URL");

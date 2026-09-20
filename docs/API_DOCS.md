@@ -105,19 +105,42 @@
 
 ---
 
-### POST /api/v1/auth/google
-**Purpose:** Authenticate user via Google OAuth
+### POST /api/v1/auth/oauth/authorize
+**Purpose:** Step 1 of unified OAuth sign-in. Generates the provider's authorization URL (and CSRF state). Clients with client-side authorization (e.g. Google) can skip the redirect and go straight to the callback.
 **Access:** Public
 **Request Body:**
-- `idToken` (string) - Google ID token
+- `provider` (string) - OAuth provider (GOOGLE or TWITTER)
+
+**Response:**
+```json
+{
+  "provider": "TWITTER",
+  "authorizeUrl": "https://twitter.com/i/oauth2/authorize?...",
+  "state": "opaque-csrf-state"
+}
+```
+
+---
+
+### POST /api/v1/auth/oauth/callback
+**Purpose:** Step 2 of unified OAuth sign-in. Validates the provider callback, creates or updates the user, and issues a JWT. Provider-specific fields are interpreted per provider:
+- `GOOGLE` expects `idToken`
+- `TWITTER` expects `code` and `state`
+**Access:** Public
+**Request Body:**
+- `provider` (string) - OAuth provider (GOOGLE or TWITTER)
 - `userType` (string) - Type of user (PASSENGER or OPERATOR)
+- `idToken` (string, GOOGLE only) - Google ID token
+- `code` (string, TWITTER only) - Authorization code from the provider's redirect
+- `state` (string, TWITTER only) - CSRF state token returned at authorize
 
 **Response:**
 ```json
 {
   "accessToken": "string",
   "tokenType": "Bearer",
-  "expiresIn": 3600
+  "expiresIn": 3600,
+  "onboardingRequired": true
 }
 ```
 

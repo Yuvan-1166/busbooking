@@ -63,10 +63,9 @@ export const api = {
   login: (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
   registerPassenger: (details) => request('/auth/register', { method: 'POST', body: JSON.stringify(details) }),
   registerOperator: (details) => request('/auth/operator/register', { method: 'POST', body: JSON.stringify(details) }),
-  googleOAuthCallback: (idToken, userType) => request('/auth/google', { method: 'POST', body: JSON.stringify({ idToken, userType: userType || 'PASSENGER' }) }),
-  // Twitter (X) OAuth 2.0 PKCE
-  getTwitterAuthorizeUrl: () => request('/auth/twitter/authorize'),
-  twitterCallback: (code, state, userType) => request('/auth/twitter/callback', { method: 'POST', body: JSON.stringify({ code, state, userType: userType || 'PASSENGER' }) }),
+  // Unified OAuth (Google, Twitter, …) – provider selected in the request body
+  oauthAuthorize: (provider, userType = 'PASSENGER') => request('/auth/oauth/authorize', { method: 'POST', body: JSON.stringify({ provider, userType }) }),
+  oauthCallback: (payload) => request('/auth/oauth/callback', { method: 'POST', body: JSON.stringify(payload) }),
   verifyTwitterEmail: (email, otp) => request('/users/me/verify-twitter-email', { method: 'POST', body: JSON.stringify({ email, otp }) }),
   completeOnboarding: (payload) => request('/auth/onboarding/complete', { method: 'POST', body: JSON.stringify(payload) }),
   sendOtp: (email) => request('/auth/verify/send', { method: 'POST', body: JSON.stringify({ email }) }),

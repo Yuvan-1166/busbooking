@@ -16,7 +16,7 @@ const USER_TYPE_KEY = "twitter_oauth_user_type";
  *  1. Read code + state from the URL search params.
  *  2. Validate state against the value saved in sessionStorage before the
  *     redirect — prevents CSRF.
- *  3. POST code + state + userType to the backend /api/v1/auth/twitter/callback.
+ *  3. POST code + state + userType to the backend /api/v1/auth/oauth/callback.
  *  4. On success, build a session, persist it, and navigate to /.
  *  5. On failure, show an error with a "Try again" link back to /login.
  */
@@ -75,7 +75,12 @@ export default function TwitterCallback() {
       sessionStorage.removeItem(USER_TYPE_KEY);
 
       try {
-        const loginResponse = await api.twitterCallback(code, returnedState, userType);
+        const loginResponse = await api.oauthCallback({
+          provider: "TWITTER",
+          code,
+          state: returnedState,
+          userType,
+        });
         const session = createSession(loginResponse);
         storeSession(session);
 

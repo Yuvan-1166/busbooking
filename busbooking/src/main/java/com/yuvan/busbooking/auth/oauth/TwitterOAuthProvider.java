@@ -1,11 +1,14 @@
-package com.yuvan.busbooking.auth.service;
+package com.yuvan.busbooking.auth.oauth;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yuvan.busbooking.auth.dto.LoginResponse;
-import com.yuvan.busbooking.auth.dto.TwitterAuthorizeResponse;
+import com.yuvan.busbooking.auth.dto.OAuthAuthorizeResponse;
+import com.yuvan.busbooking.auth.dto.OAuthCallbackRequest;
 import com.yuvan.busbooking.auth.entity.UserTwitterCredential;
 import com.yuvan.busbooking.auth.repository.UserTwitterCredentialRepository;
+import com.yuvan.busbooking.auth.service.CustomUserDetailsService;
+import com.yuvan.busbooking.auth.service.JwtService;
 import com.yuvan.busbooking.user.entity.Role;
 import com.yuvan.busbooking.user.entity.RoleName;
 import com.yuvan.busbooking.user.entity.User;
@@ -14,8 +17,13 @@ import com.yuvan.busbooking.user.entity.UserStatus;
 import com.yuvan.busbooking.user.repository.RoleRepository;
 import com.yuvan.busbooking.user.repository.UserRepository;
 import com.yuvan.busbooking.user.repository.UserRoleRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,31 +40,25 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Service implementing the Twitter (X) OAuth 2.0 Authorization Code flow with PKCE.
+ * OAuth provider for Twitter (X) — OAuth 2.0 Authorization Code flow with PKCE.
  *
- * <h3>Flow overview</h3>
- * <ol>
- *   <li>{@link #buildAuthorizeUrl()} – generates a {@code code_verifier} + {@code code_challenge},
- *       persists the verifier in memory keyed by {@code state}, and returns the Twitter
- *       authorization URL for the frontend to redirect to.</li>
- *   <li>{@link #handleCallback(String, String, String)} – validates the {@code state},
- *       retrieves the stored verifier, exchanges the {@code code} for tokens via the
- *       Twitter token endpoint, fetches the user's profile, then creates or updates the
- *       local user record and issues a JWT.</li>
- * </ol>
- *
- * <h3>PKCE</h3>
- * Twitter mandates PKCE for public / confidential clients.  We use {@code S256}:
- * {@code code_challenge = BASE64URL(SHA256(code_verifier))}.
- *
- * <h3>State store</h3>
- * The verifier is stored in a {@link ConcurrentHashMap} with a per-entry TTL enforced at
- * retrieval time.  This keeps the service stateless from the database perspective while
- * still protecting against CSRF.  In a multi-instance deployment you would replace this
- * with a Redis cache.
+ * <p>Step 1 ({@link #authorize()}) generates a {@code code_verifier} and
+ * {@code code_challenge}, persists the verifier in memory keyed by a random
+ * {@code state} token, and returns the Twitter authorization URL. Step 2
+ * ({@link #handleCallback}) validates the state, exchanges the code for tokens,
+ * fetches the profile, and creates or updates the local user.</p>
  */
 @Service
-public class TwitterOAuthService {
+@Slf4j
+public class TwitterOAuthProvider implements OAuthProvider {
+
+    private static final String PASSENGER = "PASSENGER";
+    private static final String SCOPES = "tweet.read users.read offline.access";
+
+    /**
+     * How long (ms) a pending auth entry lives before it is considered stale.
+     */
+    private static final long STATE_TTL_MS = 10 * 60 * 1000L; // 10 minutes
 
     // ── configuration ─────────────────────────────────────────────────────────
 
@@ -80,18 +82,10 @@ public class TwitterOAuthService {
 
     // ── PKCE state store ───────────────────────────────────────────────────────
 
-    /** Maps {@code state} → {@code PendingAuth(codeVerifier, expiresAt)}. */
+    /** Maps {@code state} → {@link PendingAuth}. */
     private final Map<String, PendingAuth> pendingAuthStore = new ConcurrentHashMap<>();
 
-    /** How long (ms) a pending auth entry lives before it is considered stale. */
-    private static final long STATE_TTL_MS = 10 * 60 * 1000L; // 10 minutes
-
-    /** Twitter scopes we request. */
-    private static final String SCOPES = "tweet.read users.read offline.access";
-
-    // ── constructor ────────────────────────────────────────────────────────────
-
-    public TwitterOAuthService(
+    public TwitterOAuthProvider(
             @Value("${app.twitter.client-id}") String clientId,
             @Value("${app.twitter.client-secret}") String clientSecret,
             @Value("${app.twitter.redirect-uri}") String redirectUri,
@@ -121,23 +115,30 @@ public class TwitterOAuthService {
         this.objectMapper = new ObjectMapper();
     }
 
+    @Override
+    public OAuthProviderType getType() {
+        return OAuthProviderType.TWITTER;
+    }
+
     // ── Step 1: build authorization URL ───────────────────────────────────────
 
     /**
-     * Generates a PKCE {@code code_verifier} + {@code code_challenge}, stores the verifier
-     * against a random {@code state} token, and returns the full Twitter authorization URL.
-     *
-     * @return {@link TwitterAuthorizeResponse} containing the URL and the state token.
+     * Generates a PKCE {@code code_verifier} + {@code code_challenge}, stores the
+     * verifier against a random {@code state} token, and returns the Twitter
+     * authorization URL for the client to redirect the browser to.
      */
-    public TwitterAuthorizeResponse buildAuthorizeUrl() {
-        // Purge stale entries on every authorize call (lightweight GC)
+    @Override
+    public OAuthAuthorizeResponse authorize() {
         evictExpiredStates();
 
         String codeVerifier = generateCodeVerifier();
         String codeChallenge = generateCodeChallenge(codeVerifier);
         String state = generateState();
 
-        pendingAuthStore.put(state, new PendingAuth(codeVerifier, System.currentTimeMillis() + STATE_TTL_MS));
+        pendingAuthStore.put(state, new PendingAuth(
+                codeVerifier,
+                System.currentTimeMillis() + STATE_TTL_MS
+        ));
 
         String url = authUrl
                 + "?response_type=code"
@@ -148,53 +149,41 @@ public class TwitterOAuthService {
                 + "&code_challenge=" + encode(codeChallenge)
                 + "&code_challenge_method=S256";
 
-        return new TwitterAuthorizeResponse(url, state);
+        return new OAuthAuthorizeResponse(OAuthProviderType.TWITTER, url, state);
     }
 
     // ── Step 2: handle callback ────────────────────────────────────────────────
 
     /**
-     * Validates the callback from Twitter, exchanges the authorization code for tokens,
-     * fetches the user's Twitter profile, then creates or updates the local user record
-     * and issues a JWT.
-     *
-     * @param code     Authorization code from Twitter's redirect.
-     * @param state    State token returned by Twitter (must match the one we issued).
-     * @param userType "PASSENGER" or "OPERATOR".
-     * @return {@link LoginResponse} with a JWT (and {@code onboardingRequired} flag if new).
+     * Validates the callback from Twitter, exchanges the authorization code for
+     * tokens, fetches the user's Twitter profile, then creates or updates the
+     * local user record and issues a JWT.
      */
+    @Override
     @Transactional
-    public LoginResponse handleCallback(String code, String state, String userType) {
-        System.out.println("=== Twitter OAuth Callback ===");
-        System.out.println("Code: " + (code != null ? code.substring(0, Math.min(20, code.length())) + "..." : "NULL"));
-        System.out.println("State: " + state);
-        System.out.println("UserType: " + userType);
-        
-        validateUserType(userType);
+    public LoginResponse handleCallback(OAuthCallbackRequest request) {
+        validateUserType(request.userType());
 
         // 1. Validate state and retrieve verifier
-        String codeVerifier = consumeState(state);
-        System.out.println("State validation: OK");
+        String codeVerifier = consumeState(request.state());
 
         // 2. Exchange code for access token
-        String accessToken = exchangeCodeForToken(code, codeVerifier);
-        System.out.println("Token exchange: OK");
+        String accessToken = exchangeCodeForToken(request.code(), codeVerifier);
 
         // 3. Fetch user info from Twitter
         TwitterUserInfo userInfo = fetchUserInfo(accessToken);
-        System.out.println("Twitter ID: " + userInfo.twitterId());
-        System.out.println("Twitter Email: " + userInfo.email());
 
         // 4. Create or update local user + credential
-        LoginResponse response = createOrUpdateUser(userInfo, userType);
-        System.out.println("=== Twitter OAuth Callback Complete ===");
-        return response;
+        return createOrUpdateUser(userInfo, request.userType());
     }
 
     // ── private helpers ────────────────────────────────────────────────────────
 
     /** Validates state and returns the code_verifier; removes entry from store. */
     private String consumeState(String state) {
+        if (state == null || state.isBlank()) {
+            throw new IllegalArgumentException("State token is required");
+        }
         PendingAuth pending = pendingAuthStore.remove(state);
         if (pending == null) {
             throw new IllegalArgumentException("Invalid or expired OAuth state token");
@@ -207,6 +196,10 @@ public class TwitterOAuthService {
 
     /** Exchanges the authorization code for a Twitter access token via Basic auth. */
     private String exchangeCodeForToken(String code, String codeVerifier) {
+        if (code == null || code.isBlank()) {
+            throw new IllegalArgumentException("Authorization code is required");
+        }
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
@@ -225,14 +218,12 @@ public class TwitterOAuthService {
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 
         try {
-            System.out.println("Exchanging code at: " + tokenUrl);
-            ResponseEntity<String> response = restTemplate.postForEntity(tokenUrl, request, String.class);
-
-            System.out.println("Token exchange response status: " + response.getStatusCode());
-            System.out.println("Token exchange response body: " + response.getBody());
+            ResponseEntity<String> response =
+                    restTemplate.postForEntity(tokenUrl, request, String.class);
 
             if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                throw new IllegalStateException("Twitter token exchange failed: " + response.getStatusCode());
+                throw new IllegalStateException(
+                        "Twitter token exchange failed: " + response.getStatusCode());
             }
 
             JsonNode json = objectMapper.readTree(response.getBody());
@@ -243,18 +234,16 @@ public class TwitterOAuthService {
             return tokenNode.asText();
 
         } catch (IllegalStateException | IllegalArgumentException e) {
-            System.err.println("Token exchange error: " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            System.err.println("Token exchange exception: " + e.getClass().getSimpleName() + " - " + e.getMessage());
-            e.printStackTrace();
-            throw new IllegalStateException("Failed to exchange Twitter authorization code: " + e.getMessage(), e);
+            log.error("Failed to exchange Twitter authorization code", e);
+            throw new IllegalStateException(
+                    "Failed to exchange Twitter authorization code: " + e.getMessage(), e);
         }
     }
 
     /** Fetches the authenticated user's Twitter profile. */
     private TwitterUserInfo fetchUserInfo(String accessToken) {
-        System.out.println("Fetch User Info");
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
 
@@ -268,10 +257,9 @@ public class TwitterOAuthService {
                     url, HttpMethod.GET, request, String.class);
 
             if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
-                throw new IllegalStateException("Twitter user info fetch failed: " + response.getStatusCode());
+                throw new IllegalStateException(
+                        "Twitter user info fetch failed: " + response.getStatusCode());
             }
-
-            System.out.println("Fetch success");
 
             JsonNode root = objectMapper.readTree(response.getBody());
             JsonNode data = root.path("data");
@@ -282,8 +270,6 @@ public class TwitterOAuthService {
             String profileImageUrl = data.path("profile_image_url").asText(null);
             String email = data.path("email").asText(null);
 
-            System.out.println("Got everything including email: " + email);
-
             if (twitterId.isEmpty()) {
                 throw new IllegalStateException("Twitter user info response missing 'id'");
             }
@@ -291,10 +277,9 @@ public class TwitterOAuthService {
             return new TwitterUserInfo(twitterId, username, name, profileImageUrl, email);
 
         } catch (IllegalStateException e) {
-            System.err.println("Some Error 1");
             throw e;
         } catch (Exception e) {
-            System.err.println("Some Error 2");
+            log.error("Failed to fetch Twitter user info", e);
             throw new IllegalStateException("Failed to fetch Twitter user info: " + e.getMessage(), e);
         }
     }
@@ -324,19 +309,9 @@ public class TwitterOAuthService {
         boolean isNewUser = (user == null);
 
         if (isNewUser) {
-            user = new User();
-            user.setEmail(syntheticEmail);
-            user.setPasswordHash(null); // OAuth-only account
-            user.setFirstName(extractFirstName(info.name()));
-            user.setLastName(extractLastName(info.name()));
-            user.setPhone(null);
-            user.setStatus(UserStatus.ACTIVE); // OAuth users are auto-verified
-            user.setOnboardingCompleted(false); // Let user fill in profile
-            user.setTwitterEmailPending(true); // Flag for email verification during onboarding
-            user = userRepository.save(user);
-
-            // Assign a temporary PASSENGER role so the onboarding JWT is valid
-            // The user selects their final role during onboarding
+            user = createNewUser(info, syntheticEmail);
+            // Assign a temporary PASSENGER role so the onboarding JWT is valid;
+            // the user selects their final role during onboarding
             Role passengerRole = roleRepository.findByName(RoleName.PASSENGER)
                     .orElseThrow(() -> new IllegalStateException("PASSENGER role not found"));
             UserRole userRole = new UserRole();
@@ -359,6 +334,25 @@ public class TwitterOAuthService {
 
         // onboardingRequired tells the frontend to show onboarding for new users
         return new LoginResponse(token, "Bearer", 3600L, isNewUser && !user.getOnboardingCompleted(), user.getTwitterEmailPending());
+    }
+
+    private User createNewUser(TwitterUserInfo info, String syntheticEmail) {
+        User user = new User();
+        user.setEmail(syntheticEmail);
+        user.setPasswordHash(null); // OAuth-only account
+        user.setFirstName(extractFirstName(info.name()));
+        user.setLastName(extractLastName(info.name()));
+        user.setPhone(null);
+        user.setStatus(UserStatus.ACTIVE); // OAuth users are auto-verified
+        user.setOnboardingCompleted(false); // Let user fill in profile
+        user.setTwitterEmailPending(true); // Flag for email verification during onboarding
+        return userRepository.save(user);
+    }
+
+    private void validateUserType(String userType) {
+        if (userType == null || (!userType.equals(PASSENGER) && !userType.equals("OPERATOR"))) {
+            throw new IllegalArgumentException("Invalid userType. Must be 'PASSENGER' or 'OPERATOR'");
+        }
     }
 
     // ── PKCE helpers ───────────────────────────────────────────────────────────
@@ -425,12 +419,6 @@ public class TwitterOAuthService {
         if (fullName == null || fullName.isBlank()) return "";
         String[] parts = fullName.trim().split("\\s+", 2);
         return parts.length > 1 ? parts[1] : "";
-    }
-
-    private void validateUserType(String userType) {
-        if (userType == null || (!userType.equals("PASSENGER") && !userType.equals("OPERATOR"))) {
-            throw new IllegalArgumentException("Invalid userType. Must be 'PASSENGER' or 'OPERATOR'");
-        }
     }
 
     // ── inner records ──────────────────────────────────────────────────────────
