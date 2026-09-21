@@ -3,7 +3,7 @@ package com.yuvan.busbooking.payment.dto;
 import com.yuvan.busbooking.payment.entity.PaymentMethod;
 import jakarta.validation.constraints.NotNull;
 
-public record PaymentRequest(
+public record PaymentInitiateRequest(
 
         @NotNull(message = "Booking ID is required")
         Long bookingId,

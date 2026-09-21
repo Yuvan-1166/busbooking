@@ -47,34 +47,23 @@ public class PassengerRegistrationStrategy extends AbstractRegistrationStrategy 
     @Override
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
-        System.out.println("Before Create");
         User user = createPendingUser(request);
-        System.out.println("After Create");
 
         Role passengerRole = roleRepository
                 .findByName(RoleName.PASSENGER)
                 .orElseThrow(() ->
                         new IllegalStateException("PASSENGER role not found"));
 
-        System.out.println("Before role");
 
         UserRole userRole = new UserRole();
         userRole.setUser(user);
         userRole.setRole(passengerRole);
         userRoleRepository.save(userRole);
 
-        System.out.println("After Role");
-        System.out.println("Before Wallet");
-
         // Create wallet with default ₹10,000 balance for every new passenger
         walletService.createWallet(user);
 
-        System.out.println("After wallet");
-        System.out.println("Before OTP");
-
         sendVerificationOtp(user);
-
-        System.out.println("After OTP");
 
         return new RegisterResponse(
                 user.getId(),

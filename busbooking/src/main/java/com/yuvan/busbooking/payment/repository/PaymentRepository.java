@@ -14,6 +14,8 @@ public interface PaymentRepository
             String transactionReference
     );
 
+    Optional<Payment> findByGatewayOrderId(String gatewayOrderId);
+
     boolean existsByBookingId(Long bookingId);
     
 }

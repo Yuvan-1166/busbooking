@@ -74,7 +74,9 @@ public class SecurityConfig {
                                 "/api/v1/auth/reset-password",
                                 // Unified OAuth 2.0 endpoints (Google, Twitter, …)
                                 "/api/v1/auth/oauth/authorize",
-                                "/api/v1/auth/oauth/callback"
+                                "/api/v1/auth/oauth/callback",
+                                // Razorpay webhook (signature validated server-side)
+                                "/api/v1/payments/webhook/razorpay"
                         ).permitAll()
 
                         // Authenticated endpoints (onboarding, TOTP management)

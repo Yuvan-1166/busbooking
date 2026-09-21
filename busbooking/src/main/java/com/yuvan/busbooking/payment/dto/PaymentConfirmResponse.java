@@ -6,8 +6,8 @@ import com.yuvan.busbooking.payment.entity.PaymentStatus;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-public record PaymentResponse(
-        Long id,
+public record PaymentConfirmResponse(
+        Long paymentId,
         Long bookingId,
         String transactionReference,
         PaymentStatus status,
@@ -16,6 +16,5 @@ public record PaymentResponse(
         String failureReason,
         /** Non-null only when paymentMethod is WALLET. Shows balance remaining after payment. */
         BigDecimal walletBalanceAfter,
-        LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {}

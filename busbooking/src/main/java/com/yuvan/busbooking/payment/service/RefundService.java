@@ -6,25 +6,35 @@ import com.yuvan.busbooking.booking.repository.BookingRepository;
 import com.yuvan.busbooking.common.exception.ResourceNotFoundException;
 import com.yuvan.busbooking.payment.entity.Payment;
 import com.yuvan.busbooking.payment.entity.PaymentStatus;
+import com.yuvan.busbooking.payment.gateway.PaymentGateway;
+import com.yuvan.busbooking.payment.gateway.PaymentGatewayFactory;
+import com.yuvan.busbooking.payment.gateway.PaymentGatewayRefundRequest;
+import com.yuvan.busbooking.payment.gateway.PaymentGatewayResult;
 import com.yuvan.busbooking.payment.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Routes a refund back to the <em>original</em> payment method. The concrete
+ * gateway is resolved from the payment's method via the factory — Razorpay
+ * payments are refunded to the card/UPI account, wallet payments are credited
+ * back to the wallet.
+ */
 @Service
 public class RefundService {
 
     private final PaymentRepository paymentRepository;
     private final BookingRepository bookingRepository;
-    private final PaymentGateway paymentGateway;
+    private final PaymentGatewayFactory gatewayFactory;
 
     public RefundService(
             PaymentRepository paymentRepository,
             BookingRepository bookingRepository,
-            PaymentGateway paymentGateway
+            PaymentGatewayFactory gatewayFactory
     ) {
         this.paymentRepository = paymentRepository;
         this.bookingRepository = bookingRepository;
-        this.paymentGateway = paymentGateway;
+        this.gatewayFactory = gatewayFactory;
     }
 
     @Transactional
@@ -63,14 +73,19 @@ public class RefundService {
             );
         }
 
-        PaymentGatewayResult result =
-                paymentGateway.refundPayment(
-                        payment.getTransactionReference(),
-                        payment.getAmount()
-                );
+        PaymentGateway gateway = gatewayFactory.getGateway(payment.getPaymentMethod());
+
+        String gatewayTransactionId = payment.getGatewayPaymentId() != null
+                ? payment.getGatewayPaymentId()
+                : payment.getTransactionReference();
+
+        PaymentGatewayResult result = gateway.refund(new PaymentGatewayRefundRequest(
+                gatewayTransactionId,
+                payment.getAmount(),
+                payment.getBooking().getUser().getId()
+        ));
 
         if (!result.successful()) {
-
             throw new IllegalArgumentException(
                     "Refund failed: " + result.message()
             );

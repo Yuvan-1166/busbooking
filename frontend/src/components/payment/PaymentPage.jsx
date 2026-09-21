@@ -4,11 +4,45 @@ import { api } from "../../api";
 import { LoadingPage } from "../common/Loading";
 
 const PAYMENT_METHODS = [
+  { value: "RAZORPAY", label: "Razorpay", description: "UPI, cards, net banking & wallets — powered by Razorpay" },
   { value: "WALLET", label: "Wallet", description: "Pay from your bus booking wallet balance" },
-  { value: "UPI", label: "UPI", description: "Any UPI app — GPay, PhonePe, Paytm" },
-  { value: "CARD", label: "Card", description: "Credit or debit card" },
-  { value: "NET_BANKING", label: "Net Banking", description: "Internet banking" },
 ];
+
+const RAZORPAY_CHECKOUT_SCRIPT = "https://checkout.razorpay.com/v1/checkout.js";
+
+function loadRazorpayScript() {
+  if (window.Razorpay) return Promise.resolve();
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = RAZORPAY_CHECKOUT_SCRIPT;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load the payment gateway. Please try again."));
+    document.body.appendChild(script);
+  });
+}
+
+function openRazorpayCheckout(initiated) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      key: initiated.gatewayKeyId,
+      amount: Math.round(Number(initiated.amount) * 100),
+      currency: initiated.currency || "INR",
+      name: "BusBooking",
+      description: `Booking ${initiated.transactionReference}`,
+      order_id: initiated.gatewayOrderId,
+      theme: { color: "#e67e22" },
+      handler: (response) => resolve(response),
+      modal: { ondismiss: () => resolve(null) },
+    };
+    const razorpay = new window.Razorpay(options);
+    razorpay.on("payment.failed", (response) => {
+      const description = response?.error?.description || "Payment failed. Please try again.";
+      reject(new Error(description));
+    });
+    razorpay.open();
+  });
+}
 
 export default function PaymentPage({ locations, onPaymentSuccess }) {
   const { bookingId } = useParams();
@@ -16,7 +50,7 @@ export default function PaymentPage({ locations, onPaymentSuccess }) {
 
   const [booking, setBooking] = useState(null);
   const [wallet, setWallet] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState("WALLET");
+  const [paymentMethod, setPaymentMethod] = useState("RAZORPAY");
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
@@ -50,7 +84,35 @@ export default function PaymentPage({ locations, onPaymentSuccess }) {
     setPaying(true);
     setError("");
     try {
-      await api.pay(Number(bookingId), paymentMethod);
+      const initiated = await api.initiatePayment(Number(bookingId), paymentMethod);
+
+      let result;
+      if (paymentMethod === "RAZORPAY") {
+        await loadRazorpayScript();
+        const payment = await openRazorpayCheckout(initiated);
+        if (!payment) {
+          setError("Payment window closed. Your booking is still held — please retry.");
+          return;
+        }
+        result = await api.confirmPayment({
+          paymentId: initiated.paymentId,
+          gatewayOrderId: payment.razorpay_order_id,
+          gatewayPaymentId: payment.razorpay_payment_id,
+          gatewaySignature: payment.razorpay_signature,
+        });
+      } else {
+        result = await api.confirmPayment({ paymentId: initiated.paymentId });
+      }
+
+      if (result && result.status === "FAILED") {
+        setError(result.failureReason || "Payment failed. Please try again.");
+        return;
+      }
+
+      if (result?.walletBalanceAfter != null) {
+        setWallet({ balance: result.walletBalanceAfter });
+      }
+
       const ticket = await api.getTicket(Number(bookingId));
       if (onPaymentSuccess) onPaymentSuccess(ticket);
       navigate("/bookings");
@@ -64,10 +126,6 @@ export default function PaymentPage({ locations, onPaymentSuccess }) {
   const totalAmount = Number(booking?.totalAmount ?? 0);
   const walletBalance = Number(wallet?.balance ?? 0);
   const canAfford = paymentMethod !== "WALLET" || walletBalance >= totalAmount;
-
-  console.log("api =", api);
-  console.log("api.getBooking =", api.getBooking);
-  console.log("typeof =", typeof api.getBooking);
 
   if (loading) {
     return <LoadingPage message="Loading Payment" subMessage="Preparing your secure checkout experience" />;
@@ -325,7 +383,7 @@ export default function PaymentPage({ locations, onPaymentSuccess }) {
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
             </svg>
-            <span>Simulated payment for development</span>
+            <span>Payments secured and processed by Razorpay</span>
           </div>
         </div>
       </div>

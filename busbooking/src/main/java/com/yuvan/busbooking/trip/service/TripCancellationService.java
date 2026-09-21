@@ -4,6 +4,7 @@ import com.yuvan.busbooking.booking.entity.Booking;
 import com.yuvan.busbooking.booking.entity.BookingStatus;
 import com.yuvan.busbooking.booking.repository.BookingRepository;
 import com.yuvan.busbooking.common.exception.ResourceNotFoundException;
+import com.yuvan.busbooking.payment.service.RefundService;
 import com.yuvan.busbooking.ticket.entity.TicketStatus;
 import com.yuvan.busbooking.ticket.repository.TicketRepository;
 import com.yuvan.busbooking.trip.entity.Trip;
@@ -12,7 +13,6 @@ import com.yuvan.busbooking.trip.entity.TripSeatStatus;
 import com.yuvan.busbooking.trip.entity.TripStatus;
 import com.yuvan.busbooking.trip.repository.TripRepository;
 import com.yuvan.busbooking.trip.repository.TripSeatRepository;
-import com.yuvan.busbooking.wallet.service.WalletService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +22,8 @@ import java.util.List;
  * Handles operator-initiated trip cancellations with automatic refunds.
  * When a trip is cancelled by an operator, all confirmed bookings are:
  * 1. Marked as CANCELLED with the operator's reason
- * 2. Passengers are refunded the full booking amount to their wallet
+ * 2. Passengers are refunded the full booking amount via their original
+ *    payment method (Razorpay refund or wallet credit)
  * 3. Tickets are moved to past bookings with cancellation reason
  */
 @Service
@@ -32,20 +33,20 @@ public class TripCancellationService {
     private final BookingRepository bookingRepository;
     private final TicketRepository ticketRepository;
     private final TripSeatRepository tripSeatRepository;
-    private final WalletService walletService;
+    private final RefundService refundService;
 
     public TripCancellationService(
             TripRepository tripRepository,
             BookingRepository bookingRepository,
             TicketRepository ticketRepository,
             TripSeatRepository tripSeatRepository,
-            WalletService walletService
+            RefundService refundService
     ) {
         this.tripRepository = tripRepository;
         this.bookingRepository = bookingRepository;
         this.ticketRepository = ticketRepository;
         this.tripSeatRepository = tripSeatRepository;
-        this.walletService = walletService;
+        this.refundService = refundService;
     }
 
     @Transactional
@@ -92,8 +93,8 @@ public class TripCancellationService {
                 ticketRepository.save(ticket);
             });
 
-            // Refund to wallet
-            walletService.refund(booking.getUser().getId(), booking.getTotalAmount());
+            // Refund via the original payment method
+            refundService.refundBooking(booking.getId());
 
             // Release all seats from this booking's trip
             releaseSeatsByTrip(booking.getTrip().getId());

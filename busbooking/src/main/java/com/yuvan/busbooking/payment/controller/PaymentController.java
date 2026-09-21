@@ -1,7 +1,9 @@
 package com.yuvan.busbooking.payment.controller;
 
-import com.yuvan.busbooking.payment.dto.PaymentRequest;
-import com.yuvan.busbooking.payment.dto.PaymentResponse;
+import com.yuvan.busbooking.payment.dto.PaymentConfirmRequest;
+import com.yuvan.busbooking.payment.dto.PaymentConfirmResponse;
+import com.yuvan.busbooking.payment.dto.PaymentInitiateRequest;
+import com.yuvan.busbooking.payment.dto.PaymentInitiateResponse;
 import com.yuvan.busbooking.payment.service.PaymentService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -18,15 +20,42 @@ public class PaymentController {
         this.paymentService = paymentService;
     }
 
+    /**
+     * Step 1 — prepares a payment for the booking. For Razorpay this returns
+     * the order id and merchant key needed to launch the client checkout.
+     */
     @PostMapping
     @PreAuthorize("hasRole('PASSENGER')")
-    public ResponseEntity<PaymentResponse> processPayment(
-            @Valid @RequestBody PaymentRequest request
+    public ResponseEntity<PaymentInitiateResponse> initiatePayment(
+            @Valid @RequestBody PaymentInitiateRequest request
     ) {
-
-        return ResponseEntity.ok(
-                paymentService.processPayment(request)
-        );
+        return ResponseEntity.ok(paymentService.initiatePayment(request));
     }
-    
+
+    /**
+     * Step 2 — confirms and settles an initiated payment after the client
+     * completes the payment (Razorpay checkout callback / wallet).
+     */
+    @PostMapping("/confirm")
+    @PreAuthorize("hasRole('PASSENGER')")
+    public ResponseEntity<PaymentConfirmResponse> confirmPayment(
+            @Valid @RequestBody PaymentConfirmRequest request
+    ) {
+        return ResponseEntity.ok(paymentService.confirmPayment(request));
+    }
+
+    /**
+     * Razorpay webhook receiver — used to settle payments server-side when the
+     * client never returns from the checkout. Requires no user auth; the
+     * provider signature is validated inside the service.
+     */
+    @PostMapping("/webhook/razorpay")
+    public ResponseEntity<Void> razorpayWebhook(
+            @RequestHeader(value = "x-razorpay-signature", required = false) String signature,
+            @RequestBody String rawPayload
+    ) {
+        paymentService.handleRazorpayWebhook(signature, rawPayload);
+        return ResponseEntity.ok().build();
+    }
+
 }

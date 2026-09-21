@@ -219,7 +219,6 @@ public class OtpService {
                         new IllegalArgumentException(
                                 "No verification code found for this email. Please request a new one."));
 
-        System.out.println("Record found: " + record);
         if (record.getStatus() == OtpStatus.VERIFIED) {
             throw new IllegalStateException("Email is already verified.");
         }
@@ -227,7 +226,6 @@ public class OtpService {
         if (record.getStatus() == OtpStatus.EXPIRED
                 || LocalDateTime.now().isAfter(record.getExpiresAt())) {
             record.setStatus(OtpStatus.EXPIRED);
-            System.out.println("Record Expired: " + record);
             otpRepository.save(record);
             throw new OtpVerificationException(
                     "The verification code has expired. Please request a new one.");

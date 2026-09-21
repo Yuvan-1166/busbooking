@@ -45,6 +45,17 @@ public class Payment {
     @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;
 
+    @Column(length = 8)
+    private String currency;
+
+    /** Provider-side order id (e.g. Razorpay {@code order_id}) used for checkout. */
+    @Column(name = "gateway_order_id", length = 80)
+    private String gatewayOrderId;
+
+    /** Provider-side payment id (e.g. Razorpay {@code payment_id}) recorded once captured. */
+    @Column(name = "gateway_payment_id", length = 80)
+    private String gatewayPaymentId;
+
     @Column(name = "failure_reason", length = 500)
     private String failureReason;
 
@@ -65,11 +76,15 @@ public class Payment {
         if (status == null) {
             status = PaymentStatus.INITIATED;
         }
+
+        if (currency == null || currency.isBlank()) {
+            currency = "INR";
+        }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-    
+
 }
