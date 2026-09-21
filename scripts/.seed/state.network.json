@@ -1,0 +1,431 @@
+{
+  "version": 1,
+  "seedPrefix": "real",
+  "admins": {
+    "real-admin": {
+      "id": 1,
+      "email": "admin@zohocorp.com",
+      "username": "admin@zohocorp.com"
+    }
+  },
+  "locations": {
+    "real-location-1": "1",
+    "real-location-2": "2",
+    "real-location-3": "3",
+    "real-location-4": "4",
+    "real-location-5": "5",
+    "real-location-6": "6",
+    "real-location-7": "7",
+    "real-location-8": "8",
+    "real-location-9": "9",
+    "real-location-10": "10",
+    "real-location-11": "11",
+    "real-location-12": "12",
+    "real-location-13": "13",
+    "real-location-14": "14",
+    "real-location-15": "15",
+    "real-location-16": "16",
+    "real-location-17": "17",
+    "real-location-18": "18",
+    "real-location-19": "19",
+    "real-location-20": "20",
+    "real-location-21": "21",
+    "real-location-22": "22",
+    "real-location-23": "23",
+    "real-location-24": "24",
+    "real-location-25": "25",
+    "real-location-26": "26",
+    "real-location-27": "27",
+    "real-location-28": "28",
+    "real-location-29": "29",
+    "real-location-30": "30",
+    "real-location-31": "31",
+    "real-location-32": "32",
+    "real-location-33": "33",
+    "real-location-34": "34",
+    "real-location-35": "35",
+    "real-location-36": "36",
+    "real-location-37": "37",
+    "real-location-38": "38",
+    "real-location-39": "39",
+    "real-location-40": "40",
+    "real-location-41": "41",
+    "real-location-42": "42",
+    "real-location-43": "43",
+    "real-location-44": "44",
+    "real-location-45": "45",
+    "real-location-46": "46",
+    "real-location-47": "47",
+    "real-location-48": "48",
+    "real-location-49": "49",
+    "real-location-50": "50",
+    "real-location-51": "51",
+    "real-location-52": "52",
+    "real-location-53": "53",
+    "real-location-54": "54",
+    "real-location-55": "55",
+    "real-location-56": "56"
+  },
+  "routes": {
+    "real-route-1-fwd": {
+      "id": 1,
+      "name": "Chennai - Pondicherry"
+    },
+    "real-route-1-ret": {
+      "id": 2,
+      "name": "Pondicherry - Chennai"
+    },
+    "real-route-2-fwd": {
+      "id": 3,
+      "name": "Chennai - Trichy"
+    },
+    "real-route-2-ret": {
+      "id": 4,
+      "name": "Trichy - Chennai"
+    },
+    "real-route-3-fwd": {
+      "id": 5,
+      "name": "Chennai - Madurai"
+    },
+    "real-route-3-ret": {
+      "id": 6,
+      "name": "Madurai - Chennai"
+    },
+    "real-route-4-fwd": {
+      "id": 7,
+      "name": "Pondicherry - Nagapattinam"
+    },
+    "real-route-4-ret": {
+      "id": 8,
+      "name": "Nagapattinam - Pondicherry"
+    },
+    "real-route-5-fwd": {
+      "id": 9,
+      "name": "Trichy - Chidambaram"
+    },
+    "real-route-5-ret": {
+      "id": 10,
+      "name": "Chidambaram - Trichy"
+    },
+    "real-route-6-fwd": {
+      "id": 11,
+      "name": "Chennai - Bengaluru"
+    },
+    "real-route-6-ret": {
+      "id": 12,
+      "name": "Bengaluru - Chennai"
+    },
+    "real-route-7-fwd": {
+      "id": 13,
+      "name": "Chennai - Coimbatore"
+    },
+    "real-route-7-ret": {
+      "id": 14,
+      "name": "Coimbatore - Chennai"
+    },
+    "real-route-8-fwd": {
+      "id": 15,
+      "name": "Trichy - Madurai"
+    },
+    "real-route-8-ret": {
+      "id": 16,
+      "name": "Madurai - Trichy"
+    },
+    "real-route-9-fwd": {
+      "id": 17,
+      "name": "Salem - Madurai"
+    },
+    "real-route-9-ret": {
+      "id": 18,
+      "name": "Madurai - Salem"
+    },
+    "real-route-10-fwd": {
+      "id": 19,
+      "name": "Salem - Coimbatore"
+    },
+    "real-route-10-ret": {
+      "id": 20,
+      "name": "Coimbatore - Salem"
+    },
+    "real-route-11-fwd": {
+      "id": 21,
+      "name": "Coimbatore - Trichy"
+    },
+    "real-route-11-ret": {
+      "id": 22,
+      "name": "Trichy - Coimbatore"
+    },
+    "real-route-12-fwd": {
+      "id": 23,
+      "name": "Coimbatore - Madurai"
+    },
+    "real-route-12-ret": {
+      "id": 24,
+      "name": "Madurai - Coimbatore"
+    },
+    "real-route-13-fwd": {
+      "id": 25,
+      "name": "Madurai - Theni"
+    },
+    "real-route-13-ret": {
+      "id": 26,
+      "name": "Theni - Madurai"
+    },
+    "real-route-14-fwd": {
+      "id": 27,
+      "name": "Coimbatore - Ooty"
+    },
+    "real-route-14-ret": {
+      "id": 28,
+      "name": "Ooty - Coimbatore"
+    },
+    "real-route-15-fwd": {
+      "id": 29,
+      "name": "Trichy - Kumbakonam"
+    },
+    "real-route-15-ret": {
+      "id": 30,
+      "name": "Kumbakonam - Trichy"
+    },
+    "real-route-16-fwd": {
+      "id": 31,
+      "name": "Madurai - Rameswaram"
+    },
+    "real-route-16-ret": {
+      "id": 32,
+      "name": "Rameswaram - Madurai"
+    },
+    "real-route-17-fwd": {
+      "id": 33,
+      "name": "Madurai - Kanyakumari"
+    },
+    "real-route-17-ret": {
+      "id": 34,
+      "name": "Kanyakumari - Madurai"
+    },
+    "real-route-18-fwd": {
+      "id": 35,
+      "name": "Tirunelveli - Thoothukudi"
+    },
+    "real-route-18-ret": {
+      "id": 36,
+      "name": "Thoothukudi - Tirunelveli"
+    },
+    "real-route-19-fwd": {
+      "id": 37,
+      "name": "Trichy - Thoothukudi"
+    },
+    "real-route-19-ret": {
+      "id": 38,
+      "name": "Thoothukudi - Trichy"
+    }
+  },
+  "routeStops": {
+    "real-route-1-fwd-stop-1": "1",
+    "real-route-1-fwd-stop-2": "2",
+    "real-route-1-fwd-stop-3": "3",
+    "real-route-1-fwd-stop-4": "4",
+    "real-route-1-fwd-stop-5": "5",
+    "real-route-1-ret-stop-1": "6",
+    "real-route-1-ret-stop-2": "7",
+    "real-route-1-ret-stop-3": "8",
+    "real-route-1-ret-stop-4": "9",
+    "real-route-1-ret-stop-5": "10",
+    "real-route-2-fwd-stop-1": "11",
+    "real-route-2-fwd-stop-2": "12",
+    "real-route-2-fwd-stop-3": "13",
+    "real-route-2-fwd-stop-4": "14",
+    "real-route-2-fwd-stop-5": "15",
+    "real-route-2-fwd-stop-6": "16",
+    "real-route-2-fwd-stop-7": "17",
+    "real-route-2-fwd-stop-8": "18",
+    "real-route-2-fwd-stop-9": "19",
+    "real-route-2-ret-stop-1": "20",
+    "real-route-2-ret-stop-2": "21",
+    "real-route-2-ret-stop-3": "22",
+    "real-route-2-ret-stop-4": "23",
+    "real-route-2-ret-stop-5": "24",
+    "real-route-2-ret-stop-6": "25",
+    "real-route-2-ret-stop-7": "26",
+    "real-route-2-ret-stop-8": "27",
+    "real-route-2-ret-stop-9": "28",
+    "real-route-3-fwd-stop-1": "29",
+    "real-route-3-fwd-stop-2": "30",
+    "real-route-3-fwd-stop-3": "31",
+    "real-route-3-fwd-stop-4": "32",
+    "real-route-3-fwd-stop-5": "33",
+    "real-route-3-fwd-stop-6": "34",
+    "real-route-3-fwd-stop-7": "35",
+    "real-route-3-fwd-stop-8": "36",
+    "real-route-3-fwd-stop-9": "37",
+    "real-route-3-fwd-stop-10": "38",
+    "real-route-3-fwd-stop-11": "39",
+    "real-route-3-ret-stop-1": "40",
+    "real-route-3-ret-stop-2": "41",
+    "real-route-3-ret-stop-3": "42",
+    "real-route-3-ret-stop-4": "43",
+    "real-route-3-ret-stop-5": "44",
+    "real-route-3-ret-stop-6": "45",
+    "real-route-3-ret-stop-7": "46",
+    "real-route-3-ret-stop-8": "47",
+    "real-route-3-ret-stop-9": "48",
+    "real-route-3-ret-stop-10": "49",
+    "real-route-3-ret-stop-11": "50",
+    "real-route-4-fwd-stop-1": "51",
+    "real-route-4-fwd-stop-2": "52",
+    "real-route-4-fwd-stop-3": "53",
+    "real-route-4-fwd-stop-4": "54",
+    "real-route-4-fwd-stop-5": "55",
+    "real-route-4-fwd-stop-6": "56",
+    "real-route-4-ret-stop-1": "57",
+    "real-route-4-ret-stop-2": "58",
+    "real-route-4-ret-stop-3": "59",
+    "real-route-4-ret-stop-4": "60",
+    "real-route-4-ret-stop-5": "61",
+    "real-route-4-ret-stop-6": "62",
+    "real-route-5-fwd-stop-1": "63",
+    "real-route-5-fwd-stop-2": "64",
+    "real-route-5-fwd-stop-3": "65",
+    "real-route-5-ret-stop-1": "66",
+    "real-route-5-ret-stop-2": "67",
+    "real-route-5-ret-stop-3": "68",
+    "real-route-6-fwd-stop-1": "69",
+    "real-route-6-fwd-stop-2": "70",
+    "real-route-6-fwd-stop-3": "71",
+    "real-route-6-fwd-stop-4": "72",
+    "real-route-6-fwd-stop-5": "73",
+    "real-route-6-fwd-stop-6": "74",
+    "real-route-6-fwd-stop-7": "75",
+    "real-route-6-fwd-stop-8": "76",
+    "real-route-6-ret-stop-1": "77",
+    "real-route-6-ret-stop-2": "78",
+    "real-route-6-ret-stop-3": "79",
+    "real-route-6-ret-stop-4": "80",
+    "real-route-6-ret-stop-5": "81",
+    "real-route-6-ret-stop-6": "82",
+    "real-route-6-ret-stop-7": "83",
+    "real-route-6-ret-stop-8": "84",
+    "real-route-7-fwd-stop-1": "85",
+    "real-route-7-fwd-stop-2": "86",
+    "real-route-7-fwd-stop-3": "87",
+    "real-route-7-fwd-stop-4": "88",
+    "real-route-7-fwd-stop-5": "89",
+    "real-route-7-fwd-stop-6": "90",
+    "real-route-7-fwd-stop-7": "91",
+    "real-route-7-fwd-stop-8": "92",
+    "real-route-7-fwd-stop-9": "93",
+    "real-route-7-fwd-stop-10": "94",
+    "real-route-7-ret-stop-1": "95",
+    "real-route-7-ret-stop-2": "96",
+    "real-route-7-ret-stop-3": "97",
+    "real-route-7-ret-stop-4": "98",
+    "real-route-7-ret-stop-5": "99",
+    "real-route-7-ret-stop-6": "100",
+    "real-route-7-ret-stop-7": "101",
+    "real-route-7-ret-stop-8": "102",
+    "real-route-7-ret-stop-9": "103",
+    "real-route-7-ret-stop-10": "104",
+    "real-route-8-fwd-stop-1": "105",
+    "real-route-8-fwd-stop-2": "106",
+    "real-route-8-fwd-stop-3": "107",
+    "real-route-8-ret-stop-1": "108",
+    "real-route-8-ret-stop-2": "109",
+    "real-route-8-ret-stop-3": "110",
+    "real-route-9-fwd-stop-1": "111",
+    "real-route-9-fwd-stop-2": "112",
+    "real-route-9-fwd-stop-3": "113",
+    "real-route-9-fwd-stop-4": "114",
+    "real-route-9-fwd-stop-5": "115",
+    "real-route-9-ret-stop-1": "116",
+    "real-route-9-ret-stop-2": "117",
+    "real-route-9-ret-stop-3": "118",
+    "real-route-9-ret-stop-4": "119",
+    "real-route-9-ret-stop-5": "120",
+    "real-route-10-fwd-stop-1": "121",
+    "real-route-10-fwd-stop-2": "122",
+    "real-route-10-fwd-stop-3": "123",
+    "real-route-10-ret-stop-1": "124",
+    "real-route-10-ret-stop-2": "125",
+    "real-route-10-ret-stop-3": "126",
+    "real-route-11-fwd-stop-1": "127",
+    "real-route-11-fwd-stop-2": "128",
+    "real-route-11-fwd-stop-3": "129",
+    "real-route-11-fwd-stop-4": "130",
+    "real-route-11-ret-stop-1": "131",
+    "real-route-11-ret-stop-2": "132",
+    "real-route-11-ret-stop-3": "133",
+    "real-route-11-ret-stop-4": "134",
+    "real-route-12-fwd-stop-1": "135",
+    "real-route-12-fwd-stop-2": "136",
+    "real-route-12-fwd-stop-3": "137",
+    "real-route-12-fwd-stop-4": "138",
+    "real-route-12-fwd-stop-5": "139",
+    "real-route-12-ret-stop-1": "140",
+    "real-route-12-ret-stop-2": "141",
+    "real-route-12-ret-stop-3": "142",
+    "real-route-12-ret-stop-4": "143",
+    "real-route-12-ret-stop-5": "144",
+    "real-route-13-fwd-stop-1": "145",
+    "real-route-13-fwd-stop-2": "146",
+    "real-route-13-fwd-stop-3": "147",
+    "real-route-13-fwd-stop-4": "148",
+    "real-route-13-ret-stop-1": "149",
+    "real-route-13-ret-stop-2": "150",
+    "real-route-13-ret-stop-3": "151",
+    "real-route-13-ret-stop-4": "152",
+    "real-route-14-fwd-stop-1": "153",
+    "real-route-14-fwd-stop-2": "154",
+    "real-route-14-fwd-stop-3": "155",
+    "real-route-14-fwd-stop-4": "156",
+    "real-route-14-ret-stop-1": "157",
+    "real-route-14-ret-stop-2": "158",
+    "real-route-14-ret-stop-3": "159",
+    "real-route-14-ret-stop-4": "160",
+    "real-route-15-fwd-stop-1": "161",
+    "real-route-15-fwd-stop-2": "162",
+    "real-route-15-fwd-stop-3": "163",
+    "real-route-15-ret-stop-1": "164",
+    "real-route-15-ret-stop-2": "165",
+    "real-route-15-ret-stop-3": "166",
+    "real-route-16-fwd-stop-1": "167",
+    "real-route-16-fwd-stop-2": "168",
+    "real-route-16-fwd-stop-3": "169",
+    "real-route-16-fwd-stop-4": "170",
+    "real-route-16-fwd-stop-5": "171",
+    "real-route-16-ret-stop-1": "172",
+    "real-route-16-ret-stop-2": "173",
+    "real-route-16-ret-stop-3": "174",
+    "real-route-16-ret-stop-4": "175",
+    "real-route-16-ret-stop-5": "176",
+    "real-route-17-fwd-stop-1": "177",
+    "real-route-17-fwd-stop-2": "178",
+    "real-route-17-fwd-stop-3": "179",
+    "real-route-17-fwd-stop-4": "180",
+    "real-route-17-fwd-stop-5": "181",
+    "real-route-17-fwd-stop-6": "182",
+    "real-route-17-ret-stop-1": "183",
+    "real-route-17-ret-stop-2": "184",
+    "real-route-17-ret-stop-3": "185",
+    "real-route-17-ret-stop-4": "186",
+    "real-route-17-ret-stop-5": "187",
+    "real-route-17-ret-stop-6": "188",
+    "real-route-18-fwd-stop-1": "189",
+    "real-route-18-fwd-stop-2": "190",
+    "real-route-18-fwd-stop-3": "191",
+    "real-route-18-ret-stop-1": "192",
+    "real-route-18-ret-stop-2": "193",
+    "real-route-18-ret-stop-3": "194",
+    "real-route-19-fwd-stop-1": "195",
+    "real-route-19-fwd-stop-2": "196",
+    "real-route-19-fwd-stop-3": "197",
+    "real-route-19-fwd-stop-4": "198",
+    "real-route-19-fwd-stop-5": "199",
+    "real-route-19-fwd-stop-6": "200",
+    "real-route-19-ret-stop-1": "201",
+    "real-route-19-ret-stop-2": "202",
+    "real-route-19-ret-stop-3": "203",
+    "real-route-19-ret-stop-4": "204",
+    "real-route-19-ret-stop-5": "205",
+    "real-route-19-ret-stop-6": "206"
+  }
+}
