@@ -7,6 +7,7 @@ import com.yuvan.busbooking.common.util.SecurityUtils;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.service.UserService;
 
+import java.util.*;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,6 +42,14 @@ public class BookingController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(response);
+    }
+
+    @GetMapping()
+    @PreAuthorize("hasrole('ADMIN')")
+    public ResponseEntity<List<BookingResponse>> getBookings() {
+        return ResponseEntity.ok(
+                bookingService.findAll()
+        );
     }
 
     @GetMapping("/{bookingId}")

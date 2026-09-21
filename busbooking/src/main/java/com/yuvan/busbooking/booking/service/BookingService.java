@@ -175,6 +175,14 @@ public class BookingService {
                 return toResponse(booking);
         }
 
+        public List<BookingResponse> findAll() {
+                List<BookingResponse> bookings = bookingRepository.findAll()
+                                                        .stream()
+                                                        .map(this::toResponse)
+                                                        .toList();
+                return bookings;
+        }
+
     /**
      * Safety-net gender policy check at booking time.
      * The primary enforcement happens at hold time; this guards against

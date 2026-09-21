@@ -17,7 +17,6 @@ import com.yuvan.busbooking.payment.dto.PaymentConfirmResponse;
 import com.yuvan.busbooking.payment.dto.PaymentInitiateRequest;
 import com.yuvan.busbooking.payment.dto.PaymentInitiateResponse;
 import com.yuvan.busbooking.payment.entity.Payment;
-import com.yuvan.busbooking.payment.entity.PaymentMethod;
 import com.yuvan.busbooking.payment.entity.PaymentStatus;
 import com.yuvan.busbooking.payment.gateway.PaymentGateway;
 import com.yuvan.busbooking.payment.gateway.PaymentGatewayFactory;
