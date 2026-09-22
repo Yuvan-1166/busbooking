@@ -3,13 +3,14 @@ package com.yuvan.busbooking.auth.service;
 import com.yuvan.busbooking.auth.entity.OtpPurpose;
 import com.yuvan.busbooking.auth.entity.OtpStatus;
 import com.yuvan.busbooking.auth.entity.OtpVerification;
+import com.yuvan.busbooking.auth.otp.OtpFlow;
+import com.yuvan.busbooking.auth.otp.OtpFlowFactory;
 import com.yuvan.busbooking.auth.repository.OtpVerificationRepository;
 import com.yuvan.busbooking.common.exception.OtpVerificationException;
 import com.yuvan.busbooking.common.exception.ResourceNotFoundException;
-import com.yuvan.busbooking.user.entity.User;
-import com.yuvan.busbooking.user.entity.UserStatus;
-import com.yuvan.busbooking.user.repository.UserRepository;
 import com.yuvan.busbooking.common.util.SecurityUtils;
+import com.yuvan.busbooking.user.entity.User;
+import com.yuvan.busbooking.user.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,16 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 
+/**
+ * Service for issuing and verifying email OTPs.
+ * <p>
+ * Acts as a facade over the {@link OtpFlow} strategies, providing the
+ * purpose-agnostic orchestration: storage, hashing, expiry, attempt limits
+ * and code matching. Purpose-specific behavior (eligibility, delivery,
+ * post-verification side effects) is delegated to the flow for the requested
+ * {@link OtpPurpose}.
+ * </p>
+ */
 @Service
 public class OtpService {
 
@@ -25,23 +36,23 @@ public class OtpService {
 
     private final OtpVerificationRepository otpRepository;
     private final UserRepository userRepository;
-    private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final OtpFlowFactory flowFactory;
     private final int expiryMinutes;
     private final int maxAttempts;
 
     public OtpService(
             OtpVerificationRepository otpRepository,
             UserRepository userRepository,
-            EmailService emailService,
             PasswordEncoder passwordEncoder,
+            OtpFlowFactory flowFactory,
             @Value("${app.otp.expiry-minutes:10}") int expiryMinutes,
             @Value("${app.otp.max-attempts:5}") int maxAttempts
     ) {
         this.otpRepository = otpRepository;
         this.userRepository = userRepository;
-        this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
+        this.flowFactory = flowFactory;
         this.expiryMinutes = expiryMinutes;
         this.maxAttempts = maxAttempts;
     }
@@ -52,38 +63,7 @@ public class OtpService {
      */
     @Transactional
     public void generateAndSendPasswordReset(String email) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User not found: " + email));
-
-        if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new IllegalStateException(
-                    "Account is not active. Please verify your email first.");
-        }
-
-        // Expire any existing active PASSWORD_RESET OTP for this email
-        otpRepository
-                .findTopByEmailAndPurposeOrderByCreatedAtDesc(
-                        email, OtpPurpose.PASSWORD_RESET)
-                .filter(existing -> existing.getStatus() == OtpStatus.ACTIVE)
-                .ifPresent(existing -> {
-                    existing.setStatus(OtpStatus.EXPIRED);
-                    otpRepository.save(existing);
-                });
-
-        String plainOtp = generateSixDigitOtp();
-
-        OtpVerification record = new OtpVerification();
-        record.setEmail(email);
-        record.setOtpHash(passwordEncoder.encode(plainOtp));
-        record.setPurpose(OtpPurpose.PASSWORD_RESET);
-        record.setStatus(OtpStatus.ACTIVE);
-        record.setExpiresAt(LocalDateTime.now().plusMinutes(expiryMinutes));
-        record.setAttempts(0);
-
-        otpRepository.save(record);
-
-        emailService.sendPasswordResetOtp(email, plainOtp, expiryMinutes);
+        issue(email, flowFactory.getFlow(OtpPurpose.PASSWORD_RESET));
     }
 
     /**
@@ -93,48 +73,9 @@ public class OtpService {
      */
     @Transactional(noRollbackFor = OtpVerificationException.class)
     public OtpVerification verifyForPasswordReset(String email, String submittedOtp) {
-        OtpVerification record = otpRepository
-                .findTopByEmailAndPurposeOrderByCreatedAtDesc(
-                        email, OtpPurpose.PASSWORD_RESET)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "No reset code found for this email. Please request a new one."));
-
-        if (record.getStatus() == OtpStatus.VERIFIED) {
-            throw new IllegalStateException("This reset code has already been used.");
-        }
-
-        if (record.getStatus() == OtpStatus.EXPIRED
-                || LocalDateTime.now().isAfter(record.getExpiresAt())) {
-            record.setStatus(OtpStatus.EXPIRED);
-            otpRepository.save(record);
-            throw new OtpVerificationException(
-                    "The reset code has expired. Please request a new one.");
-        }
-
-        if (record.getAttempts() >= maxAttempts) {
-            record.setStatus(OtpStatus.EXPIRED);
-            otpRepository.save(record);
-            throw new OtpVerificationException(
-                    "Too many incorrect attempts. Please request a new code.");
-        }
-
-        if (!passwordEncoder.matches(submittedOtp, record.getOtpHash())) {
-            record.setAttempts(record.getAttempts() + 1);
-            otpRepository.save(record);
-
-            int remaining = maxAttempts - record.getAttempts();
-            throw new OtpVerificationException(
-                    "Incorrect code. " + remaining
-                            + " attempt" + (remaining == 1 ? "" : "s") + " remaining.");
-        }
-
-        // Mark verified
-        record.setStatus(OtpStatus.VERIFIED);
-        record.setVerifiedAt(LocalDateTime.now());
-        otpRepository.save(record);
-
-        return record;
+        return verifyCore(
+                email, submittedOtp, OtpPurpose.PASSWORD_RESET,
+                "No reset code found for this email. Please request a new one.");
     }
 
     /**
@@ -143,84 +84,77 @@ public class OtpService {
      */
     @Transactional
     public void generateAndSend(String email, OtpPurpose purpose) {
-        
-        User user = getUser(email);
-
-        if (!user.getTwitterEmailPending() && user.getStatus() == UserStatus.ACTIVE) {
-            throw new IllegalStateException("Email is already verified");
-        }
-
-        // Expire any existing active OTP for this email + purpose
-        otpRepository
-                .findTopByEmailAndPurposeOrderByCreatedAtDesc(email, purpose)
-                .filter(existing -> existing.getStatus() == OtpStatus.ACTIVE)
-                .ifPresent(existing -> {
-                    existing.setStatus(OtpStatus.EXPIRED);
-                    otpRepository.save(existing);
-                });
-
-        String plainOtp = generateSixDigitOtp();
-
-        OtpVerification record = new OtpVerification();
-        record.setEmail(email);
-        record.setOtpHash(passwordEncoder.encode(plainOtp));
-        record.setPurpose(purpose);
-        record.setStatus(OtpStatus.ACTIVE);
-        record.setExpiresAt(LocalDateTime.now().plusMinutes(expiryMinutes));
-        record.setAttempts(0);
-
-        otpRepository.save(record);
-
-        emailService.sendOtp(email, plainOtp, expiryMinutes);
+        issue(email, flowFactory.getFlow(purpose));
     }
 
     /**
      * Generates and sends OTP for TOTP login fallback.
      * Used when user's authenticator app is unavailable.
-     * No verification status check - works for any verified user with TOTP enabled.
      */
     @Transactional
     public void generateAndSendTotpLoginFallback(String email) {
+        issue(email, flowFactory.getFlow(OtpPurpose.TOTP_LOGIN_FALLBACK));
+    }
 
-        // Expire any existing active OTP for this email + purpose
-        otpRepository
-                .findTopByEmailAndPurposeOrderByCreatedAtDesc(email, OtpPurpose.TOTP_LOGIN_FALLBACK)
-                .filter(existing -> existing.getStatus() == OtpStatus.ACTIVE)
-                .ifPresent(existing -> {
-                    existing.setStatus(OtpStatus.EXPIRED);
-                    otpRepository.save(existing);
-                });
+    /**
+     * Verifies the submitted OTP against the latest record for this email + purpose
+     * and applies the purpose-specific post-verification side effects.
+     */
+    @Transactional(noRollbackFor = OtpVerificationException.class)
+    public String verify(String email, String submittedOtp, OtpPurpose purpose) {
+        verifyCore(
+                email, submittedOtp, purpose,
+                "No verification code found for this email. Please request a new one.");
+
+        User user = getUser(email);
+        OtpFlow flow = flowFactory.getFlow(purpose);
+        flow.applyPostVerification(user);
+        userRepository.save(user);
+
+        return null;
+    }
+
+    /**
+     * Issues a new OTP for the given flow: validates eligibility, invalidates any
+     * previous ACTIVE OTP, persists the hashed code and delivers it.
+     */
+    private void issue(String email, OtpFlow flow) {
+        User user = getUser(email);
+
+        flow.validateForSend(user);
+
+        expireExisting(email, flow.getPurpose());
 
         String plainOtp = generateSixDigitOtp();
 
         OtpVerification record = new OtpVerification();
         record.setEmail(email);
         record.setOtpHash(passwordEncoder.encode(plainOtp));
-        record.setPurpose(OtpPurpose.TOTP_LOGIN_FALLBACK);
+        record.setPurpose(flow.getPurpose());
         record.setStatus(OtpStatus.ACTIVE);
         record.setExpiresAt(LocalDateTime.now().plusMinutes(expiryMinutes));
         record.setAttempts(0);
 
         otpRepository.save(record);
 
-        emailService.sendOtp(email, plainOtp, expiryMinutes);
+        flow.deliver(email, plainOtp, expiryMinutes);
     }
 
     /**
-     * Verifies the submitted OTP against the latest record for this email + purpose.
-     * For REGISTRATION purpose: Returns tempToken for TOTP setup (does NOT activate user yet)
-     * For other purposes: Activates user immediately
+     * Loads the latest OTP record for the purpose and validates the submitted code.
      */
-    @Transactional(noRollbackFor = OtpVerificationException.class)
-    public String verify(String email, String submittedOtp, OtpPurpose purpose) {
+    private OtpVerification verifyCore(
+            String email,
+            String submittedOtp,
+            OtpPurpose purpose,
+            String notFoundMessage
+    ) {
         OtpVerification record = otpRepository
                 .findTopByEmailAndPurposeOrderByCreatedAtDesc(email, purpose)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "No verification code found for this email. Please request a new one."));
+                .orElseThrow(() -> new IllegalArgumentException(notFoundMessage));
 
         if (record.getStatus() == OtpStatus.VERIFIED) {
-            throw new IllegalStateException("Email is already verified.");
+            throw new IllegalStateException("This verification code has already been used.");
         }
 
         if (record.getStatus() == OtpStatus.EXPIRED
@@ -253,15 +187,20 @@ public class OtpService {
         record.setVerifiedAt(LocalDateTime.now());
         otpRepository.save(record);
 
-        User user = getUser(email);
+        return record;
+    }
 
-        // Activate user immediately after OTP verification
-        // TOTP 2FA setup is now optional and done from profile page
-        user.setStatus(UserStatus.ACTIVE);
-        user.setOnboardingCompleted(true);
-        userRepository.save(user);
-        
-        return null;
+    /**
+     * Invalidates any existing ACTIVE OTP for this email + purpose.
+     */
+    private void expireExisting(String email, OtpPurpose purpose) {
+        otpRepository
+                .findTopByEmailAndPurposeOrderByCreatedAtDesc(email, purpose)
+                .filter(existing -> existing.getStatus() == OtpStatus.ACTIVE)
+                .ifPresent(existing -> {
+                    existing.setStatus(OtpStatus.EXPIRED);
+                    otpRepository.save(existing);
+                });
     }
 
     private String generateSixDigitOtp() {
@@ -272,21 +211,21 @@ public class OtpService {
         String currentEmail = SecurityUtils.getCurrentUserEmail();
 
         User user;
-        
-        if(currentEmail.startsWith("twitter"))
+
+        if (currentEmail.startsWith("twitter"))
             user = userRepository.findByEmail(currentEmail)
-                            .orElseThrow(
-                                () -> new ResourceNotFoundException(
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException(
                                     "User not found with email " + currentEmail
-                                )
-                            );
+                            )
+                    );
         else
             user = userRepository.findByEmail(email)
-                            .orElseThrow(
-                                () -> new ResourceNotFoundException(
+                    .orElseThrow(
+                            () -> new ResourceNotFoundException(
                                     "User not found with email " + email
-                                )
-                            );
+                            )
+                    );
         return user;
     }
 }
