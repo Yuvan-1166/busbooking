@@ -65,6 +65,11 @@ public class TotpAlternativeController {
                         .body(new ErrorResponse("Invalid or expired session"));
             }
             
+            if (!Boolean.TRUE.equals(user.getTotpEnabled())) {
+                log.warn("User {} attempted alternative OTP without 2FA enabled", user.getId());
+                throw new IllegalArgumentException("2FA is not enabled for this user");
+            }
+            
             // Extract IP and user agent for audit
             String ipAddress = getClientIpAddress(httpRequest);
             String userAgent = httpRequest.getHeader("User-Agent");

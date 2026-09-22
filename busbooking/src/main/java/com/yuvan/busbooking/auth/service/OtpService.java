@@ -88,15 +88,6 @@ public class OtpService {
     }
 
     /**
-     * Generates and sends OTP for TOTP login fallback.
-     * Used when user's authenticator app is unavailable.
-     */
-    @Transactional
-    public void generateAndSendTotpLoginFallback(String email) {
-        issue(email, flowFactory.getFlow(OtpPurpose.TOTP_LOGIN_FALLBACK));
-    }
-
-    /**
      * Verifies the submitted OTP against the latest record for this email + purpose
      * and applies the purpose-specific post-verification side effects.
      */

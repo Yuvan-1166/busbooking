@@ -75,8 +75,6 @@ export const api = {
   verifyTotpSetup: (totpCode) => request('/auth/totp/verify-setup', { method: 'POST', body: JSON.stringify({ totpCode }) }),
   disableTotp: (data) => request('/auth/totp/disable', { method: 'POST', body: JSON.stringify(data) }),
   generateBackupCodes: () => request('/auth/totp/backup-codes/generate', { method: 'POST' }),
-  requestTotpLoginEmailOtp: (tempToken, email) => request('/auth/login/request-otp-fallback', { method: 'POST', body: JSON.stringify({ tempToken, email }) }),
-  verifyTotpLoginEmailOtp: (tempToken, otp) => request('/auth/login/verify-otp-fallback', { method: 'POST', body: JSON.stringify({ tempToken, otp }) }),
   // TOTP Alternative OTP methods (SMS, Email, etc.)
   sendTotpAlternativeOtp: (method, tempToken) => request('/auth/totp-alternative/send', { method: 'POST', body: JSON.stringify({ method, tempToken }) }),
   verifyTotpAlternativeOtp: (tempToken, sessionId, code) => request('/auth/totp-alternative/verify', { method: 'POST', body: JSON.stringify({ tempToken, sessionId, code }) }),

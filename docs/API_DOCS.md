@@ -153,40 +153,6 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/auth/login/request-otp-fallback
-**Purpose:** Request email OTP as fallback for TOTP login (when authenticator app is unavailable)
-**Access:** Public
-**Request Body:**
-- `tempToken` (string) - Temporary JWT token from initial login attempt
-- `email` (string) - User email address
-
-**Response:**
-```json
-{
-  "message": "OTP sent to your email: user@example.com"
-}
-```
-
----
-
-### POST /api/v1/auth/login/verify-otp-fallback
-**Purpose:** Verify email OTP and complete login
-**Access:** Public
-**Request Body:**
-- `tempToken` (string) - Temporary JWT token
-- `otp` (string) - 6-digit OTP code
-
-**Response:**
-```json
-{
-  "accessToken": "string",
-  "tokenType": "Bearer",
-  "expiresIn": 3600
-}
-```
-
----
-
 ### POST /api/v1/auth/login/verify-totp
 **Purpose:** Verify TOTP code and complete login
 **Access:** Public

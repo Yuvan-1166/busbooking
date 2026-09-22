@@ -64,8 +64,6 @@ public class SecurityConfig {
                         "/api/v1/auth/register",
                         "/api/v1/auth/login",
                                 "/api/v1/auth/login/verify-totp",
-                                "/api/v1/auth/login/request-otp-fallback",
-                                "/api/v1/auth/login/verify-otp-fallback",
                                 "/api/v1/auth/totp-alternative/send",
                                 "/api/v1/auth/totp-alternative/verify",
                                 "/api/v1/auth/verify/send",

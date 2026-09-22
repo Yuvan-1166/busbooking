@@ -92,8 +92,6 @@ src/main/java/com/yuvan/busbooking/
 - POST /api/v1/auth/oauth/authorize
 - POST /api/v1/auth/oauth/callback
 - POST /api/v1/auth/login
-- POST /api/v1/auth/login/request-otp-fallback
-- POST /api/v1/auth/login/verify-otp-fallback
 - POST /api/v1/auth/login/verify-totp
 - POST /api/v1/auth/onboarding/complete
 - POST /api/v1/auth/totp-alternative/send

@@ -137,30 +137,4 @@ public class AuthController {
     ) {
         return onboardingService.completeOnboarding(request);
     }
-
-    /**
-     * Request email OTP as fallback for TOTP login
-     * Used when user cannot access authenticator app
-     *
-     * POST /api/v1/auth/login/request-otp-fallback
-     */
-    @PostMapping("/login/request-otp-fallback")
-    public com.yuvan.busbooking.auth.dto.MessageResponse requestOtpFallback(
-            @Valid @RequestBody com.yuvan.busbooking.auth.dto.TotpLoginOtpFallbackRequest request
-    ) {
-        authService.sendOtpForTotpLoginFallback(request.tempToken(), request.email());
-        return new com.yuvan.busbooking.auth.dto.MessageResponse("OTP sent to your email: " + request.email());
-    }
-
-    /**
-     * Verify email OTP and complete login
-     *
-     * POST /api/v1/auth/login/verify-otp-fallback
-     */
-    @PostMapping("/login/verify-otp-fallback")
-    public LoginResponse verifyOtpFallback(
-            @Valid @RequestBody com.yuvan.busbooking.auth.dto.TotpLoginVerifyOtpRequest request
-    ) {
-        return authService.verifyOtpForTotpLoginAndLogin(request.tempToken(), request.otp());
-    }
 }
