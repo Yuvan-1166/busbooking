@@ -109,7 +109,23 @@ function groupSeatsByRow(seats) {
 }
 
 /**
- * SeatRow - Renders a single row with aisle separation
+ * Returns the column after which the aisle is placed in this row.
+ * Uses the persisted aisleAfter when available, otherwise falls back
+ * to a heuristic (1 for tiny rows, 2 for standard 2+2/2+1 layouts).
+ */
+function getRowAisleAfter(row) {
+  if (row.length <= 1) return 0;
+  const raw = row[0]?.aisleAfter;
+  if (typeof raw === "number" && raw >= 1) {
+    return Math.min(raw, row.length - 1);
+  }
+  return row.length <= 2 ? 1 : 2;
+}
+
+/**
+ * SeatRow - Renders a single row split by the aisle.
+ * Seats before the aisle sit on the left (window-first), the rest on
+ * the right (aisle-first, window at the very edge).
  */
 function SeatRow({
   row,
@@ -120,16 +136,16 @@ function SeatRow({
   disabled,
   compact,
 }) {
-  // Detect 2+2 or 2+3 configuration
-  const leftSeats = row.length <= 2 ? row.slice(0, 1) : row.slice(0, 2);
-  const rightSeats = row.length <= 2 ? row.slice(1) : row.slice(2);
+  const leftCount = getRowAisleAfter(row);
+  const leftSeats = row.slice(0, leftCount);
+  const rightSeats = row.slice(leftCount);
 
   return (
     <div
-      className={`grid ${compact ? "h-[32px] grid-cols-[68px_16px_68px] gap-1" : "h-[38px] grid-cols-[88px_28px_88px] gap-2"} justify-center`}
+      className={`flex items-stretch justify-between ${compact ? "h-[32px] gap-1" : "h-[38px] gap-2"} px-0`}
     >
-      {/* Left Side */}
-      <div className={`grid grid-cols-2 justify-center ${compact ? "gap-1" : "gap-2"}`}>
+      {/* Left Side (window seats hug the left wall) */}
+      <div className={`flex justify-start ${compact ? "gap-1" : "gap-2"}`}>
         {leftSeats.map((seat) => (
           <SeatButton
             key={seat.id}
@@ -149,12 +165,12 @@ function SeatRow({
 
       {/* Aisle */}
       <span
-        className={`min-h-7 border-x border-dashed border-[#bcc7b8] ${compact ? "w-4" : "w-7"}`}
+        className={`self-stretch border-x border-dashed border-[#bcc7b8] ${compact ? "w-4" : "w-7"}`}
         aria-hidden="true"
       />
 
-      {/* Right Side */}
-      <div className={`grid grid-cols-2 justify-center ${compact ? "gap-1" : "gap-2"}`}>
+      {/* Right Side (aisle seat first, window seat at the right wall) */}
+      <div className={`flex justify-end ${compact ? "gap-1" : "gap-2"}`}>
         {rightSeats.map((seat) => (
           <SeatButton
             key={seat.id}

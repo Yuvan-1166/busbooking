@@ -45,6 +45,14 @@ public class Seat {
     @Column(nullable = false, length = 20)
     private SeatPosition position;
 
+    /**
+     * Column after which the aisle is placed in this row.
+     * Seats in columns {@code <= aisleAfter} sit left of the aisle,
+     * seats in columns {@code > aisleAfter} sit right of the aisle.
+     */
+    @Column(name = "aisle_after")
+    private Integer aisleAfter;
+
     @Column(name = "gender_policy")
     private SeatGenderPolicy genderPolicy;
 

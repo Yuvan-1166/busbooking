@@ -28,6 +28,12 @@ public record SeatRequest(
         SeatPosition position,
 
         /**
+         * Column after which the aisle is placed in this row.
+         * Optional - used to render the seat layout correctly.
+         */
+        Integer aisleAfter,
+
+        /**
          * Gender policy for this seat.
          * Defaults to {@code ANY} when not provided.
          */

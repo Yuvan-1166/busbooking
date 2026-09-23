@@ -736,7 +736,7 @@ const BusesView = ({
             >
               <option value="SLEEPER">Sleeper</option>
               <option value="SEMI_SLEEPER">Semi-Sleeper</option>
-              <option value="AC_SLEEPER">AC Sleeper</option>
+              <option value="SEATER">Seater</option>
             </select>
           </div>
 

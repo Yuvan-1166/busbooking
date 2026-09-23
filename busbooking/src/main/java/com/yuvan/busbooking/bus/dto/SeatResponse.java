@@ -15,6 +15,7 @@ public record SeatResponse(
         String deckName,
         SeatType seatType,
         SeatPosition position,
+        Integer aisleAfter,
         SeatGenderPolicy genderPolicy,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
@@ -28,6 +29,7 @@ public record SeatResponse(
                 seat.getDeckName(),
                 seat.getSeatType(),
                 seat.getPosition(),
+                seat.getAisleAfter(),
                 seat.getGenderPolicy(),
                 seat.getCreatedAt(),
                 seat.getUpdatedAt()

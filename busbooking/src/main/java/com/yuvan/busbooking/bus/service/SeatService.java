@@ -54,6 +54,7 @@ public class SeatService {
         seat.setDeckName(request.deckName());
         seat.setSeatType(request.seatType());
         seat.setPosition(request.position());
+        seat.setAisleAfter(request.aisleAfter());
         seat.setGenderPolicy(
                 request.genderPolicy() != null
                         ? request.genderPolicy()
@@ -97,6 +98,7 @@ public class SeatService {
                     seat.setDeckName(request.deckName());
                     seat.setSeatType(request.seatType());
                     seat.setPosition(request.position());
+                    seat.setAisleAfter(request.aisleAfter());
                     seat.setGenderPolicy(
                             request.genderPolicy() != null
                                     ? request.genderPolicy()
@@ -185,6 +187,7 @@ public class SeatService {
         seat.setDeckName(request.deckName());
         seat.setSeatType(request.seatType());
         seat.setPosition(request.position());
+        seat.setAisleAfter(request.aisleAfter());
         seat.setGenderPolicy(
                 request.genderPolicy() != null
                         ? request.genderPolicy()
@@ -215,6 +218,7 @@ public class SeatService {
                 seat.getDeckName(),
                 seat.getSeatType(),
                 seat.getPosition(),
+                seat.getAisleAfter(),
                 seat.getGenderPolicy() != null
                         ? seat.getGenderPolicy()
                         : SeatGenderPolicy.ANY,

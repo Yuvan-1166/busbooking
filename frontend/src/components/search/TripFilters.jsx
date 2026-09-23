@@ -85,6 +85,7 @@ export default function TripFilters({ trips, onFiltersChange, getTripFare }) {
     const typeMap = {
       SLEEPER: "Sleeper",
       SEMI_SLEEPER: "Semi-Sleeper",
+      SEATER: "Seater",
       COACH: "Coach",
       LUXURY: "Luxury",
       AC_SLEEPER: "AC Sleeper",

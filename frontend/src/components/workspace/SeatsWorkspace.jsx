@@ -12,6 +12,7 @@ const emptySeat = {
   deckName: "",
   seatType: "SEAT",
   position: "WINDOW",
+  aisleAfter: null,
   genderPolicy: "ANY",
 };
 const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -20,15 +21,14 @@ function createSeatPreview(busId, dimensions, selectedBus) {
   const seats = [];
   const isDoubleDecker = selectedBus?.deckType === "DOUBLE";
   const deckPrefix = isDoubleDecker ? (dimensions.deckNumber === 1 ? "L" : "U") : "";
-  
+
   for (let row = 1; row <= dimensions.rows; row += 1) {
     for (let column = 1; column <= dimensions.seatsPerRow; column += 1) {
-      const position =
-        column === 1 || column === dimensions.seatsPerRow
-          ? "WINDOW"
-          : column === dimensions.aisleAfter
-            ? "AISLE"
-            : "MIDDLE";
+      const position = getSeatPosition(
+        column,
+        dimensions.seatsPerRow,
+        dimensions.aisleAfter,
+      );
       seats.push({
         localId: `${row}-${column}`,
         busId: Number(busId),
@@ -37,11 +37,25 @@ function createSeatPreview(busId, dimensions, selectedBus) {
         deckName: dimensions.deckName,
         seatType: "SEAT",
         position,
+        aisleAfter: Number(dimensions.aisleAfter),
         genderPolicy: "ANY",
       });
     }
   }
   return seats;
+}
+
+/**
+ * Position for a seat at `column` in a row of `seatsPerRow` seats with the
+ * aisle placed right after `aisleAfter` columns.
+ * - Column 1 and the last column are window seats (bus walls).
+ * - Columns immediately adjacent to the aisle (one on each side) are aisle seats.
+ * - Everything else is a middle seat.
+ */
+function getSeatPosition(column, seatsPerRow, aisleAfter) {
+  if (column === 1 || column === seatsPerRow) return "WINDOW";
+  if (column === aisleAfter || column === aisleAfter + 1) return "AISLE";
+  return "MIDDLE";
 }
 
 export default function SeatsWorkspace({
@@ -128,6 +142,7 @@ export default function SeatsWorkspace({
       seatNumber: seat.seatNumber || "",
       seatType: seat.seatType || "SEAT",
       position: seat.position || "WINDOW",
+      aisleAfter: seat.aisleAfter ?? null,
       genderPolicy: seat.genderPolicy || "ANY",
     });
   };
@@ -609,6 +624,25 @@ function SeatEditor({
             <option value="MALE_PREFERRED">Male preferred</option>
             <option value="MALE_ONLY">Male only (reserved)</option>
           </select>
+        </label>
+        <label className="grid gap-1.5 text-xs font-medium text-neutral-700">
+          Aisle after column
+          <input
+            className="w-full border-0 border-b border-neutral-200 bg-transparent py-2 text-sm text-neutral-900 outline-0 focus:border-primary-500"
+            type="number"
+            min="1"
+            placeholder="e.g. 2 for 2+2"
+            value={form.aisleAfter ?? ""}
+            onChange={(event) =>
+              onChange({
+                ...form,
+                aisleAfter:
+                  event.target.value === ""
+                    ? null
+                    : Number(event.target.value),
+              })
+            }
+          />
         </label>
         <button className="btn btn-primary w-full" disabled={saving}>
           {saving ? "Saving..." : isEditing ? "Save changes" : "Add seat"}

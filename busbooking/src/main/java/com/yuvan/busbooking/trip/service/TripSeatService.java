@@ -155,6 +155,11 @@ public class TripSeatService {
                 tripSeat.getSeat().getSeatNumber(),
                 tripSeat.getStatus(),
                 policy != null ? policy : SeatGenderPolicy.ANY,
+                tripSeat.getSeat().getSeatType(),
+                tripSeat.getSeat().getPosition(),
+                tripSeat.getSeat().getDeckNumber(),
+                tripSeat.getSeat().getDeckName(),
+                tripSeat.getSeat().getAisleAfter(),
                 tripSeat.getHeldUntil(),
                 tripSeat.getCreatedAt(),
                 tripSeat.getUpdatedAt()

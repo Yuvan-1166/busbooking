@@ -30,6 +30,7 @@ export default function TripCard({ trip, onSelect }) {
     const typeMap = {
       SLEEPER: "Sleeper",
       SEMI_SLEEPER: "Semi-Sleeper",
+      SEATER: "Seater",
       COACH: "Coach",
       LUXURY: "Luxury",
       AC_SLEEPER: "AC Sleeper",

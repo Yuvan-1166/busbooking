@@ -151,6 +151,7 @@ public class SeatTemplateService {
                 seat.setDeckName(deck.getDeckName());
                 seat.setSeatType(pattern.getType() != null ? pattern.getType() : SeatType.SEAT);
                 seat.setPosition(pattern.getPosition() != null ? pattern.getPosition() : SeatPosition.MIDDLE);
+                seat.setAisleAfter(deck.getAisleAfter());
                 seat.setGenderPolicy(pattern.getGenderPolicy() != null ? pattern.getGenderPolicy() : SeatGenderPolicy.ANY);
                 
                 seats.add(seat);
@@ -187,6 +188,7 @@ public class SeatTemplateService {
                         deck.getDeckName(),
                         pattern.getType() != null ? pattern.getType() : SeatType.SEAT,
                         pattern.getPosition() != null ? pattern.getPosition() : SeatPosition.MIDDLE,
+                        deck.getAisleAfter(),
                         pattern.getGenderPolicy() != null ? pattern.getGenderPolicy() : SeatGenderPolicy.ANY
                 );
                 previewSeats.add(seatRequest);
