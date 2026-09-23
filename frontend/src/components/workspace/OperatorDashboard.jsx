@@ -9,6 +9,7 @@ import { LoadingPage } from "../common/Loading";
 import MetricCard from "./MetricCard";
 import SeatsWorkspace from "./SeatsWorkspace";
 import ScheduleFormModal from "./ScheduleFormModal";
+import FilterBar from "./FilterBar";
 
 const emptyBus = {
   registrationNumber: "",
@@ -43,6 +44,45 @@ const emptySchedule = {
   },
   tripGenerationFrom: "",
   tripGenerationTo: "",
+};
+
+// ── Filter helpers ────────────────────────────────────────────────────────
+const formatEnumLabel = (value) =>
+  (value || "")
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+const uniqueValues = (items, key) =>
+  Array.from(new Set(items.map((item) => item[key]).filter(Boolean))).sort();
+
+const toSelectOptions = (values, labelFn) =>
+  values.map((value) => ({
+    value,
+    label: labelFn ? labelFn(value) : value,
+  }));
+
+const routeOptions = (routes) =>
+  routes.map((route) => ({ value: String(route.id), label: route.name }));
+
+const busOptions = (buses) =>
+  buses.map((bus) => ({
+    value: String(bus.id),
+    label: `${bus.model} • ${bus.registrationNumber}`,
+  }));
+
+const getTripStatusBadgeClass = (status) => {
+  switch (status) {
+    case "CANCELLED":
+      return "badge-error";
+    case "COMPLETED":
+      return "badge-neutral";
+    case "BOARDING":
+    case "IN_PROGRESS":
+      return "badge-info";
+    default:
+      return "badge-success";
+  }
 };
 
 export default function OperatorDashboard() {
@@ -628,164 +668,221 @@ const BusesView = ({
   onDeleteBus,
   onCancelEdit,
   saving,
-}) => (
-  <section className="grid gap-6 lg:grid-cols-[400px_1fr]">
-    {/* Form */}
-    <form onSubmit={onSaveBus} className="card h-fit">
-      <h3 className="mb-6 text-lg font-semibold text-neutral-900">
-        {editingBusId ? "Edit Bus" : "Add New Bus"}
-      </h3>
-      
-      <div className="space-y-4">
-        <div className="form-group">
-          <label className="form-label">Registration Number *</label>
-          <input
-            type="text"
-            required
-            value={busForm.registrationNumber}
-            onChange={(e) => onBusChange("registrationNumber", e.target.value)}
-            className="input"
-            placeholder="e.g., KA-01-AB-1234"
-          />
-        </div>
+}) => {
+  const [search, setSearch] = useState("");
+  const [busType, setBusType] = useState("");
+  const [deckType, setDeckType] = useState("");
+  const [status, setStatus] = useState("");
 
-        <div className="form-group">
-          <label className="form-label">Bus Model *</label>
-          <input
-            type="text"
-            required
-            value={busForm.model}
-            onChange={(e) => onBusChange("model", e.target.value)}
-            className="input"
-            placeholder="e.g., Volvo Multi-Axle"
-          />
-        </div>
+  const filteredBuses = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return buses.filter((bus) => {
+      const matchesSearch =
+        !query ||
+        `${bus.registrationNumber} ${bus.model}`.toLowerCase().includes(query);
+      const matchesType = !busType || bus.busType === busType;
+      const matchesDeck = !deckType || bus.deckType === deckType;
+      const matchesStatus = !status || bus.status === status;
+      return matchesSearch && matchesType && matchesDeck && matchesStatus;
+    });
+  }, [buses, search, busType, deckType, status]);
 
-        <div className="form-group">
-          <label className="form-label">Bus Type *</label>
-          <select
-            value={busForm.busType}
-            onChange={(e) => onBusChange("busType", e.target.value)}
-            className="select"
-          >
-            <option value="SLEEPER">Sleeper</option>
-            <option value="SEMI_SLEEPER">Semi-Sleeper</option>
-            <option value="AC_SLEEPER">AC Sleeper</option>
-          </select>
-        </div>
+  const clearFilters = () => {
+    setSearch("");
+    setBusType("");
+    setDeckType("");
+    setStatus("");
+  };
 
-        <div className="form-group">
-          <label className="form-label">Deck Type *</label>
-          <select
-            value={busForm.deckType}
-            onChange={(e) => onBusChange("deckType", e.target.value)}
-            className="select"
-          >
-            <option value="SINGLE">Single Deck</option>
-            <option value="DOUBLE">Double Decker</option>
-          </select>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Status *</label>
-          <select
-            value={busForm.status}
-            onChange={(e) => onBusChange("status", e.target.value)}
-            className="select"
-          >
-            <option value="ACTIVE">Active</option>
-            <option value="INACTIVE">Inactive</option>
-          </select>
-        </div>
-
-        <div className="flex gap-3 pt-2">
-          <button
-            type="submit"
-            disabled={saving}
-            className="btn btn-primary flex-1"
-          >
-            {saving ? (
-              <>
-                <span className="spinner"></span>
-                Saving...
-              </>
-            ) : (
-              editingBusId ? "Update Bus" : "Create Bus"
-            )}
-          </button>
-          {editingBusId && (
-            <button
-              type="button"
-              onClick={onCancelEdit}
-              className="btn btn-ghost"
-            >
-              Cancel
-            </button>
-          )}
-        </div>
-      </div>
-    </form>
-
-    {/* List */}
-    <div>
-      <h3 className="mb-4 text-lg font-semibold text-neutral-900">
-        Your Buses ({buses.length})
-      </h3>
-      {buses.length === 0 ? (
-        <div className="rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-50 p-8 text-center">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-200">
-            <svg className="h-6 w-6 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-            </svg>
+  return (
+    <section className="grid gap-6 lg:grid-cols-[400px_1fr]">
+      {/* Form */}
+      <form onSubmit={onSaveBus} className="card h-fit">
+        <h3 className="mb-6 text-lg font-semibold text-neutral-900">
+          {editingBusId ? "Edit Bus" : "Add New Bus"}
+        </h3>
+        
+        <div className="space-y-4">
+          <div className="form-group">
+            <label className="form-label">Registration Number *</label>
+            <input
+              type="text"
+              required
+              value={busForm.registrationNumber}
+              onChange={(e) => onBusChange("registrationNumber", e.target.value)}
+              className="input"
+              placeholder="e.g., KA-01-AB-1234"
+            />
           </div>
-          <p className="text-sm text-neutral-600">No buses registered yet. Create one to get started.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {buses.map((bus) => (
-            <div
-              key={bus.id}
-              className="card card-hover flex items-center justify-between"
+
+          <div className="form-group">
+            <label className="form-label">Bus Model *</label>
+            <input
+              type="text"
+              required
+              value={busForm.model}
+              onChange={(e) => onBusChange("model", e.target.value)}
+              className="input"
+              placeholder="e.g., Volvo Multi-Axle"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Bus Type *</label>
+            <select
+              value={busForm.busType}
+              onChange={(e) => onBusChange("busType", e.target.value)}
+              className="select"
             >
-              <div>
-                <h4 className="mb-1 font-semibold text-neutral-900">{bus.model}</h4>
-                <p className="text-sm text-neutral-600">
-                  {bus.registrationNumber} · {bus.busType.replace(/_/g, ' ')}
-                </p>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className={`badge ${bus.status === 'ACTIVE' ? 'badge-success' : 'badge-neutral'}`}>
-                    {bus.status}
-                  </span>
-                  <span className="badge badge-neutral">{bus.deckType} Deck</span>
+              <option value="SLEEPER">Sleeper</option>
+              <option value="SEMI_SLEEPER">Semi-Sleeper</option>
+              <option value="AC_SLEEPER">AC Sleeper</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Deck Type *</label>
+            <select
+              value={busForm.deckType}
+              onChange={(e) => onBusChange("deckType", e.target.value)}
+              className="select"
+            >
+              <option value="SINGLE">Single Deck</option>
+              <option value="DOUBLE">Double Decker</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Status *</label>
+            <select
+              value={busForm.status}
+              onChange={(e) => onBusChange("status", e.target.value)}
+              className="select"
+            >
+              <option value="ACTIVE">Active</option>
+              <option value="INACTIVE">Inactive</option>
+            </select>
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="btn btn-primary flex-1"
+            >
+              {saving ? (
+                <>
+                  <span className="spinner"></span>
+                  Saving...
+                </>
+              ) : (
+                editingBusId ? "Update Bus" : "Create Bus"
+              )}
+            </button>
+            {editingBusId && (
+              <button
+                type="button"
+                onClick={onCancelEdit}
+                className="btn-ghost"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
+        </div>
+      </form>
+
+      {/* List */}
+      <div>
+        <h3 className="mb-4 text-lg font-semibold text-neutral-900">
+          Your Buses ({buses.length})
+        </h3>
+
+        <FilterBar
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search by registration number or model..."
+          selects={[
+            {
+              label: "Bus Type",
+              value: busType,
+              onChange: setBusType,
+              options: toSelectOptions(uniqueValues(buses, "busType"), formatEnumLabel),
+            },
+            {
+              label: "Deck",
+              value: deckType,
+              onChange: setDeckType,
+              options: toSelectOptions(uniqueValues(buses, "deckType"), (value) => `${formatEnumLabel(value)} Deck`),
+            },
+            {
+              label: "Status",
+              value: status,
+              onChange: setStatus,
+              options: toSelectOptions(uniqueValues(buses, "status"), formatEnumLabel),
+            },
+          ]}
+          onClear={clearFilters}
+          resultCount={filteredBuses.length}
+          resultLabel="buses"
+        />
+
+        {filteredBuses.length === 0 ? (
+          <div className="rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-50 p-8 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-200">
+              <svg className="h-6 w-6 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+            </div>
+            <p className="text-sm text-neutral-600">No buses match your filters. Adjust the search or clear filters.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredBuses.map((bus) => (
+              <div
+                key={bus.id}
+                className="card card-hover flex items-center justify-between"
+              >
+                <div>
+                  <h4 className="mb-1 font-semibold text-neutral-900">{bus.model}</h4>
+                  <p className="text-sm text-neutral-600">
+                    {bus.registrationNumber} · {bus.busType.replace(/_/g, ' ')}
+                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className={`badge ${bus.status === 'ACTIVE' ? 'badge-success' : 'badge-neutral'}`}>
+                      {bus.status}
+                    </span>
+                    <span className="badge badge-neutral">{bus.deckType} Deck</span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => onEditBus(bus)}
+                    className="btn-ghost"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => onDeleteBus(bus.id)}
+                    className="btn-ghost text-error-600"
+                  >
+                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                  </button>
                 </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onEditBus(bus)}
-                  className="btn-ghost"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  Edit
-                </button>
-                <button
-                  onClick={() => onDeleteBus(bus.id)}
-                  className="btn-ghost text-error-600"
-                >
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  </section>
-);
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};
 
 // ── Schedules View with Modal Form ────────────────────────────────────────
 const SchedulesViewWithForm = ({
@@ -808,12 +905,45 @@ const SchedulesViewWithForm = ({
   onSchedulePageChange,
 }) => {
   const ITEMS_PER_PAGE = 8;
-  
-  const totalPages = Math.ceil(schedules.length / ITEMS_PER_PAGE);
+  const [search, setSearch] = useState("");
+  const [routeId, setRouteId] = useState("");
+  const [busId, setBusId] = useState("");
+  const [status, setStatus] = useState("");
+
+  const filteredSchedules = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return schedules.filter((schedule) => {
+      const route = routes.find((r) => r.id === schedule.routeId);
+      const bus = buses.find((b) => b.id === schedule.busId);
+      const matchesSearch =
+        !query ||
+        `${route?.name || ""} ${bus?.model || ""} ${bus?.registrationNumber || ""}`
+          .toLowerCase()
+          .includes(query);
+      const matchesRoute = !routeId || String(schedule.routeId) === routeId;
+      const matchesBus = !busId || String(schedule.busId) === busId;
+      const matchesStatus = !status || schedule.status === status;
+      return matchesSearch && matchesRoute && matchesBus && matchesStatus;
+    });
+  }, [schedules, routes, buses, search, routeId, busId, status]);
+
+  const clearFilters = () => {
+    setSearch("");
+    setRouteId("");
+    setBusId("");
+    setStatus("");
+  };
+
+  useEffect(() => {
+    onSchedulePageChange(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, routeId, busId, status]);
+
+  const totalPages = Math.ceil(filteredSchedules.length / ITEMS_PER_PAGE);
   const paginatedSchedules = useMemo(() => {
     const startIdx = (schedulePage - 1) * ITEMS_PER_PAGE;
-    return schedules.slice(startIdx, startIdx + ITEMS_PER_PAGE);
-  }, [schedules, schedulePage]);
+    return filteredSchedules.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+  }, [filteredSchedules, schedulePage]);
 
   return (
     <>
@@ -840,9 +970,42 @@ const SchedulesViewWithForm = ({
           </button>
         </div>
 
+        <FilterBar
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search by route, bus model or registration..."
+          selects={[
+            {
+              label: "Route",
+              value: routeId,
+              onChange: setRouteId,
+              options: routeOptions(routes),
+            },
+            {
+              label: "Bus",
+              value: busId,
+              onChange: setBusId,
+              options: busOptions(buses),
+            },
+            {
+              label: "Status",
+              value: status,
+              onChange: setStatus,
+              options: toSelectOptions(uniqueValues(schedules, "status"), formatEnumLabel),
+            },
+          ]}
+          onClear={clearFilters}
+          resultCount={filteredSchedules.length}
+          resultLabel="schedules"
+        />
+
         {schedules.length === 0 ? (
           <div className="rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-50 p-8 text-center text-sm text-neutral-600">
             No schedules yet. Click "Create Schedule" to get started.
+          </div>
+        ) : filteredSchedules.length === 0 ? (
+          <div className="rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-50 p-8 text-center text-sm text-neutral-600">
+            No schedules match your filters. Adjust the search or clear filters.
           </div>
         ) : (
           <>
@@ -933,12 +1096,51 @@ const TripsViewReadOnly = ({ trips, schedules, routes, buses, onCreateNew, trips
   const [selectedTripId, setSelectedTripId] = useState(null);
   const [cancellationReason, setCancellationReason] = useState("");
   const [cancelling, setCancelling] = useState(false);
-  
-  const totalPages = Math.ceil(trips.length / ITEMS_PER_PAGE);
+  const [search, setSearch] = useState("");
+  const [routeId, setRouteId] = useState("");
+  const [busId, setBusId] = useState("");
+  const [status, setStatus] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+
+  const filteredTrips = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    return trips.filter((trip) => {
+      const route = routes.find((r) => r.id === trip.routeId);
+      const bus = buses.find((b) => b.id === trip.busId);
+      const matchesSearch =
+        !query ||
+        `${route?.name || ""} ${bus?.model || ""} ${bus?.registrationNumber || ""}`
+          .toLowerCase()
+          .includes(query);
+      const matchesRoute = !routeId || String(trip.routeId) === routeId;
+      const matchesBus = !busId || String(trip.busId) === busId;
+      const matchesStatus = !status || trip.status === status;
+      const matchesFrom = !dateFrom || trip.tripDate >= dateFrom;
+      const matchesTo = !dateTo || trip.tripDate <= dateTo;
+      return matchesSearch && matchesRoute && matchesBus && matchesStatus && matchesFrom && matchesTo;
+    });
+  }, [trips, routes, buses, search, routeId, busId, status, dateFrom, dateTo]);
+
+  const clearFilters = () => {
+    setSearch("");
+    setRouteId("");
+    setBusId("");
+    setStatus("");
+    setDateFrom("");
+    setDateTo("");
+  };
+
+  useEffect(() => {
+    onTripsPageChange(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, routeId, busId, status, dateFrom, dateTo]);
+
+  const totalPages = Math.ceil(filteredTrips.length / ITEMS_PER_PAGE);
   const paginatedTrips = useMemo(() => {
     const startIdx = (tripsPage - 1) * ITEMS_PER_PAGE;
-    return trips.slice(startIdx, startIdx + ITEMS_PER_PAGE);
-  }, [trips, tripsPage]);
+    return filteredTrips.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+  }, [filteredTrips, tripsPage]);
 
   const handleCancelClick = (tripId) => {
     setSelectedTripId(tripId);
@@ -1018,9 +1220,46 @@ const TripsViewReadOnly = ({ trips, schedules, routes, buses, onCreateNew, trips
           </button>
         </div>
 
+        <FilterBar
+          search={search}
+          onSearchChange={setSearch}
+          searchPlaceholder="Search by route, bus model or registration..."
+          selects={[
+            {
+              label: "Route",
+              value: routeId,
+              onChange: setRouteId,
+              options: routeOptions(routes),
+            },
+            {
+              label: "Bus",
+              value: busId,
+              onChange: setBusId,
+              options: busOptions(buses),
+            },
+            {
+              label: "Status",
+              value: status,
+              onChange: setStatus,
+              options: toSelectOptions(uniqueValues(trips, "status"), formatEnumLabel),
+            },
+          ]}
+          dateFrom={dateFrom}
+          onDateFromChange={setDateFrom}
+          dateTo={dateTo}
+          onDateToChange={setDateTo}
+          onClear={clearFilters}
+          resultCount={filteredTrips.length}
+          resultLabel="trips"
+        />
+
         {trips.length === 0 ? (
           <div className="rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-50 p-8 text-center text-sm text-neutral-600">
             No trips published yet. Create a schedule to get started.
+          </div>
+        ) : filteredTrips.length === 0 ? (
+          <div className="rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-50 p-8 text-center text-sm text-neutral-600">
+            No trips match your filters. Adjust the search or clear filters.
           </div>
         ) : (
           <>
@@ -1058,7 +1297,9 @@ const TripsViewReadOnly = ({ trips, schedules, routes, buses, onCreateNew, trips
                               Departure: {schedule?.departureTime || "—"}
                             </p>
                           </div>
-                          <span className="badge badge-success">Active</span>
+                          <span className={`badge ${getTripStatusBadgeClass(trip.status)}`}>
+                            {trip.status?.replace(/_/g, " ") || "Active"}
+                          </span>
                         </div>
                         <button
                           onClick={() => handleCancelClick(trip.id)}
