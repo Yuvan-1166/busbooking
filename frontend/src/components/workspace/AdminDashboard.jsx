@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../../api'
 import MetricCard from './MetricCard'
 import FilterablePaginatedList from './FilterablePaginatedList'
+import RouteBuilder from './RouteBuilder'
 import ItemList from '../common/ItemList'
 import { LoadingPage } from '../common/Loading'
 
@@ -12,14 +13,18 @@ const formatEnumLabel = (value) =>
     .toLowerCase()
     .replace(/\b\w/g, (c) => c.toUpperCase())
 
+const EMPTY_LOCATION_FORM = { name: '', city: '', state: '', country: 'India', latitude: '', longitude: '' }
+
 export default function AdminDashboard() {
   const [data, setData] = useState({ users: [], operators: [], locations: [], routes: [] })
   const { section } = useParams()
   const navigate = useNavigate()
   const view = section || 'overview'
   const setView = (nextView) => navigate(`/admin/${nextView}`)
-  const [locationForm, setLocationForm] = useState({ name: '', city: '', state: '', country: 'India', latitude: '', longitude: '' })
-  const [routeForm, setRouteForm] = useState({ name: '', status: 'ACTIVE' })
+  const [locationForm, setLocationForm] = useState(EMPTY_LOCATION_FORM)
+  const [editingLocation, setEditingLocation] = useState(null)
+  const [editingRoute, setEditingRoute] = useState(null)
+  const [routeFormVersion, setRouteFormVersion] = useState(0)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(true)
@@ -39,29 +44,96 @@ export default function AdminDashboard() {
 
   useEffect(() => { loadData() }, [])
 
-  const createResource = async (event, action, reset) => {
-    event.preventDefault()
+  const runAction = async (action, successMessage) => {
     setSaving(true)
     setError('')
     try {
       await action()
-      reset()
-      setMessage('Resource created successfully.')
+      setMessage(successMessage)
       await loadData()
-    } catch (saveError) {
-      setError(saveError.message)
+      return true
+    } catch (actionError) {
+      setError(actionError.message)
+      return false
     } finally {
       setSaving(false)
     }
   }
 
-  const locationSubmit = (event) => createResource(
-    event,
-    () => api.createLocation({ ...locationForm, latitude: Number(locationForm.latitude), longitude: Number(locationForm.longitude) }),
-    () => setLocationForm({ name: '', city: '', state: '', country: 'India', latitude: '', longitude: '' }),
-  )
+  const locationSubmit = async (event) => {
+    event.preventDefault()
+    const payload = { ...locationForm, latitude: Number(locationForm.latitude), longitude: Number(locationForm.longitude) }
+    const ok = await runAction(
+      () => (editingLocation ? api.updateLocation(editingLocation.id, payload) : api.createLocation(payload)),
+      editingLocation ? 'Location updated.' : 'Location created.'
+    )
+    if (ok) {
+      setEditingLocation(null)
+      setLocationForm(EMPTY_LOCATION_FORM)
+    }
+  }
 
-  const routeSubmit = (event) => createResource(event, () => api.createRoute(routeForm), () => setRouteForm({ name: '', status: 'ACTIVE' }))
+  const startLocationEdit = (location) => {
+    setEditingLocation(location)
+    setLocationForm({
+      name: location.name,
+      city: location.city,
+      state: location.state,
+      country: location.country || 'India',
+      latitude: location.latitude ?? '',
+      longitude: location.longitude ?? '',
+    })
+  }
+
+  const cancelLocationEdit = () => {
+    setEditingLocation(null)
+    setLocationForm(EMPTY_LOCATION_FORM)
+  }
+
+  const deleteLocation = async (location) => {
+    if (!window.confirm(`Delete location "${location.name}"? Locations used by a route stop cannot be deleted.`)) return
+    const ok = await runAction(() => api.deleteLocation(location.id), 'Location deleted.')
+    if (ok && editingLocation?.id === location.id) cancelLocationEdit()
+  }
+
+  const saveRoute = async (payload) => {
+    const ok = await runAction(
+      () => (editingRoute ? api.updateRoute(editingRoute.route.id, payload) : api.createRoute(payload)),
+      editingRoute ? 'Route updated.' : 'Route created.'
+    )
+    if (ok) {
+      setEditingRoute(null)
+      setRouteFormVersion((version) => version + 1)
+    }
+  }
+
+  const startRouteEdit = async (routeId) => {
+    setError('')
+    try {
+      const route = data.routes.find((item) => item.id === routeId)
+      const stops = await api.getRouteStops(routeId)
+      setEditingRoute({ route, stops })
+    } catch (editError) {
+      setError(editError.message)
+    }
+  }
+
+  const cancelRouteEdit = () => setEditingRoute(null)
+
+  const deleteRoute = async (route) => {
+    if (!window.confirm(`Delete route "${route.name}"? Routes used by schedules cannot be deleted.`)) return
+    const ok = await runAction(() => api.deleteRoute(route.id), 'Route deleted.')
+    if (ok && editingRoute?.route?.id === route.id) cancelRouteEdit()
+  }
+
+  const locationProps = {
+    locationForm,
+    setLocationForm,
+    saving,
+    locationSubmit,
+    editingLocation,
+    onCancelEdit: cancelLocationEdit,
+  }
 
   return (
     <main className="w-full mx-auto mb-20 min-h-screen max-w-7xl px-4 sm:px-6">
@@ -124,20 +196,22 @@ export default function AdminDashboard() {
       {loading ? (
         <LoadingPage message="Loading Admin Panel" subMessage="Gathering platform data and metrics" showLogo={false} />
       ) : view === 'overview' ? (
-        <OverviewView
-          data={data}
-          setView={setView}
-          locationForm={locationForm}
-          setLocationForm={setLocationForm}
-          saving={saving}
-          locationSubmit={locationSubmit}
-        />
+        <OverviewView data={data} setView={setView} {...locationProps} />
       ) : view === 'users' ? (
         <UsersView data={data} />
       ) : view === 'locations' ? (
-        <LocationsView data={data} locationForm={locationForm} setLocationForm={setLocationForm} saving={saving} locationSubmit={locationSubmit} />
+        <LocationsView data={data} {...locationProps} onDeleteLocation={deleteLocation} onStartEdit={startLocationEdit} />
       ) : (
-        <RoutesView data={data} routeForm={routeForm} setRouteForm={setRouteForm} saving={saving} routeSubmit={routeSubmit} />
+        <RoutesView
+          data={data}
+          saving={saving}
+          editingRoute={editingRoute}
+          routeFormVersion={routeFormVersion}
+          onSave={saveRoute}
+          onEdit={startRouteEdit}
+          onCancelEdit={cancelRouteEdit}
+          onDeleteRoute={deleteRoute}
+        />
       )}
     </main>
   )
@@ -158,7 +232,7 @@ const NavTab = ({ active, onClick, children }) => (
 )
 
 // ── Overview View ──────────────────────────────────────────────────────────
-const OverviewView = ({ data, setView, locationForm, setLocationForm, saving, locationSubmit }) => (
+const OverviewView = ({ data, setView, locationForm, setLocationForm, saving, locationSubmit, editingLocation, onCancelEdit }) => (
   <>
     <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
       <MetricCard
@@ -210,8 +284,17 @@ const OverviewView = ({ data, setView, locationForm, setLocationForm, saving, lo
 
     <div className="grid gap-6 lg:grid-cols-2">
       <section className="card">
-        <h2 className="mb-6 text-lg font-semibold text-neutral-900">Add Location</h2>
-        <LocationForm form={locationForm} onChange={setLocationForm} saving={saving} onSubmit={locationSubmit} />
+        <h2 className="mb-6 text-lg font-semibold text-neutral-900">
+          {editingLocation ? 'Edit Location' : 'Add Location'}
+        </h2>
+        <LocationForm
+          form={locationForm}
+          onChange={setLocationForm}
+          saving={saving}
+          onSubmit={locationSubmit}
+          editing={editingLocation}
+          onCancelEdit={onCancelEdit}
+        />
       </section>
 
       <section className="card bg-primary-50">
@@ -224,7 +307,19 @@ const OverviewView = ({ data, setView, locationForm, setLocationForm, saving, lo
             </svg>
           </button>
         </div>
-        <ItemList items={data.routes.slice(0, 5)} empty="No routes configured." render={(route) => <ResourceRow key={route.id} icon="↗" title={route.name} detail={`Route #${route.id}`} status={route.status} />} />
+        <ItemList
+          items={data.routes.slice(0, 5)}
+          empty="No routes configured."
+          render={(route) => (
+            <ResourceRow
+              key={route.id}
+              icon="↗"
+              title={route.name}
+              detail={`${route.stopCount ?? 0} stops · ${route.totalDistanceKm ?? 0} km total`}
+              status={route.status}
+            />
+          )}
+        />
       </section>
     </div>
   </>
@@ -260,11 +355,20 @@ const UsersView = ({ data }) => (
 )
 
 // ── Locations View ─────────────────────────────────────────────────────────
-const LocationsView = ({ data, locationForm, setLocationForm, saving, locationSubmit }) => (
+const LocationsView = ({ data, locationForm, setLocationForm, saving, locationSubmit, editingLocation, onCancelEdit, onDeleteLocation, onStartEdit }) => (
   <section className="grid gap-6 xl:grid-cols-[minmax(320px,1fr)_2fr]">
     <div className="card h-fit">
-      <h3 className="mb-6 text-lg font-semibold text-neutral-900">Add New Location</h3>
-      <LocationForm form={locationForm} onChange={setLocationForm} saving={saving} onSubmit={locationSubmit} />
+      <h3 className="mb-6 text-lg font-semibold text-neutral-900">
+        {editingLocation ? 'Edit Location' : 'Add New Location'}
+      </h3>
+      <LocationForm
+        form={locationForm}
+        onChange={setLocationForm}
+        saving={saving}
+        onSubmit={locationSubmit}
+        editing={editingLocation}
+        onCancelEdit={onCancelEdit}
+      />
     </div>
 
     <div>
@@ -276,30 +380,73 @@ const LocationsView = ({ data, locationForm, setLocationForm, saving, locationSu
         searchPlaceholder="Search by name, city or state..."
         searchGetter={(location) => `${location.name} ${location.city} ${location.state} ${location.country || ''}`}
         filters={[{ label: 'City', getValue: (location) => location.city, formatLabel: formatEnumLabel }]}
-        renderItem={(location) => <ResourceRow key={location.id} icon="⌖" title={location.name} detail={`${location.city}, ${location.state}`} status="" />}
+        renderItem={(location) => (
+          <div key={location.id} className="flex items-center gap-3">
+            <ResourceRow
+              icon="⌖"
+              title={location.name}
+              detail={`${location.city}, ${location.state}`}
+              hint={`${location.latitude ?? '–'}, ${location.longitude ?? '–'} (lat, lng)`}
+            />
+            <div className="flex shrink-0 gap-1">
+              <button type="button" className="btn-ghost px-2 py-1 text-sm" onClick={() => onStartEdit(location)}>
+                Edit
+              </button>
+              <button type="button" className="btn-ghost px-2 py-1 text-sm text-error-600 hover:bg-error-50" onClick={() => onDeleteLocation(location)}>
+                Delete
+              </button>
+            </div>
+          </div>
+        )}
       />
     </div>
   </section>
 )
 
 // ── Routes View ────────────────────────────────────────────────────────────
-const RoutesView = ({ data, routeForm, setRouteForm, saving, routeSubmit }) => (
-  <section className="grid gap-6 xl:grid-cols-[minmax(320px,1fr)_2fr]">
+const RoutesView = ({ data, saving, editingRoute, routeFormVersion, onSave, onEdit, onCancelEdit, onDeleteRoute }) => (
+  <section className="grid gap-6 xl:grid-cols-[minmax(340px,1fr)_2fr]">
     <div className="card h-fit">
-      <h3 className="mb-6 text-lg font-semibold text-neutral-900">Add New Route</h3>
-      <RouteForm form={routeForm} onChange={setRouteForm} saving={saving} onSubmit={routeSubmit} />
+      <h3 className="mb-6 text-lg font-semibold text-neutral-900">
+        {editingRoute ? `Edit Route: ${editingRoute.route.name}` : 'Add New Route'}
+      </h3>
+      <RouteBuilder
+        key={`${editingRoute?.route?.id ?? 'new'}-${routeFormVersion}`}
+        locations={data.locations}
+        initialRoute={editingRoute}
+        saving={saving}
+        onSave={onSave}
+        onCancel={onCancelEdit}
+      />
     </div>
 
     <div>
       <FilterablePaginatedList
         title="All Routes"
         items={data.routes}
-        empty="No routes configured. Add one to get started."
+        empty="No routes configured. Build one with the editor."
         resultLabel="routes"
         searchPlaceholder="Search by route name..."
         searchGetter={(route) => route.name}
         filters={[{ label: 'Status', getValue: (route) => route.status, formatLabel: formatEnumLabel }]}
-        renderItem={(route) => <ResourceRow key={route.id} icon="↗" title={route.name} detail={`Route #${route.id}`} status={route.status} />}
+        renderItem={(route) => (
+          <div key={route.id} className="flex items-center gap-3">
+            <ResourceRow
+              icon="↗"
+              title={route.name}
+              detail={`${route.stopCount ?? 0} stops · ${route.totalDistanceKm ?? 0} km total`}
+              status={route.status}
+            />
+            <div className="flex shrink-0 gap-1">
+              <button type="button" className="btn-ghost px-2 py-1 text-sm" onClick={() => onEdit(route.id)}>
+                Edit
+              </button>
+              <button type="button" className="btn-ghost px-2 py-1 text-sm text-error-600 hover:bg-error-50" onClick={() => onDeleteRoute(route)}>
+                Delete
+              </button>
+            </div>
+          </div>
+        )}
       />
     </div>
   </section>
@@ -307,7 +454,7 @@ const RoutesView = ({ data, routeForm, setRouteForm, saving, routeSubmit }) => (
 
 // ── Form Components ────────────────────────────────────────────────────────
 
-function LocationForm({ form, onChange, saving, onSubmit }) {
+function LocationForm({ form, onChange, saving, onSubmit, editing, onCancelEdit }) {
   const update = (key, value) => onChange({ ...form, [key]: value })
   return (
     <form className="space-y-4" onSubmit={onSubmit}>
@@ -333,51 +480,35 @@ function LocationForm({ form, onChange, saving, onSubmit }) {
           <input required className="input" type="number" step="any" value={form.longitude} onChange={(event) => update('longitude', event.target.value)} placeholder="77.5946" />
         </div>
       </div>
-      <button className="btn btn-primary w-full" disabled={saving}>
-        {saving ? (
-          <>
-            <span className="spinner"></span>
-            Saving...
-          </>
-        ) : (
-          'Add Location'
+      <p className="text-xs text-neutral-600">
+        Coordinates are used to auto-calculate stage distances on routes that cover this location.
+      </p>
+      <div className="flex gap-2">
+        <button className="btn btn-primary w-full" disabled={saving}>
+          {saving ? (
+            <>
+              <span className="spinner"></span>
+              Saving...
+            </>
+          ) : editing ? (
+            'Update Location'
+          ) : (
+            'Add Location'
+          )}
+        </button>
+        {editing && (
+          <button type="button" className="btn btn-ghost" onClick={onCancelEdit} disabled={saving}>
+            Cancel
+          </button>
         )}
-      </button>
-    </form>
-  )
-}
-
-function RouteForm({ form, onChange, saving, onSubmit }) {
-  return (
-    <form className="space-y-4" onSubmit={onSubmit}>
-      <div className="form-group">
-        <label className="form-label">Route Name *</label>
-        <input required className="input" value={form.name} onChange={(event) => onChange({ ...form, name: event.target.value })} placeholder="e.g., Bangalore to Mumbai" />
       </div>
-      <div className="form-group">
-        <label className="form-label">Status *</label>
-        <select className="select" value={form.status} onChange={(event) => onChange({ ...form, status: event.target.value })}>
-          <option>ACTIVE</option>
-          <option>INACTIVE</option>
-        </select>
-      </div>
-      <button className="btn btn-primary w-full" disabled={saving}>
-        {saving ? (
-          <>
-            <span className="spinner"></span>
-            Saving...
-          </>
-        ) : (
-          'Add Route'
-        )}
-      </button>
     </form>
   )
 }
 
 // ── Utility Components ─────────────────────────────────────────────────────
 
-function ResourceRow({ icon, title, detail, status }) {
+function ResourceRow({ icon, title, detail, hint, status }) {
   return (
     <div className="flex items-center gap-3 py-3">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-100 text-sm font-semibold text-primary-700">
@@ -386,6 +517,7 @@ function ResourceRow({ icon, title, detail, status }) {
       <div className="min-w-0 flex-1">
         <div className="truncate font-semibold text-neutral-900">{title}</div>
         <div className="text-sm text-neutral-600">{detail}</div>
+        {hint && <div className="text-xs text-neutral-500">{hint}</div>}
       </div>
       {status && (
         <span className={`badge ${status === 'ACTIVE' ? 'badge-success' : 'badge-neutral'}`}>

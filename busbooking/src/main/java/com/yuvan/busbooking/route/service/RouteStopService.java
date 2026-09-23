@@ -138,6 +138,7 @@ public class RouteStopService {
         routeStop.setDepartureOffsetMinutes(
                 request.departureOffsetMinutes()
         );
+        routeStop.setDistanceFromOriginKm(request.distanceFromOriginKm());
 
         return toResponse(routeStopRepository.save(routeStop));
     }

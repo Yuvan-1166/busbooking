@@ -126,8 +126,12 @@ export const api = {
   getBus: (busId) => request(`/buses/${busId}`),
   getAllLocations: () => request('/locations'),
   createLocation: (payload) => request('/locations', { method: 'POST', body: JSON.stringify(payload) }),
+  updateLocation: (locationId, payload) => request(`/locations/${locationId}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  deleteLocation: (locationId) => request(`/locations/${locationId}`, { method: 'DELETE' }),
   getAllRoutes: () => request('/routes'),
   createRoute: (payload) => request('/routes', { method: 'POST', body: JSON.stringify(payload) }),
+  updateRoute: (routeId, payload) => request(`/routes/${routeId}`, { method: 'PUT', body: JSON.stringify(payload) }),
+  deleteRoute: (routeId) => request(`/routes/${routeId}`, { method: 'DELETE' }),
   // Mobile verification via MessageCentral
   sendMobileOtp: (mobileNumber) => request('/verifynow/send-otp', { method: 'POST', body: JSON.stringify({ mobileNumber }) }),
   validateMobileOtp: (verificationId, mobileNumber, code) => request('/verifynow/validate-otp', { method: 'POST', body: JSON.stringify({ verificationId, mobileNumber, code }) }),

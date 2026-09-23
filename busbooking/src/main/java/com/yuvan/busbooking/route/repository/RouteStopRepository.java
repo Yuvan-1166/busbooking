@@ -14,4 +14,8 @@ public interface RouteStopRepository
 
     Optional<RouteStop> findByRouteIdAndLocationId(Long id,
             Long dropLocationId);
+
+    long countByRouteId(Long routeId);
+
+    void deleteByRouteId(Long routeId);
 }

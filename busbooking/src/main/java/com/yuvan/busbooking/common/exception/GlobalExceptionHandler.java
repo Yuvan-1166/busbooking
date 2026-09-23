@@ -1,5 +1,6 @@
 package com.yuvan.busbooking.common.exception;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -119,6 +120,20 @@ public class GlobalExceptionHandler {
                         "timestamp", LocalDateTime.now(),
                         "status", 403,
                         "message", "Access denied"
+                ));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<?> handleDataIntegrityViolation(
+            DataIntegrityViolationException ex
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "timestamp", LocalDateTime.now(),
+                        "status", 400,
+                        "message",
+                        "This record is in use by another resource and cannot be deleted."
                 ));
     }
 
