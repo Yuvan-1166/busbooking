@@ -1,9 +1,16 @@
-import { cloneElement, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { api } from '../../api'
 import MetricCard from './MetricCard'
-import StateMessage from '../common/StateMessage'
+import FilterablePaginatedList from './FilterablePaginatedList'
+import ItemList from '../common/ItemList'
 import { LoadingPage } from '../common/Loading'
+
+const formatEnumLabel = (value) =>
+  String(value || '')
+    .replace(/_/g, ' ')
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase())
 
 export default function AdminDashboard() {
   const [data, setData] = useState({ users: [], operators: [], locations: [], routes: [] })
@@ -48,8 +55,16 @@ export default function AdminDashboard() {
     }
   }
 
+  const locationSubmit = (event) => createResource(
+    event,
+    () => api.createLocation({ ...locationForm, latitude: Number(locationForm.latitude), longitude: Number(locationForm.longitude) }),
+    () => setLocationForm({ name: '', city: '', state: '', country: 'India', latitude: '', longitude: '' }),
+  )
+
+  const routeSubmit = (event) => createResource(event, () => api.createRoute(routeForm), () => setRouteForm({ name: '', status: 'ACTIVE' }))
+
   return (
-    <main className="mx-auto mb-20 min-h-screen max-w-7xl px-4 sm:px-6">
+    <main className="w-full mx-auto mb-20 min-h-screen max-w-7xl px-4 sm:px-6">
       {/* Header */}
       <section className="mb-8 rounded-xl bg-gradient-to-br from-info-50 to-info-100 p-8">
         <div className="flex items-center justify-between gap-6 max-[768px]:flex-col max-[768px]:items-start">
@@ -86,12 +101,18 @@ export default function AdminDashboard() {
           </svg>
           Users
         </NavTab>
-        <NavTab active={view === 'network'} onClick={() => setView('network')}>
+        <NavTab active={view === 'locations'} onClick={() => setView('locations')}>
           <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          Network
+          Locations
+        </NavTab>
+        <NavTab active={view === 'routes'} onClick={() => setView('routes')}>
+          <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+          </svg>
+          Routes
         </NavTab>
       </nav>
 
@@ -103,11 +124,20 @@ export default function AdminDashboard() {
       {loading ? (
         <LoadingPage message="Loading Admin Panel" subMessage="Gathering platform data and metrics" showLogo={false} />
       ) : view === 'overview' ? (
-        <OverviewView data={data} setView={setView} locationForm={locationForm} setLocationForm={setLocationForm} saving={saving} createResource={createResource} />
+        <OverviewView
+          data={data}
+          setView={setView}
+          locationForm={locationForm}
+          setLocationForm={setLocationForm}
+          saving={saving}
+          locationSubmit={locationSubmit}
+        />
       ) : view === 'users' ? (
         <UsersView data={data} />
+      ) : view === 'locations' ? (
+        <LocationsView data={data} locationForm={locationForm} setLocationForm={setLocationForm} saving={saving} locationSubmit={locationSubmit} />
       ) : (
-        <NetworkView data={data} locationForm={locationForm} setLocationForm={setLocationForm} routeForm={routeForm} setRouteForm={setRouteForm} saving={saving} createResource={createResource} />
+        <RoutesView data={data} routeForm={routeForm} setRouteForm={setRouteForm} saving={saving} routeSubmit={routeSubmit} />
       )}
     </main>
   )
@@ -128,7 +158,7 @@ const NavTab = ({ active, onClick, children }) => (
 )
 
 // ── Overview View ──────────────────────────────────────────────────────────
-const OverviewView = ({ data, setView, locationForm, setLocationForm, saving, createResource }) => (
+const OverviewView = ({ data, setView, locationForm, setLocationForm, saving, locationSubmit }) => (
   <>
     <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
       <MetricCard
@@ -181,13 +211,13 @@ const OverviewView = ({ data, setView, locationForm, setLocationForm, saving, cr
     <div className="grid gap-6 lg:grid-cols-2">
       <section className="card">
         <h2 className="mb-6 text-lg font-semibold text-neutral-900">Add Location</h2>
-        <LocationForm form={locationForm} onChange={setLocationForm} saving={saving} onSubmit={(event) => createResource(event, () => api.createLocation({ ...locationForm, latitude: Number(locationForm.latitude), longitude: Number(locationForm.longitude) }), () => setLocationForm({ name: '', city: '', state: '', country: 'India', latitude: '', longitude: '' }))} />
+        <LocationForm form={locationForm} onChange={setLocationForm} saving={saving} onSubmit={locationSubmit} />
       </section>
 
       <section className="card bg-primary-50">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-neutral-900">Recent Routes</h2>
-          <button className="btn-ghost text-sm" onClick={() => setView('network')}>
+          <button className="btn-ghost text-sm" onClick={() => setView('routes')}>
             View All
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -205,31 +235,72 @@ const UsersView = ({ data }) => (
   <section className="card">
     <h2 className="mb-6 text-lg font-semibold text-neutral-900">Users & Operators</h2>
     <div className="grid gap-6 lg:grid-cols-2">
-      <div>
-        <h3 className="mb-4 text-sm font-semibold text-neutral-700">Users ({data.users.length})</h3>
-        <ItemList items={data.users} empty="No users found." render={(user) => <ResourceRow key={user.id} icon={user.firstName?.[0] || 'U'} title={`${user.firstName} ${user.lastName || ''}`} detail={user.email} status={user.status} />} />
-      </div>
-      <div>
-        <h3 className="mb-4 text-sm font-semibold text-neutral-700">Operators ({data.operators.length})</h3>
-        <ItemList items={data.operators} empty="No operators found." render={(operator) => <ResourceRow key={operator.id} icon="O" title={operator.name} detail={operator.registrationNumber} status={operator.status} />} />
-      </div>
+      <FilterablePaginatedList
+        title="Users"
+        items={data.users}
+        empty="No users found."
+        resultLabel="users"
+        searchPlaceholder="Search by name, email or phone..."
+        searchGetter={(user) => `${user.firstName || ''} ${user.lastName || ''} ${user.email} ${user.phone || ''}`}
+        filters={[{ label: 'Status', getValue: (user) => user.status, formatLabel: formatEnumLabel }]}
+        renderItem={(user) => <ResourceRow key={user.id} icon={user.firstName?.[0] || 'U'} title={`${user.firstName} ${user.lastName || ''}`} detail={user.email} status={user.status} />}
+      />
+      <FilterablePaginatedList
+        title="Operators"
+        items={data.operators}
+        empty="No operators found."
+        resultLabel="operators"
+        searchPlaceholder="Search by name, registration or email..."
+        searchGetter={(operator) => `${operator.name} ${operator.registrationNumber} ${operator.contactEmail || ''}`}
+        filters={[{ label: 'Status', getValue: (operator) => operator.status, formatLabel: formatEnumLabel }]}
+        renderItem={(operator) => <ResourceRow key={operator.id} icon="O" title={operator.name} detail={operator.registrationNumber} status={operator.status} />}
+      />
     </div>
   </section>
 )
 
-// ── Network View ───────────────────────────────────────────────────────────
-const NetworkView = ({ data, locationForm, setLocationForm, routeForm, setRouteForm, saving, createResource }) => (
-  <section className="card">
-    <h2 className="mb-6 text-lg font-semibold text-neutral-900">Locations & Routes</h2>
-    <div className="grid gap-6 lg:grid-cols-2">
-      <div className="space-y-6">
-        <LocationForm form={locationForm} onChange={setLocationForm} saving={saving} onSubmit={(event) => createResource(event, () => api.createLocation({ ...locationForm, latitude: Number(locationForm.latitude), longitude: Number(locationForm.longitude) }), () => setLocationForm({ name: '', city: '', state: '', country: 'India', latitude: '', longitude: '' }))} />
-        <RouteForm form={routeForm} onChange={setRouteForm} saving={saving} onSubmit={(event) => createResource(event, () => api.createRoute(routeForm), () => setRouteForm({ name: '', status: 'ACTIVE' }))} />
-      </div>
-      <div>
-        <h3 className="mb-4 text-sm font-semibold text-neutral-700">Locations ({data.locations.length})</h3>
-        <ItemList items={data.locations} empty="No locations configured." render={(location) => <ResourceRow key={location.id} icon="⌖" title={location.name} detail={`${location.city}, ${location.state}`} status="" />} />
-      </div>
+// ── Locations View ─────────────────────────────────────────────────────────
+const LocationsView = ({ data, locationForm, setLocationForm, saving, locationSubmit }) => (
+  <section className="grid gap-6 xl:grid-cols-[minmax(320px,1fr)_2fr]">
+    <div className="card h-fit">
+      <h3 className="mb-6 text-lg font-semibold text-neutral-900">Add New Location</h3>
+      <LocationForm form={locationForm} onChange={setLocationForm} saving={saving} onSubmit={locationSubmit} />
+    </div>
+
+    <div>
+      <FilterablePaginatedList
+        title="All Locations"
+        items={data.locations}
+        empty="No locations configured. Add one to get started."
+        resultLabel="locations"
+        searchPlaceholder="Search by name, city or state..."
+        searchGetter={(location) => `${location.name} ${location.city} ${location.state} ${location.country || ''}`}
+        filters={[{ label: 'City', getValue: (location) => location.city, formatLabel: formatEnumLabel }]}
+        renderItem={(location) => <ResourceRow key={location.id} icon="⌖" title={location.name} detail={`${location.city}, ${location.state}`} status="" />}
+      />
+    </div>
+  </section>
+)
+
+// ── Routes View ────────────────────────────────────────────────────────────
+const RoutesView = ({ data, routeForm, setRouteForm, saving, routeSubmit }) => (
+  <section className="grid gap-6 xl:grid-cols-[minmax(320px,1fr)_2fr]">
+    <div className="card h-fit">
+      <h3 className="mb-6 text-lg font-semibold text-neutral-900">Add New Route</h3>
+      <RouteForm form={routeForm} onChange={setRouteForm} saving={saving} onSubmit={routeSubmit} />
+    </div>
+
+    <div>
+      <FilterablePaginatedList
+        title="All Routes"
+        items={data.routes}
+        empty="No routes configured. Add one to get started."
+        resultLabel="routes"
+        searchPlaceholder="Search by route name..."
+        searchGetter={(route) => route.name}
+        filters={[{ label: 'Status', getValue: (route) => route.status, formatLabel: formatEnumLabel }]}
+        renderItem={(route) => <ResourceRow key={route.id} icon="↗" title={route.name} detail={`Route #${route.id}`} status={route.status} />}
+      />
     </div>
   </section>
 )
@@ -305,18 +376,6 @@ function RouteForm({ form, onChange, saving, onSubmit }) {
 }
 
 // ── Utility Components ─────────────────────────────────────────────────────
-
-function ItemList({ items, empty, render }) {
-  return items.length ? (
-    <div className="divide-y divide-neutral-200">
-      {items.map(render)}
-    </div>
-  ) : (
-    <div className="rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-50 p-8 text-center">
-      <p className="text-sm text-neutral-600">{empty}</p>
-    </div>
-  )
-}
 
 function ResourceRow({ icon, title, detail, status }) {
   return (
