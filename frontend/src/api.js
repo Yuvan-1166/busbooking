@@ -105,8 +105,8 @@ export const api = {
   // Seat Templates
   getSeatTemplates: (deckType) => request(deckType ? `/seat-templates?deckType=${deckType}` : '/seat-templates'),
   getSeatTemplate: (templateId) => request(`/seat-templates/${templateId}`),
-  previewSeatTemplate: (templateId) => request(`/seat-templates/${templateId}/preview`),
-  applySeatTemplate: (templateId, busId, clearExisting = false) => request(`/seat-templates/${templateId}/apply`, { method: 'POST', body: JSON.stringify({ busId, clearExisting }) }),
+  previewSeatTemplate: (templateId, rows = null) => request(rows?.length ? `/seat-templates/${templateId}/preview?rows=${rows.join(',')}` : `/seat-templates/${templateId}/preview`),
+  applySeatTemplate: (templateId, busId, clearExisting = false, rows = null) => request(`/seat-templates/${templateId}/apply`, { method: 'POST', body: JSON.stringify(rows?.length ? { busId, clearExisting, rows } : { busId, clearExisting }) }),
   getSchedules: () => request('/schedules'),
   createSchedule: (payload) => request('/schedules', { method: 'POST', body: JSON.stringify(payload) }),
   updateSchedule: (scheduleId, payload) => request(`/schedules/${scheduleId}`, { method: 'PUT', body: JSON.stringify(payload) }),

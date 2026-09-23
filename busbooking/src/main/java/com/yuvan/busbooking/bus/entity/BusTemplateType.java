@@ -1,30 +1,38 @@
 package com.yuvan.busbooking.bus.entity;
 
 /**
- * Represents common bus seating configurations used in modern intercity travel.
- * Each template type defines a standard layout pattern that operators can use.
+ * Bus seat arrangements used in real-world intercity travel.
+ *
+ * <p>A template type describes the kind of arrangement, not a vehicle brand or
+ * marketing class. The type name encodes the seat class (seater,
+ * semi-sleeper, sleeper), the deck layout (single / double) and the per-row
+ * seat distribution written as {@code left+right} (for example {@code 2+2}
+ * means two seats on each side of the aisle).
  */
 public enum BusTemplateType {
-    // Single Deck Seaters
-    AC_SEATER_2X2("AC Seater (2+2)", "Standard AC seater with 2 seats on each side", DeckType.SINGLE),
-    AC_SEATER_2X3("AC Seater (2+3)", "Economy AC seater with 5 seats per row", DeckType.SINGLE),
-    SEMI_SLEEPER_2X2("AC Semi-Sleeper (2+2)", "Reclining seats with extra legroom", DeckType.SINGLE),
-    VOLVO_MULTI_AXLE("Volvo Multi-Axle (2+2)", "Premium multi-axle bus with spacious seating", DeckType.SINGLE),
-    
-    // Single Deck Sleepers
-    SLEEPER_2X1("AC Sleeper (2+1)", "Overnight sleeper with berths arranged 2+1", DeckType.SINGLE),
-    
-    // Double Deck Seaters
-    DOUBLE_DECKER_SEATER("Double Decker Seater (2+2)", "Two-level seater bus with 2+2 on both decks", DeckType.DOUBLE),
-    
-    // Double Deck Sleepers
-    DOUBLE_DECKER_SLEEPER("Double Decker Sleeper (2+1)", "Two-level sleeper with berths on both decks", DeckType.DOUBLE),
-    
-    // Mini Buses
-    MINI_BUS_2X1("Mini Bus (2+1)", "Compact bus for short routes with 2+1 configuration", DeckType.SINGLE),
-    
-    // Luxury Coaches
-    LUXURY_COACH_1X2("Luxury Coach (1+2)", "Premium coach with spacious 1+2 configuration", DeckType.SINGLE);
+
+    // ---- Single deck ----
+
+    SEATER_2_PLUS_2("Seater 2+2", "Two seats on each side of the aisle", DeckType.SINGLE),
+    SEATER_1_PLUS_2("Seater 1+2", "One seat on the left, two on the right", DeckType.SINGLE),
+    SEATER_2_PLUS_3("Seater 2+3", "Five seats per row for maximum capacity", DeckType.SINGLE),
+    SEATER_1_PLUS_1("Seater 1+1", "Wide single seats on both sides of the aisle", DeckType.SINGLE),
+
+    SEMI_SLEEPER_2_PLUS_2("Semi-Sleeper 2+2", "Reclining semi-sleeper seats in a 2+2 layout", DeckType.SINGLE),
+    SEMI_SLEEPER_1_PLUS_2("Semi-Sleeper 1+2", "Reclining semi-sleeper seats in a 1+2 layout", DeckType.SINGLE),
+    SEMI_SLEEPER_2_PLUS_3("Semi-Sleeper 2+3", "Reclining semi-sleeper seats in a 2+3 layout", DeckType.SINGLE),
+    SEMI_SLEEPER_1_PLUS_1("Semi-Sleeper 1+1", "Spacious reclining semi-sleeper seats in a 1+1 layout", DeckType.SINGLE),
+
+    SLEEPER_2_PLUS_1("Sleeper 2+1", "Stacked berths on one side, single berth on the other", DeckType.SINGLE),
+    SLEEPER_1_PLUS_1("Sleeper 1+1", "Single berths on both sides of the aisle", DeckType.SINGLE),
+    SLEEPER_2_PLUS_2("Sleeper 2+2", "Stacked berth pairs on both sides of the aisle", DeckType.SINGLE),
+
+    // ---- Double deck ----
+
+    DOUBLE_DECKER_SEATER_2_PLUS_2("Double Decker Seater 2+2", "2+2 seating on both levels", DeckType.DOUBLE),
+    DOUBLE_DECKER_SEATER_2_PLUS_3("Double Decker Seater 2+3", "High-capacity 2+3 seating on both levels", DeckType.DOUBLE),
+    DOUBLE_DECKER_SLEEPER_2_PLUS_1("Double Decker Sleeper 2+1", "Sleepers with a 2+1 berth arrangement on both levels", DeckType.DOUBLE),
+    SLEEPER_CUM_SEATER_2_PLUS_1("Sleeper-Cum-Seater 2+1", "Sleepers on the upper deck, seater on the lower deck", DeckType.DOUBLE);
 
     private final String displayName;
     private final String description;

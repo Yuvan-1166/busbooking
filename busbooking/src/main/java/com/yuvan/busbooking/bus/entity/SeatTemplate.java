@@ -42,20 +42,19 @@ public class SeatTemplate {
     private String description;
 
     /**
-     * JSON configuration containing the deck layouts.
+     * JSON configuration containing the deck layouts. Each deck is described
+     * as a fixed row recipe (seats on each side of the aisle and the seat
+     * class), so the same arrangement can be applied with any number of rows.
      * Structure:
      * {
      *   "decks": [
      *     {
      *       "deckNumber": 1,
-     *       "deckName": "Lower",
+     *       "deckName": "Lower Deck",
      *       "rows": 10,
-     *       "columns": 4,
-     *       "aisleAfter": 2,
-     *       "seatPattern": [
-     *         {"row": 1, "col": 1, "seatNumber": "L1", "type": "SEAT", "position": "WINDOW", "genderPolicy": "ANY"},
-     *         ...
-     *       ]
+     *       "leftSeats": 2,
+     *       "rightSeats": 2,
+     *       "seatType": "SEAT"
      *     }
      *   ]
      * }
@@ -112,7 +111,9 @@ public class SeatTemplate {
     }
 
     /**
-     * Configuration for a single deck (lower or upper)
+     * Configuration for a single deck (lower or upper).
+     * The layout is fixed by the seat distribution around the aisle; only the
+     * number of rows can vary between deployments of the same template.
      */
     public static class DeckConfiguration {
         @JsonProperty("deckNumber")
@@ -124,25 +125,25 @@ public class SeatTemplate {
         @JsonProperty("rows")
         private Integer rows;
 
-        @JsonProperty("columns")
-        private Integer columns;
+        @JsonProperty("leftSeats")
+        private Integer leftSeats;
 
-        @JsonProperty("aisleAfter")
-        private Integer aisleAfter;
+        @JsonProperty("rightSeats")
+        private Integer rightSeats;
 
-        @JsonProperty("seatPattern")
-        private List<SeatPattern> seatPattern;
+        @JsonProperty("seatType")
+        private SeatType seatType;
 
         public DeckConfiguration() {
         }
 
-        public DeckConfiguration(Integer deckNumber, String deckName, Integer rows, Integer columns, Integer aisleAfter, List<SeatPattern> seatPattern) {
+        public DeckConfiguration(Integer deckNumber, String deckName, Integer rows, Integer leftSeats, Integer rightSeats, SeatType seatType) {
             this.deckNumber = deckNumber;
             this.deckName = deckName;
             this.rows = rows;
-            this.columns = columns;
-            this.aisleAfter = aisleAfter;
-            this.seatPattern = seatPattern;
+            this.leftSeats = leftSeats;
+            this.rightSeats = rightSeats;
+            this.seatType = seatType;
         }
 
         public Integer getDeckNumber() {
@@ -169,111 +170,28 @@ public class SeatTemplate {
             this.rows = rows;
         }
 
-        public Integer getColumns() {
-            return columns;
+        public Integer getLeftSeats() {
+            return leftSeats;
         }
 
-        public void setColumns(Integer columns) {
-            this.columns = columns;
+        public void setLeftSeats(Integer leftSeats) {
+            this.leftSeats = leftSeats;
         }
 
-        public Integer getAisleAfter() {
-            return aisleAfter;
+        public Integer getRightSeats() {
+            return rightSeats;
         }
 
-        public void setAisleAfter(Integer aisleAfter) {
-            this.aisleAfter = aisleAfter;
+        public void setRightSeats(Integer rightSeats) {
+            this.rightSeats = rightSeats;
         }
 
-        public List<SeatPattern> getSeatPattern() {
-            return seatPattern;
+        public SeatType getSeatType() {
+            return seatType;
         }
 
-        public void setSeatPattern(List<SeatPattern> seatPattern) {
-            this.seatPattern = seatPattern;
-        }
-    }
-
-    /**
-     * Individual seat configuration in the pattern
-     */
-    public static class SeatPattern {
-        @JsonProperty("row")
-        private Integer row;
-
-        @JsonProperty("col")
-        private Integer col;
-
-        @JsonProperty("seatNumber")
-        private String seatNumber;
-
-        @JsonProperty("type")
-        private SeatType type;
-
-        @JsonProperty("position")
-        private SeatPosition position;
-
-        @JsonProperty("genderPolicy")
-        private SeatGenderPolicy genderPolicy;
-
-        public SeatPattern() {
-        }
-
-        public SeatPattern(Integer row, Integer col, String seatNumber, SeatType type, SeatPosition position, SeatGenderPolicy genderPolicy) {
-            this.row = row;
-            this.col = col;
-            this.seatNumber = seatNumber;
-            this.type = type;
-            this.position = position;
-            this.genderPolicy = genderPolicy;
-        }
-
-        public Integer getRow() {
-            return row;
-        }
-
-        public void setRow(Integer row) {
-            this.row = row;
-        }
-
-        public Integer getCol() {
-            return col;
-        }
-
-        public void setCol(Integer col) {
-            this.col = col;
-        }
-
-        public String getSeatNumber() {
-            return seatNumber;
-        }
-
-        public void setSeatNumber(String seatNumber) {
-            this.seatNumber = seatNumber;
-        }
-
-        public SeatType getType() {
-            return type;
-        }
-
-        public void setType(SeatType type) {
-            this.type = type;
-        }
-
-        public SeatPosition getPosition() {
-            return position;
-        }
-
-        public void setPosition(SeatPosition position) {
-            this.position = position;
-        }
-
-        public SeatGenderPolicy getGenderPolicy() {
-            return genderPolicy;
-        }
-
-        public void setGenderPolicy(SeatGenderPolicy genderPolicy) {
-            this.genderPolicy = genderPolicy;
+        public void setSeatType(SeatType seatType) {
+            this.seatType = seatType;
         }
     }
 }

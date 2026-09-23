@@ -78,11 +78,16 @@ public class SeatTemplateController {
     /**
      * GET /api/v1/seat-templates/{id}/preview
      * Preview seats that would be created from this template
+     * Query params: rows - optional per-deck row counts (comma separated,
+     * in the same order as the template decks)
      */
     @GetMapping("/{id}/preview")
-    public ResponseEntity<List<SeatRequest>> previewTemplate(@PathVariable Long id) {
+    public ResponseEntity<List<SeatRequest>> previewTemplate(
+            @PathVariable Long id,
+            @RequestParam(required = false) List<Integer> rows
+    ) {
         try {
-            List<SeatRequest> preview = seatTemplateService.previewTemplateSeats(id);
+            List<SeatRequest> preview = seatTemplateService.previewTemplateSeats(id, rows);
             return ResponseEntity.ok(preview);
         } catch (RuntimeException e) {
             log.error("Template not found: {}", id, e);
@@ -135,25 +140,27 @@ public class SeatTemplateController {
 
     /**
      * POST /api/v1/seat-templates/{id}/apply
-     * Apply a template to a bus
-     * Request body: { "busId": 123, "clearExisting": true }
+     * Apply a template to a bus. Operators may only apply to their own buses.
+     * Request body: { "busId": 123, "clearExisting": true, "rows": [10, 12] }
+     * rows is optional and overrides the template's default per-deck row counts.
      */
     @PostMapping("/{id}/apply")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
     public ResponseEntity<List<SeatResponse>> applyTemplate(
             @PathVariable Long id,
             @RequestBody Map<String, Object> request
     ) {
         try {
             Long busId = ((Number) request.get("busId")).longValue();
-            Boolean clearExisting = request.containsKey("clearExisting") 
-                ? (Boolean) request.get("clearExisting") 
+            Boolean clearExisting = request.containsKey("clearExisting")
+                ? (Boolean) request.get("clearExisting")
                 : false;
+            List<Integer> rows = parseRowsOverride(request.get("rows"));
 
             log.info("Applying template {} to bus {}. Clear existing: {}", id, busId, clearExisting);
 
-            List<Seat> createdSeats = seatTemplateService.applyTemplateToBus(busId, id, clearExisting);
-            
+            List<Seat> createdSeats = seatTemplateService.applyTemplateToBus(busId, id, clearExisting, rows);
+
             List<SeatResponse> response = createdSeats.stream()
                     .map(seat -> seatService.toResponse(seat))
                     .collect(Collectors.toList());
@@ -167,5 +174,18 @@ public class SeatTemplateController {
             log.error("Unexpected error applying template", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
+    }
+
+    /**
+     * Read an optional "rows" array from a request body, e.g. [10, 12].
+     */
+    private List<Integer> parseRowsOverride(Object raw) {
+        if (!(raw instanceof List<?> values)) {
+            return null;
+        }
+        List<Integer> rows = values.stream()
+                .map(value -> ((Number) value).intValue())
+                .collect(Collectors.toList());
+        return rows.isEmpty() ? null : rows;
     }
 }

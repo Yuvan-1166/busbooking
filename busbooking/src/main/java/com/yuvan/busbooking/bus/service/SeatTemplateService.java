@@ -11,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,15 +21,18 @@ public class SeatTemplateService {
     private final SeatTemplateRepository seatTemplateRepository;
     private final BusRepository busRepository;
     private final SeatRepository seatRepository;
+    private final SeatLayoutGenerator layoutGenerator;
 
     public SeatTemplateService(
             SeatTemplateRepository seatTemplateRepository,
             BusRepository busRepository,
-            SeatRepository seatRepository
+            SeatRepository seatRepository,
+            SeatLayoutGenerator layoutGenerator
     ) {
         this.seatTemplateRepository = seatTemplateRepository;
         this.busRepository = busRepository;
         this.seatRepository = seatRepository;
+        this.layoutGenerator = layoutGenerator;
     }
 
     /**
@@ -63,22 +65,75 @@ public class SeatTemplateService {
     }
 
     /**
-     * Apply a seat template to a bus.
-     * This creates all seats defined in the template for the specified bus.
+     * Preview seats that would be created from a template (without saving).
      *
-     * @param busId      The bus to apply the template to
-     * @param templateId The template to apply
-     * @return List of created seats
+     * @param templateId   the template to preview
+     * @param rowsOverride optional per-deck row counts, in the same order as
+     *                     the template decks
+     */
+    public List<SeatRequest> previewTemplateSeats(Long templateId, List<Integer> rowsOverride) {
+        SeatTemplate template = seatTemplateRepository.findById(templateId)
+                .orElseThrow(() -> new RuntimeException("Template not found with id: " + templateId));
+
+        return layoutGenerator.generate(template, rowsOverride).stream()
+                .map(spec -> new SeatRequest(
+                        null, // busId will be set when applying
+                        spec.seatNumber(),
+                        spec.deckNumber(),
+                        spec.deckName(),
+                        spec.seatType(),
+                        spec.position(),
+                        spec.aisleAfter(),
+                        spec.genderPolicy()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Apply a seat template to a bus with the template's default row counts.
      */
     @Transactional
     public List<Seat> applyTemplateToBus(Long busId, Long templateId) {
-        log.info("Applying template {} to bus {}", templateId, busId);
+        return applyTemplateToBus(busId, templateId, false, null);
+    }
 
-        // Validate bus exists
+    /**
+     * Apply a seat template to a bus with the template's default row counts.
+     *
+     * @param clearExisting whether existing seats on the bus should be removed first
+     */
+    @Transactional
+    public List<Seat> applyTemplateToBus(Long busId, Long templateId, boolean clearExisting) {
+        return applyTemplateToBus(busId, templateId, clearExisting, null);
+    }
+
+    /**
+     * Apply a seat template to a bus, optionally with custom per-deck row counts.
+     *
+     * @param busId        the bus to apply the template to
+     * @param templateId   the template to apply
+     * @param clearExisting whether existing seats on the bus should be removed first
+     * @param rowsOverride optional per-deck row counts, in the same order as
+     *                     the template decks
+     * @return list of created seats
+     */
+    @Transactional
+    public List<Seat> applyTemplateToBus(
+            Long busId,
+            Long templateId,
+            boolean clearExisting,
+            List<Integer> rowsOverride
+    ) {
+        log.info("Applying template {} to bus {} (clear existing: {})",
+                templateId, busId, clearExisting);
+
+        if (clearExisting) {
+            clearExistingSeats(busId);
+        }
+
         Bus bus = busRepository.findById(busId)
                 .orElseThrow(() -> new RuntimeException("Bus not found with id: " + busId));
 
-        // Validate template exists
         SeatTemplate template = seatTemplateRepository.findById(templateId)
                 .orElseThrow(() -> new RuntimeException("Template not found with id: " + templateId));
 
@@ -86,120 +141,40 @@ public class SeatTemplateService {
             throw new RuntimeException("Template is not active");
         }
 
-        // Check if bus already has seats
-        List<Seat> existingSeats = seatRepository.findByBusIdOrderBySeatNumber(busId);
-        if (!existingSeats.isEmpty()) {
-            log.warn("Bus {} already has {} seats. Applying template will add more seats.", busId, existingSeats.size());
-            // Optionally, you could throw an exception here or clear existing seats
-            // For now, we'll just add the template seats
-        }
+        List<Seat> seatsToCreate = layoutGenerator.generate(template, rowsOverride).stream()
+                .map(spec -> {
+                    Seat seat = new Seat();
+                    seat.setBus(bus);
+                    seat.setSeatNumber(spec.seatNumber());
+                    seat.setDeckNumber(spec.deckNumber());
+                    seat.setDeckName(spec.deckName());
+                    seat.setSeatType(spec.seatType());
+                    seat.setPosition(spec.position());
+                    seat.setAisleAfter(spec.aisleAfter());
+                    seat.setGenderPolicy(spec.genderPolicy());
+                    return seat;
+                })
+                .collect(Collectors.toList());
 
-        // Generate seats from template configuration
-        List<Seat> seatsToCreate = generateSeatsFromTemplate(bus, template);
-
-        // Save all seats
         List<Seat> createdSeats = seatRepository.saveAll(seatsToCreate);
-        
-        log.info("Successfully created {} seats for bus {} using template {}", 
-                 createdSeats.size(), busId, template.getName());
+
+        log.info("Successfully created {} seats for bus {} using template {}",
+                createdSeats.size(), busId, template.getName());
 
         return createdSeats;
     }
 
-    /**
-     * Apply template with option to clear existing seats
-     */
-    @Transactional
-    public List<Seat> applyTemplateToBus(Long busId, Long templateId, boolean clearExisting) {
-        if (clearExisting) {
-            // Delete existing seats first
-            List<Seat> existingSeats = seatRepository.findByBusIdOrderBySeatNumber(busId);
-            if (!existingSeats.isEmpty()) {
-                seatRepository.deleteAll(existingSeats);
-                log.info("Deleted {} existing seats from bus {}", existingSeats.size(), busId);
-            }
+    private void clearExistingSeats(Long busId) {
+        List<Seat> existingSeats = seatRepository.findByBusIdOrderBySeatNumber(busId);
+        if (!existingSeats.isEmpty()) {
+            seatRepository.deleteAll(existingSeats);
+            log.info("Deleted {} existing seats from bus {}", existingSeats.size(), busId);
         }
-
-        return applyTemplateToBus(busId, templateId);
     }
 
     /**
-     * Generate seat entities from template configuration
-     */
-    private List<Seat> generateSeatsFromTemplate(Bus bus, SeatTemplate template) {
-        List<Seat> seats = new ArrayList<>();
-
-        SeatTemplate.TemplateConfiguration config = template.getConfiguration();
-        
-        if (config == null || config.getDecks() == null) {
-            throw new RuntimeException("Template configuration is invalid");
-        }
-
-        // Process each deck in the configuration
-        for (SeatTemplate.DeckConfiguration deck : config.getDecks()) {
-            if (deck.getSeatPattern() == null || deck.getSeatPattern().isEmpty()) {
-                log.warn("Deck {} has no seat pattern defined", deck.getDeckName());
-                continue;
-            }
-
-            // Create seats from the pattern
-            for (SeatTemplate.SeatPattern pattern : deck.getSeatPattern()) {
-                Seat seat = new Seat();
-                seat.setBus(bus);
-                seat.setSeatNumber(pattern.getSeatNumber());
-                seat.setDeckNumber(deck.getDeckNumber());
-                seat.setDeckName(deck.getDeckName());
-                seat.setSeatType(pattern.getType() != null ? pattern.getType() : SeatType.SEAT);
-                seat.setPosition(pattern.getPosition() != null ? pattern.getPosition() : SeatPosition.MIDDLE);
-                seat.setAisleAfter(deck.getAisleAfter());
-                seat.setGenderPolicy(pattern.getGenderPolicy() != null ? pattern.getGenderPolicy() : SeatGenderPolicy.ANY);
-                
-                seats.add(seat);
-            }
-        }
-
-        return seats;
-    }
-
-    /**
-     * Preview seats that would be created from a template (without saving)
-     */
-    public List<SeatRequest> previewTemplateSeats(Long templateId) {
-        SeatTemplate template = seatTemplateRepository.findById(templateId)
-                .orElseThrow(() -> new RuntimeException("Template not found with id: " + templateId));
-
-        List<SeatRequest> previewSeats = new ArrayList<>();
-
-        SeatTemplate.TemplateConfiguration config = template.getConfiguration();
-        
-        if (config == null || config.getDecks() == null) {
-            return previewSeats;
-        }
-
-        // Process each deck
-        for (SeatTemplate.DeckConfiguration deck : config.getDecks()) {
-            if (deck.getSeatPattern() == null) continue;
-
-            for (SeatTemplate.SeatPattern pattern : deck.getSeatPattern()) {
-                SeatRequest seatRequest = new SeatRequest(
-                        null, // busId will be set when applying
-                        pattern.getSeatNumber(),
-                        deck.getDeckNumber(),
-                        deck.getDeckName(),
-                        pattern.getType() != null ? pattern.getType() : SeatType.SEAT,
-                        pattern.getPosition() != null ? pattern.getPosition() : SeatPosition.MIDDLE,
-                        deck.getAisleAfter(),
-                        pattern.getGenderPolicy() != null ? pattern.getGenderPolicy() : SeatGenderPolicy.ANY
-                );
-                previewSeats.add(seatRequest);
-            }
-        }
-
-        return previewSeats;
-    }
-
-    /**
-     * Create a new template (for admin use)
+     * Create a new template (for admin use). Seat totals are derived from the
+     * configuration so the declared capacity always matches the layout.
      */
     @Transactional
     public SeatTemplateResponse createTemplate(SeatTemplateRequest request) {
@@ -208,12 +183,10 @@ public class SeatTemplateService {
         template.setName(request.name());
         template.setTemplateType(request.templateType());
         template.setDeckType(request.deckType());
-        template.setTotalSeats(request.totalSeats());
         template.setDescription(request.description());
         template.setConfiguration(request.configuration());
-        template.setIsActive(request.isActive() != null
-                ? request.isActive()
-                : true);
+        template.setIsActive(request.isActive() != null ? request.isActive() : true);
+        template.setTotalSeats(layoutGenerator.totalSeats(template));
 
         return SeatTemplateResponse.fromEntity(
                 seatTemplateRepository.save(template)
@@ -221,27 +194,21 @@ public class SeatTemplateService {
     }
 
     /**
-     * Update an existing template
+     * Update an existing template. Seat totals are recomputed from the
+     * configuration.
      */
     @Transactional
-    public SeatTemplateResponse updateTemplate(
-            Long id,
-            SeatTemplateRequest request
-    ) {
+    public SeatTemplateResponse updateTemplate(Long id, SeatTemplateRequest request) {
         SeatTemplate existing = seatTemplateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(
-                        "Template not found with id: " + id
-                ));
+                .orElseThrow(() -> new RuntimeException("Template not found with id: " + id));
 
         existing.setName(request.name());
         existing.setTemplateType(request.templateType());
         existing.setDeckType(request.deckType());
-        existing.setTotalSeats(request.totalSeats());
         existing.setDescription(request.description());
         existing.setConfiguration(request.configuration());
-        existing.setIsActive(request.isActive() != null
-                ? request.isActive()
-                : existing.getIsActive());
+        existing.setIsActive(request.isActive() != null ? request.isActive() : existing.getIsActive());
+        existing.setTotalSeats(layoutGenerator.totalSeats(existing));
 
         return SeatTemplateResponse.fromEntity(
                 seatTemplateRepository.save(existing)
@@ -254,9 +221,7 @@ public class SeatTemplateService {
     @Transactional
     public void deactivateTemplate(Long id) {
         SeatTemplate template = seatTemplateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException(
-                        "Template not found with id: " + id
-                ));
+                .orElseThrow(() -> new RuntimeException("Template not found with id: " + id));
         template.setIsActive(false);
         seatTemplateRepository.save(template);
     }

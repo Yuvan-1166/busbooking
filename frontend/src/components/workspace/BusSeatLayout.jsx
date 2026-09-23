@@ -146,7 +146,12 @@ export default function BusSeatLayout({
       <div className="flex flex-wrap gap-4 text-xs font-medium text-neutral-500">
         <span>
           <strong className="mr-1 text-lg font-semibold text-neutral-900">
-            {seats.filter((seat) => seat.seatType === "SEAT").length}
+            {
+              seats.filter(
+                (seat) =>
+                  seat.seatType === "SEAT" || seat.seatType === "SEMI_SLEEPER",
+              ).length
+            }
           </strong>
           seats
         </span>

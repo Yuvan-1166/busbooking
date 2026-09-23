@@ -171,7 +171,7 @@ export default function SeatsWorkspace({
     setForm({ ...emptySeat, busId: selectedBusId });
   };
 
-  const handleApplyTemplate = async (template) => {
+  const handleApplyTemplate = async (template, rows) => {
     if (!selectedBusId) return;
 
     const hasExistingSeats = busSeats.length > 0;
@@ -188,8 +188,13 @@ export default function SeatsWorkspace({
       setApplyingTemplate(true);
       setShowTemplateGallery(false);
 
-      // Apply template via API
-      await api.applySeatTemplate(template.id, Number(selectedBusId), clearExisting);
+      // Apply template via API with optional per-deck row counts
+      await api.applySeatTemplate(
+        template.id,
+        Number(selectedBusId),
+        clearExisting,
+        rows,
+      );
 
       // Refresh seats by triggering parent to reload
       window.location.reload(); // Simple approach - you could also use a callback to refresh
@@ -236,9 +241,10 @@ export default function SeatsWorkspace({
               Quick Setup with Templates
             </p>
             <p className="text-sm text-neutral-600">
-              Choose from 9 professional bus layouts including single-deck,
-              double-decker, sleeper, and luxury coaches. All templates include
-              proper seat numbering and female-reserved seating.
+              Choose a real-world bus arrangement - seater, semi-sleeper or
+              sleeper, on a single or double-decker - and set the number of
+              rows to fit your bus. Templates include proper seat numbering
+              and female-reserved front rows.
             </p>
           </div>
           <button
@@ -471,6 +477,7 @@ function BatchPreview({ seats, onChange, onCancel, onSave, saving }) {
                     }
                   >
                     <option value="SEAT">Seat</option>
+                    <option value="SEMI_SLEEPER">Semi-Sleeper</option>
                     <option value="SLEEPER">Sleeper</option>
                   </select>
                   <select
