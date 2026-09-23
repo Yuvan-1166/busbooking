@@ -31,6 +31,12 @@ public class RouteStopController {
                 .body(routeStopService.create(request));
     }
 
+    @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<RouteStopResponse>> findAll() {
+        return ResponseEntity.ok(routeStopService.findAll());
+    }
+
     @GetMapping("/{id}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<RouteStopResponse> findById(

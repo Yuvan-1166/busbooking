@@ -44,8 +44,8 @@ public class BookingController {
                 .body(response);
     }
 
-    @GetMapping()
-    @PreAuthorize("hasrole('ADMIN')")
+    @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<BookingResponse>> getBookings() {
         return ResponseEntity.ok(
                 bookingService.findAll()
@@ -62,6 +62,26 @@ public class BookingController {
         return ResponseEntity.ok(
                 bookingService.getBooking(user.getId(), bookingId)
         );
+    }
+
+    @PutMapping("/{bookingId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<BookingResponse> updateBooking(
+        @PathVariable Long bookingId,
+        @Valid @RequestBody BookingRequest request
+    ) {
+        return ResponseEntity.ok(
+                bookingService.updateBooking(bookingId, request)
+        );
+    }
+
+    @DeleteMapping("/{bookingId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteBooking(
+        @PathVariable Long bookingId
+    ) {
+        bookingService.deleteBooking(bookingId);
+        return ResponseEntity.noContent().build();
     }
     
 }

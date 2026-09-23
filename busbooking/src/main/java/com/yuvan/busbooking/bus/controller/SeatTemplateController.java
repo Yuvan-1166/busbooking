@@ -2,14 +2,17 @@ package com.yuvan.busbooking.bus.controller;
 
 import com.yuvan.busbooking.bus.dto.SeatRequest;
 import com.yuvan.busbooking.bus.dto.SeatResponse;
+import com.yuvan.busbooking.bus.dto.SeatTemplateRequest;
 import com.yuvan.busbooking.bus.dto.SeatTemplateResponse;
 import com.yuvan.busbooking.bus.entity.DeckType;
 import com.yuvan.busbooking.bus.entity.Seat;
 import com.yuvan.busbooking.bus.service.SeatService;
 import com.yuvan.busbooking.bus.service.SeatTemplateService;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -91,11 +94,52 @@ public class SeatTemplateController {
     }
 
     /**
+     * POST /api/v1/seat-templates
+     * Create a new seat template
+     */
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<SeatTemplateResponse> createTemplate(
+            @Valid @RequestBody SeatTemplateRequest request
+    ) {
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(seatTemplateService.createTemplate(request));
+    }
+
+    /**
+     * PUT /api/v1/seat-templates/{id}
+     * Update an existing seat template
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<SeatTemplateResponse> updateTemplate(
+            @PathVariable Long id,
+            @Valid @RequestBody SeatTemplateRequest request
+    ) {
+        return ResponseEntity.ok(
+                seatTemplateService.updateTemplate(id, request)
+        );
+    }
+
+    /**
+     * DELETE /api/v1/seat-templates/{id}
+     * Delete a seat template
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteTemplate(@PathVariable Long id) {
+        seatTemplateService.deleteTemplate(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
      * POST /api/v1/seat-templates/{id}/apply
      * Apply a template to a bus
      * Request body: { "busId": 123, "clearExisting": true }
      */
     @PostMapping("/{id}/apply")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<SeatResponse>> applyTemplate(
             @PathVariable Long id,
             @RequestBody Map<String, Object> request

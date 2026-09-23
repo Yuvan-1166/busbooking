@@ -6,6 +6,7 @@ import com.yuvan.busbooking.booking.dto.BookingPassengerResponse;
 import com.yuvan.busbooking.booking.repository.BookingRepository;
 import com.yuvan.busbooking.booking.repository.BookingPassengerRepository;
 import com.yuvan.busbooking.ticket.dto.TicketResponse;
+import com.yuvan.busbooking.ticket.dto.TicketUpdateRequest;
 import com.yuvan.busbooking.ticket.entity.Ticket;
 import com.yuvan.busbooking.ticket.entity.TicketStatus;
 import com.yuvan.busbooking.ticket.repository.TicketRepository;
@@ -172,6 +173,48 @@ public class TicketService {
                 updateExpirationIfNecessary(ticket);
 
                 return toResponse(ticket);
+        }
+
+        @Transactional(readOnly = true)
+        public List<TicketResponse> findAll() {
+                return ticketRepository.findAll()
+                                .stream()
+                                .map(this::toResponse)
+                                .toList();
+        }
+
+        @Transactional(readOnly = true)
+        public TicketResponse findById(Long id) {
+                Ticket ticket = ticketRepository.findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Ticket not found: " + id));
+
+                return toResponse(ticket);
+        }
+
+        @Transactional
+        public TicketResponse updateStatus(
+                        Long id,
+                        TicketUpdateRequest request
+        ) {
+                Ticket ticket = ticketRepository.findById(id)
+                                .orElseThrow(() -> new ResourceNotFoundException(
+                                                "Ticket not found: " + id));
+
+                if (request.status() != null) {
+                        ticket.setStatus(request.status());
+                }
+
+                return toResponse(ticketRepository.save(ticket));
+        }
+
+        @Transactional
+        public void delete(Long id) {
+                if (!ticketRepository.existsById(id)) {
+                        throw new ResourceNotFoundException(
+                                        "Ticket not found: " + id);
+                }
+                ticketRepository.deleteById(id);
         }
 
         private LocalDateTime calculateExpirationTime(Booking booking) {

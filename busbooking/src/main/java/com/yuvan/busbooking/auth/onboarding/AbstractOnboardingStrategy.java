@@ -7,8 +7,6 @@ import com.yuvan.busbooking.user.entity.UserRole;
 import com.yuvan.busbooking.user.repository.RoleRepository;
 import com.yuvan.busbooking.user.repository.UserRoleRepository;
 
-import java.util.List;
-
 /**
  * Base class for {@link OnboardingStrategy} implementations exposing the shared
  * role-assignment helpers used by every onboarding flow.

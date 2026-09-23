@@ -1,6 +1,7 @@
 package com.yuvan.busbooking.bus.service;
 
 import com.yuvan.busbooking.bus.dto.SeatRequest;
+import com.yuvan.busbooking.bus.dto.SeatTemplateRequest;
 import com.yuvan.busbooking.bus.dto.SeatTemplateResponse;
 import com.yuvan.busbooking.bus.entity.*;
 import com.yuvan.busbooking.bus.repository.BusRepository;
@@ -199,27 +200,50 @@ public class SeatTemplateService {
      * Create a new template (for admin use)
      */
     @Transactional
-    public SeatTemplate createTemplate(SeatTemplate template) {
-        return seatTemplateRepository.save(template);
+    public SeatTemplateResponse createTemplate(SeatTemplateRequest request) {
+        SeatTemplate template = new SeatTemplate();
+
+        template.setName(request.name());
+        template.setTemplateType(request.templateType());
+        template.setDeckType(request.deckType());
+        template.setTotalSeats(request.totalSeats());
+        template.setDescription(request.description());
+        template.setConfiguration(request.configuration());
+        template.setIsActive(request.isActive() != null
+                ? request.isActive()
+                : true);
+
+        return SeatTemplateResponse.fromEntity(
+                seatTemplateRepository.save(template)
+        );
     }
 
     /**
      * Update an existing template
      */
     @Transactional
-    public SeatTemplate updateTemplate(Long id, SeatTemplate updatedTemplate) {
+    public SeatTemplateResponse updateTemplate(
+            Long id,
+            SeatTemplateRequest request
+    ) {
         SeatTemplate existing = seatTemplateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Template not found with id: " + id));
+                .orElseThrow(() -> new RuntimeException(
+                        "Template not found with id: " + id
+                ));
 
-        existing.setName(updatedTemplate.getName());
-        existing.setTemplateType(updatedTemplate.getTemplateType());
-        existing.setDeckType(updatedTemplate.getDeckType());
-        existing.setTotalSeats(updatedTemplate.getTotalSeats());
-        existing.setDescription(updatedTemplate.getDescription());
-        existing.setConfiguration(updatedTemplate.getConfiguration());
-        existing.setIsActive(updatedTemplate.getIsActive());
+        existing.setName(request.name());
+        existing.setTemplateType(request.templateType());
+        existing.setDeckType(request.deckType());
+        existing.setTotalSeats(request.totalSeats());
+        existing.setDescription(request.description());
+        existing.setConfiguration(request.configuration());
+        existing.setIsActive(request.isActive() != null
+                ? request.isActive()
+                : existing.getIsActive());
 
-        return seatTemplateRepository.save(existing);
+        return SeatTemplateResponse.fromEntity(
+                seatTemplateRepository.save(existing)
+        );
     }
 
     /**
@@ -228,8 +252,21 @@ public class SeatTemplateService {
     @Transactional
     public void deactivateTemplate(Long id) {
         SeatTemplate template = seatTemplateRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Template not found with id: " + id));
+                .orElseThrow(() -> new RuntimeException(
+                        "Template not found with id: " + id
+                ));
         template.setIsActive(false);
         seatTemplateRepository.save(template);
+    }
+
+    /**
+     * Hard-delete a template (admin use)
+     */
+    @Transactional
+    public void deleteTemplate(Long id) {
+        if (!seatTemplateRepository.existsById(id)) {
+            throw new RuntimeException("Template not found with id: " + id);
+        }
+        seatTemplateRepository.deleteById(id);
     }
 }

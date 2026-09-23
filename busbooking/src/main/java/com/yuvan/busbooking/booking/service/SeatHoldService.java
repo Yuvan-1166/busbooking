@@ -3,6 +3,7 @@ package com.yuvan.busbooking.booking.service;
 import com.yuvan.busbooking.booking.dto.SeatHoldItem;
 import com.yuvan.busbooking.booking.dto.SeatHoldRequest;
 import com.yuvan.busbooking.booking.dto.SeatHoldResponse;
+import com.yuvan.busbooking.booking.dto.SeatHoldUpdateRequest;
 import com.yuvan.busbooking.booking.entity.Gender;
 import com.yuvan.busbooking.booking.entity.SeatHold;
 import com.yuvan.busbooking.booking.entity.SeatHoldStatus;
@@ -183,6 +184,91 @@ public class SeatHoldService {
                 hold.getCreatedAt(),
                 hold.getUpdatedAt()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<SeatHoldResponse> findAll() {
+        return seatHoldRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<SeatHoldResponse> findByUser(Long userId) {
+        return seatHoldRepository.findByUserId(userId)
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public SeatHoldResponse findById(Long id) {
+        SeatHold hold = seatHoldRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Seat hold not found with id: " + id
+                        )
+                );
+        return toResponse(hold);
+    }
+
+    @Transactional
+    public SeatHoldResponse update(
+            Long id,
+            SeatHoldUpdateRequest request
+    ) {
+        SeatHold hold = seatHoldRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Seat hold not found with id: " + id
+                        )
+                );
+
+        if (request.status() != null) {
+            hold.setStatus(request.status());
+        }
+
+        if (request.expiresAt() != null) {
+            hold.setExpiresAt(request.expiresAt());
+        }
+
+        return toResponse(seatHoldRepository.save(hold));
+    }
+
+    /**
+     * Release a hold and free the underlying trip seat.
+     *
+     * @param userId when provided (non-admin caller), ownership is enforced.
+     */
+    @Transactional
+    public SeatHoldResponse release(Long id, Long userId) {
+
+        SeatHold hold = seatHoldRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Seat hold not found with id: " + id
+                        )
+                );
+
+        if (userId != null && !hold.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException(
+                    "This hold does not belong to you"
+            );
+        }
+
+        if (hold.getStatus() == SeatHoldStatus.ACTIVE) {
+            hold.setStatus(SeatHoldStatus.RELEASED);
+
+            TripSeat tripSeat = hold.getTripSeat();
+
+            if (tripSeat.getStatus() == TripSeatStatus.HELD) {
+                tripSeat.setStatus(TripSeatStatus.AVAILABLE);
+                tripSeat.setHeldUntil(null);
+            }
+        }
+
+        return toResponse(seatHoldRepository.save(hold));
     }
 
     @Scheduled(fixedRate = 60000)

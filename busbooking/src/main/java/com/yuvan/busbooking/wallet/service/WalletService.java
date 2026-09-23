@@ -5,12 +5,14 @@ import com.yuvan.busbooking.common.util.SecurityUtils;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.repository.UserRepository;
 import com.yuvan.busbooking.wallet.dto.WalletResponse;
+import com.yuvan.busbooking.wallet.dto.WalletUpdateRequest;
 import com.yuvan.busbooking.wallet.entity.UserWallet;
 import com.yuvan.busbooking.wallet.repository.UserWalletRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 public class WalletService {
@@ -83,5 +85,48 @@ public class WalletService {
         wallet.setBalance(wallet.getBalance().add(amount));
         walletRepository.save(wallet);
         return wallet.getBalance();
+    }
+
+    @Transactional(readOnly = true)
+    public List<WalletResponse> findAll() {
+        return walletRepository.findAll()
+                .stream()
+                .map(wallet -> new WalletResponse(
+                        wallet.getUser().getId(),
+                        wallet.getBalance()
+                ))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public WalletResponse findByUserId(Long userId) {
+        UserWallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Wallet not found for user: " + userId));
+        return new WalletResponse(wallet.getUser().getId(), wallet.getBalance());
+    }
+
+    @Transactional
+    public WalletResponse updateBalance(
+            Long userId,
+            WalletUpdateRequest request
+    ) {
+        UserWallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Wallet not found for user: " + userId));
+
+        wallet.setBalance(request.balance());
+        return new WalletResponse(
+                wallet.getUser().getId(),
+                walletRepository.save(wallet).getBalance()
+        );
+    }
+
+    @Transactional
+    public void delete(Long userId) {
+        UserWallet wallet = walletRepository.findByUserId(userId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Wallet not found for user: " + userId));
+        walletRepository.delete(wallet);
     }
 }

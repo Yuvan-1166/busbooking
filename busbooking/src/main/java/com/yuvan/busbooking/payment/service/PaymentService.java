@@ -16,6 +16,7 @@ import com.yuvan.busbooking.payment.dto.PaymentConfirmRequest;
 import com.yuvan.busbooking.payment.dto.PaymentConfirmResponse;
 import com.yuvan.busbooking.payment.dto.PaymentInitiateRequest;
 import com.yuvan.busbooking.payment.dto.PaymentInitiateResponse;
+import com.yuvan.busbooking.payment.dto.PaymentResponse;
 import com.yuvan.busbooking.payment.entity.Payment;
 import com.yuvan.busbooking.payment.entity.PaymentStatus;
 import com.yuvan.busbooking.payment.gateway.PaymentGateway;
@@ -366,6 +367,52 @@ public class PaymentService {
             tripSeat.setStatus(TripSeatStatus.AVAILABLE);
             tripSeat.setHeldUntil(null);
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<PaymentResponse> findAll() {
+        return paymentRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public PaymentResponse findById(Long id) {
+        Payment payment = paymentRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Payment not found with id: " + id
+                        )
+                );
+        return toResponse(payment);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        if (!paymentRepository.existsById(id)) {
+            throw new ResourceNotFoundException(
+                    "Payment not found with id: " + id
+            );
+        }
+        paymentRepository.deleteById(id);
+    }
+
+    private PaymentResponse toResponse(Payment payment) {
+        return new PaymentResponse(
+                payment.getId(),
+                payment.getBooking().getId(),
+                payment.getTransactionReference(),
+                payment.getStatus(),
+                payment.getPaymentMethod(),
+                payment.getAmount(),
+                payment.getCurrency(),
+                payment.getGatewayOrderId(),
+                payment.getGatewayPaymentId(),
+                payment.getFailureReason(),
+                payment.getCreatedAt(),
+                payment.getUpdatedAt()
+        );
     }
 
     private String generateTransactionReference() {

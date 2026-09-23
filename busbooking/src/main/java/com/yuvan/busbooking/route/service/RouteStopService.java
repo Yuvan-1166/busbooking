@@ -65,6 +65,16 @@ public class RouteStopService {
     }
 
     @Transactional(readOnly = true)
+    public List<RouteStopResponse> findAll() {
+
+        return routeStopRepository
+                .findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<RouteStopResponse> findByRoute(Long routeId) {
 
         if (!routeRepository.existsById(routeId)) {

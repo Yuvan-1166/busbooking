@@ -282,6 +282,78 @@ public class BookingService {
         return toResponse(booking);
     }
 
+    @Transactional
+    public BookingResponse updateBooking(Long bookingId, BookingRequest request) {
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Booking not found: " + bookingId
+                        )
+                );
+
+        Trip trip = tripRepository.findById(request.tripId())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Trip not found with id: " + request.tripId()
+                        )
+                );
+        
+        RouteStop pickupStop = routeStopRepository
+                .findByRouteIdAndLocationId(
+                        trip.getRoute().getId(),
+                        request.pickupLocationId()
+                )
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Pickup location is not a stop on this route"
+                        )
+                );
+
+        RouteStop dropStop = routeStopRepository
+                .findByRouteIdAndLocationId(
+                        trip.getRoute().getId(),
+                        request.dropLocationId()
+                )
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Drop location is not a stop on this route"
+                        )
+                );
+
+        if (pickupStop.getStopOrder() >= dropStop.getStopOrder()) {
+        throw new IllegalArgumentException(
+                "Drop location must come after pickup location"
+        );
+        }
+
+        BigDecimal totalAmount = pricingService.calculateFare(
+                trip,
+                pickupStop.getDistanceFromOriginKm(),
+                dropStop.getDistanceFromOriginKm(),
+                request.passengers().size()
+        );      
+
+        validateDuplicateSeats(request);
+
+        booking.setTrip(trip);
+        booking.setPickupLocation(pickupStop.getLocation());
+        booking.setDropLocation(dropStop.getLocation());
+        booking.setTotalAmount(totalAmount);
+
+        return toResponse(bookingRepository.save(booking));
+    }
+
+    public void deleteBooking(Long bookingId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                                .orElseThrow(
+                                        () -> new ResourceNotFoundException(
+                                                "Booking not found: " + bookingId
+                                        )
+                                );
+        bookingRepository.deleteById(booking.getId());
+    }
+
     private BookingResponse toResponse(Booking booking) {
 
         List<BookingPassengerResponse> passengers =

@@ -112,6 +112,15 @@ public class SeatService {
     }
 
     @Transactional(readOnly = true)
+    public List<SeatResponse> findAll() {
+
+        return seatRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<SeatResponse> findByBus(Long busId) {
 
         if (!busRepository.existsById(busId)) {

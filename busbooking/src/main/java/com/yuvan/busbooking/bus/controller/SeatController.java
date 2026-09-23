@@ -40,6 +40,13 @@ public class SeatController {
                 .body(seatService.createBatch(requests));
     }
 
+    @GetMapping
+    public ResponseEntity<List<SeatResponse>> findAll() {
+        return ResponseEntity.ok(
+                seatService.findAll()
+        );
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<SeatResponse> findById(
             @PathVariable Long id

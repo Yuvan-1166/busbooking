@@ -2,6 +2,7 @@ package com.yuvan.busbooking.booking.service;
 
 import com.yuvan.busbooking.booking.dto.BookingCancellationRequest;
 import com.yuvan.busbooking.booking.dto.CancellationResponse;
+import com.yuvan.busbooking.booking.dto.CancellationUpdateRequest;
 import com.yuvan.busbooking.booking.entity.Booking;
 import com.yuvan.busbooking.booking.entity.BookingPassenger;
 import com.yuvan.busbooking.booking.entity.BookingStatus;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 @Service
 public class CancellationService {
@@ -163,5 +165,59 @@ public class CancellationService {
                 cancellation.getRefundAmount(),
                 cancellation.getCancelledAt()
         );
+    }
+
+    @Transactional(readOnly = true)
+    public List<CancellationResponse> findAll() {
+        return cancellationRepository.findAll()
+                .stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public CancellationResponse findById(Long id) {
+        Cancellation cancellation = cancellationRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Cancellation not found with id: " + id
+                        )
+                );
+        return toResponse(cancellation);
+    }
+
+    @Transactional
+    public CancellationResponse update(
+            Long id,
+            CancellationUpdateRequest request
+    ) {
+        Cancellation cancellation = cancellationRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Cancellation not found with id: " + id
+                        )
+                );
+
+        if (request.reason() != null) {
+            cancellation.setReason(request.reason());
+        }
+
+        if (request.refundAmount() != null) {
+            cancellation.setRefundAmount(request.refundAmount());
+        }
+
+        return toResponse(
+                cancellationRepository.save(cancellation)
+        );
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        if (!cancellationRepository.existsById(id)) {
+            throw new ResourceNotFoundException(
+                    "Cancellation not found with id: " + id
+            );
+        }
+        cancellationRepository.deleteById(id);
     }
 }
