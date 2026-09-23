@@ -16,6 +16,7 @@ public record TripResponse(
         LocalTime departureTime,
         BigDecimal startingFare,
         TripStatus status,
+        LocalDateTime expiresAt,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {

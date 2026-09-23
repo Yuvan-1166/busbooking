@@ -57,6 +57,9 @@ public class Trip {
     @Column(nullable = false, length = 30)
     private TripStatus status;
 
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 

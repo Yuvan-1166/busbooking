@@ -12,6 +12,9 @@ export default function SearchForm({
   onSwap,
   onSubmit,
 }) {
+  const today = new Date();
+  const minDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+
   return (
     <form
       className="card relative z-20 mx-auto max-w-full shadow-lg"
@@ -87,6 +90,7 @@ export default function SearchForm({
             className="input"
             required
             type="date"
+            min={minDate}
             value={date}
             onChange={(event) => onDateChange(event.target.value)}
             disabled={loading}

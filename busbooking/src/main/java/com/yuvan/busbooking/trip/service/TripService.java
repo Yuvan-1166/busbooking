@@ -4,6 +4,8 @@ import com.yuvan.busbooking.bus.entity.Seat;
 import com.yuvan.busbooking.bus.repository.SeatRepository;
 import com.yuvan.busbooking.common.exception.ResourceNotFoundException;
 import com.yuvan.busbooking.common.util.SecurityUtils;
+import com.yuvan.busbooking.route.entity.RouteStop;
+import com.yuvan.busbooking.route.repository.RouteStopRepository;
 import com.yuvan.busbooking.trip.dto.TripRequest;
 import com.yuvan.busbooking.trip.dto.BulkTripRequest;
 import com.yuvan.busbooking.trip.dto.TripResponse;
@@ -23,30 +25,41 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @Transactional
 public class TripService {
+
+    private static final List<TripStatus> ACTIVE_STATUSES = List.of(
+            TripStatus.SCHEDULED,
+            TripStatus.BOARDING,
+            TripStatus.IN_PROGRESS
+    );
 
     private final TripRepository tripRepository;
     private final ScheduleRepository scheduleRepository;
     private final TripSeatRepository tripSeatRepository;
     private final SeatRepository seatRepository;
     private final UserRepository userRepository;
+    private final RouteStopRepository routeStopRepository;
 
     public TripService(
             TripRepository tripRepository,
             ScheduleRepository scheduleRepository,
             TripSeatRepository tripSeatRepository,
             SeatRepository seatRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            RouteStopRepository routeStopRepository
     ) {
         this.tripRepository = tripRepository;
         this.scheduleRepository = scheduleRepository;
         this.tripSeatRepository = tripSeatRepository;
         this.seatRepository = seatRepository;
         this.userRepository = userRepository;
+        this.routeStopRepository = routeStopRepository;
     }
 
     @Transactional
@@ -88,6 +101,8 @@ public TripResponse createTrip(TripRequest request) {
                     ? request.status()
                     : TripStatus.SCHEDULED
     );
+
+    trip.setExpiresAt(calculateExpirationTime(trip));
 
     trip = tripRepository.save(trip);
 
@@ -141,6 +156,7 @@ public TripResponse createTrip(TripRequest request) {
                     trip.setPricePerKm(schedule.getPricePerKm());
                     trip.setDepartureTime(schedule.getDepartureTime());
                     trip.setStatus(TripStatus.SCHEDULED);
+                    trip.setExpiresAt(calculateExpirationTime(trip));
 
                     trip = tripRepository.save(trip);
 
@@ -179,8 +195,15 @@ public TripResponse createTrip(TripRequest request) {
                         .toList();
         }
         else {
-                return tripRepository.findAll()
-                        .stream()
+                List<Trip> trips = tripRepository.findAll();
+
+                if (!SecurityUtils.hasRole(RoleName.ADMIN.toString())) {
+                        trips = trips.stream()
+                                .filter(this::isUpcoming)
+                                .toList();
+                }
+
+                return trips.stream()
                         .map(this::toResponse)
                         .toList();
         }
@@ -196,6 +219,16 @@ public TripResponse createTrip(TripRequest request) {
                         )
                 );
 
+        updateExpirationIfNecessary(trip);
+
+        if (!SecurityUtils.hasRole(RoleName.ADMIN.toString())
+                && !SecurityUtils.hasRole(RoleName.OPERATOR.toString())
+                && !isUpcoming(trip)) {
+                throw new ResourceNotFoundException(
+                        "Trip not found: " + id
+                );
+        }
+
         return toResponse(trip);
     }
 
@@ -206,7 +239,12 @@ public TripResponse createTrip(TripRequest request) {
     ) {
 
         return tripRepository
-                .findByRouteIdAndTripDate(routeId, date)
+                .findUpcomingByRouteIdAndTripDate(
+                        routeId,
+                        date,
+                        ACTIVE_STATUSES,
+                        LocalDateTime.now()
+                )
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -215,8 +253,16 @@ public TripResponse createTrip(TripRequest request) {
     @Transactional(readOnly = true)
     public List<TripResponse> findByBus(Long busId) {
 
-        return tripRepository.findByBusId(busId)
-                .stream()
+        List<Trip> trips = tripRepository.findByBusId(busId);
+
+        if (!SecurityUtils.hasRole(RoleName.ADMIN.toString())
+                && !SecurityUtils.hasRole(RoleName.OPERATOR.toString())) {
+                trips = trips.stream()
+                        .filter(this::isUpcoming)
+                        .toList();
+        }
+
+        return trips.stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -256,6 +302,8 @@ public TripResponse createTrip(TripRequest request) {
             trip.setStatus(request.status());
         }
 
+        trip.setExpiresAt(calculateExpirationTime(trip));
+
         return toResponse(tripRepository.save(trip));
     }
 
@@ -288,6 +336,47 @@ public TripResponse createTrip(TripRequest request) {
         // Note: Requires BookingRepository to have a method to find by trip
     }
 
+    private void updateExpirationIfNecessary(Trip trip) {
+
+        if (isActiveStatus(trip.getStatus())
+                        && trip.getExpiresAt() != null
+                        && !LocalDateTime.now().isBefore(trip.getExpiresAt())) {
+
+                trip.setStatus(TripStatus.COMPLETED);
+                tripRepository.save(trip);
+        }
+    }
+
+    private boolean isActiveStatus(TripStatus status) {
+        return status == TripStatus.SCHEDULED
+                || status == TripStatus.BOARDING
+                || status == TripStatus.IN_PROGRESS;
+    }
+
+    private boolean isUpcoming(Trip trip) {
+
+        return isActiveStatus(trip.getStatus())
+                && trip.getExpiresAt() != null
+                && trip.getExpiresAt()
+                        .isAfter(LocalDateTime.now());
+    }
+
+    private LocalDateTime calculateExpirationTime(Trip trip) {
+
+        LocalDateTime departureDateTime = LocalDateTime.of(
+                trip.getTripDate(),
+                trip.getDepartureTime());
+
+        return routeStopRepository
+                .findByRouteIdOrderByStopOrder(trip.getRoute().getId())
+                .stream()
+                .map(RouteStop::getArrivalOffsetMinutes)
+                .filter(Objects::nonNull)
+                .max(Integer::compareTo)
+                .map(departureDateTime::plusMinutes)
+                .orElse(departureDateTime);
+    }
+
     private TripResponse toResponse(Trip trip) {
 
         return new TripResponse(
@@ -299,6 +388,7 @@ public TripResponse createTrip(TripRequest request) {
                 trip.getDepartureTime(),
                 trip.getBaseFare(),
                 trip.getStatus(),
+                trip.getExpiresAt(),
                 trip.getCreatedAt(),
                 trip.getUpdatedAt()
         );
