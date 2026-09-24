@@ -1,43 +1,29 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { api } from "../../../api";
-import MetricCard from "../MetricCard";
-import { LoadingPage } from "../../common";
-import DateRangeFilter from "./DateRangeFilter";
-import TrendChart from "./TrendChart";
-import RankedBarList from "./RankedBarList";
-import PerformanceTable from "./PerformanceTable";
+import { useMemo, useState } from "react";
+import { useAnalytics } from "./useAnalytics";
+import AnalyticsHeader from "./components/AnalyticsHeader";
+import KpiGrid from "./components/KpiGrid";
+import ChartCard from "./components/ChartCard";
+import TrendChart from "./components/TrendChart";
+import RankedBarChart from "./components/RankedBarChart";
+import PerformancePanel from "./components/PerformancePanel";
+import AnalyticsSkeleton from "./components/AnalyticsSkeleton";
+import SegmentedControl from "./components/SegmentedControl";
 import {
   formatCount,
   formatCurrency,
-  formatFullDate,
   formatPercent,
 } from "../../../utils/format";
 
-const toISO = (date) => {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-};
-
-const defaultRange = () => {
-  const to = new Date();
-  const from = new Date();
-  from.setDate(to.getDate() - 29);
-  return { from: toISO(from), to: toISO(to) };
-};
-
 const revenueFormatter = (value) => formatCurrency(value, true);
-const compactCount = (value) => formatCount(value);
+const countFormatter = (value) => formatCount(value);
 
-const accent = {
-  primary: "bg-primary-500",
-  success: "bg-success-500",
-  info: "bg-info-500",
-  warning: "bg-warning-500",
-};
+const TREND_MODES = [
+  { key: "bookings", label: "Bookings", formatter: countFormatter, valueLabel: "Bookings" },
+  { key: "passengers", label: "Passengers", formatter: countFormatter, valueLabel: "Passengers" },
+  { key: "revenue", label: "Revenue", formatter: revenueFormatter, valueLabel: "Revenue" },
+];
 
-const icons = {
+const ICONS = {
   currency: {
     color: "success",
     node: (
@@ -104,372 +90,289 @@ const icons = {
   },
 };
 
+const routeColumns = [
+  {
+    key: "routeName",
+    label: "Route",
+    render: (row) => <span className="font-medium text-neutral-900">{row.routeName}</span>,
+  },
+  { key: "tripCount", label: "Trips", align: "right", render: (row) => formatCount(row.tripCount) },
+  { key: "bookingCount", label: "Bookings", align: "right", render: (row) => formatCount(row.bookingCount) },
+  { key: "passengerCount", label: "Passengers", align: "right", render: (row) => formatCount(row.passengerCount) },
+  { key: "occupancyRate", label: "Occupancy", align: "right", render: (row) => formatPercent(row.occupancyRate) },
+  { key: "revenue", label: "Revenue", align: "right", render: (row) => formatCurrency(row.revenue) },
+];
+
+const busColumns = [
+  {
+    key: "registrationNumber",
+    label: "Bus",
+    render: (row) => (
+      <div>
+        <div className="font-medium text-neutral-900">{row.registrationNumber}</div>
+        <div className="text-xs text-neutral-500">{row.model}</div>
+      </div>
+    ),
+  },
+  { key: "tripCount", label: "Trips", align: "right", render: (row) => formatCount(row.tripCount) },
+  { key: "bookingCount", label: "Bookings", align: "right", render: (row) => formatCount(row.bookingCount) },
+  { key: "passengerCount", label: "Passengers", align: "right", render: (row) => formatCount(row.passengerCount) },
+  { key: "occupancyRate", label: "Occupancy", align: "right", render: (row) => formatPercent(row.occupancyRate) },
+  { key: "revenue", label: "Revenue", align: "right", render: (row) => formatCurrency(row.revenue) },
+];
+
+const operatorColumns = [
+  {
+    key: "operatorName",
+    label: "Operator",
+    render: (row) => <span className="font-medium text-neutral-900">{row.operatorName}</span>,
+  },
+  { key: "busCount", label: "Buses", align: "right", render: (row) => formatCount(row.busCount) },
+  { key: "tripCount", label: "Trips", align: "right", render: (row) => formatCount(row.tripCount) },
+  { key: "bookingCount", label: "Bookings", align: "right", render: (row) => formatCount(row.bookingCount) },
+  { key: "passengerCount", label: "Passengers", align: "right", render: (row) => formatCount(row.passengerCount) },
+  { key: "occupancyRate", label: "Occupancy", align: "right", render: (row) => formatPercent(row.occupancyRate) },
+  { key: "revenue", label: "Revenue", align: "right", render: (row) => formatCurrency(row.revenue) },
+];
+
+const routeDetail = (row) =>
+  `${formatCount(row.tripCount)} trips · ${formatPercent(row.occupancyRate)} occupancy`;
+const busDetail = (row) =>
+  `${formatCount(row.tripCount)} trips · ${formatPercent(row.occupancyRate)} occupancy`;
+const operatorDetail = (row) =>
+  `${formatCount(row.busCount)} buses · ${formatCount(row.tripCount)} trips`;
+
 export default function AnalyticsPage({ role = "operator" }) {
-  const isAdmin = role === "admin";
-  const [range, setRange] = useState(defaultRange);
-  const [operatorId, setOperatorId] = useState("all");
-  const [operators, setOperators] = useState([]);
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const {
+    isAdmin,
+    range,
+    setRange,
+    setPreset,
+    operatorId,
+    setOperatorId,
+    operators,
+    data,
+    loading,
+    error,
+    reload,
+  } = useAnalytics(role);
 
-  useEffect(() => {
-    if (!isAdmin) return;
-    api
-      .getOperators()
-      .then(setOperators)
-      .catch(() => setOperators([]));
-  }, [isAdmin]);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const effectiveOperator =
-        isAdmin && operatorId !== "all" ? Number(operatorId) : undefined;
-      const payload = await api.getAnalytics(range.from, range.to, effectiveOperator);
-      setData(payload);
-    } catch (loadError) {
-      setError(loadError.message || "Failed to load analytics");
-    } finally {
-      setLoading(false);
-    }
-  }, [isAdmin, operatorId, range]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
+  const [trendKey, setTrendKey] = useState("bookings");
+  const trendMode = TREND_MODES.find((mode) => mode.key === trendKey) ?? TREND_MODES[0];
 
   const summary = data?.summary;
 
   const kpis = useMemo(() => {
     if (!summary) return [];
 
-    const cards = [
+    const core = [
       {
         label: "Total Revenue",
         value: formatCurrency(summary.totalRevenue, true),
         detail: `across ${formatCount(summary.totalBookings)} bookings`,
-        color: icons.currency.color,
-        icon: icons.currency.node,
+        icon: ICONS.currency.node,
+        color: ICONS.currency.color,
       },
       {
         label: "Bookings",
         value: formatCount(summary.totalBookings),
-        detail: `${summary.totalBookings > 0 ? formatCount(summary.totalBookings) : 0} confirmed`,
-        color: icons.ticket.color,
-        icon: icons.ticket.node,
+        detail: `${formatCount(summary.totalPassengers)} passengers`,
+        icon: ICONS.ticket.node,
+        color: ICONS.ticket.color,
       },
       {
         label: "Avg Occupancy",
         value: formatPercent(summary.averageOccupancy),
         detail: `${formatCount(summary.totalTickets)} tickets issued`,
-        color: icons.seat.color,
-        icon: icons.seat.node,
+        icon: ICONS.seat.node,
+        color: ICONS.seat.color,
       },
       {
         label: "Cancellations",
         value: formatCount(summary.totalCancellations),
         detail: `${formatCurrency(summary.refundedAmount, true)} refunded`,
-        color: icons.cancel.color,
-        icon: icons.cancel.node,
+        icon: ICONS.cancel.node,
+        color: ICONS.cancel.color,
       },
       {
         label: "Trips",
         value: formatCount(summary.totalTrips),
         detail: `${summary.completedTrips} completed · ${summary.scheduledTrips} scheduled`,
-        color: icons.trip.color,
-        icon: icons.trip.node,
+        icon: ICONS.trip.node,
+        color: ICONS.trip.color,
       },
       {
         label: "Fleet",
         value: formatCount(summary.totalBuses),
         detail: `${formatCount(summary.totalSeats)} seats total`,
-        color: icons.bus.color,
-        icon: icons.bus.node,
+        icon: ICONS.bus.node,
+        color: ICONS.bus.color,
       },
     ];
 
     if (isAdmin) {
-      cards.push(
+      core.push(
         {
           label: "New Users",
           value: formatCount(summary.newUsers ?? 0),
           detail: `${formatCount(summary.totalUsers ?? 0)} total users`,
-          color: icons.user.color,
-          icon: icons.user.node,
+          icon: ICONS.user.node,
+          color: ICONS.user.color,
         },
         {
           label: "Operators",
           value: formatCount(summary.totalOperators ?? 0),
           detail: `${formatCount(summary.totalRoutes ?? 0)} routes live`,
-          color: icons.operator.color,
-          icon: icons.operator.node,
+          icon: ICONS.operator.node,
+          color: ICONS.operator.color,
         },
       );
     }
-    return cards;
+
+    return core;
   }, [isAdmin, summary]);
 
-  const trendModes = useMemo(
-    () => [
-      { key: "bookings", label: "Bookings" },
-      { key: "passengers", label: "Passengers" },
-      { key: "revenue", label: "Revenue" },
-    ],
-    [],
-  );
-  const [trendMode, setTrendMode] = useState("bookings");
-  const trendFormatter =
-    trendMode === "revenue" ? revenueFormatter : compactCount;
+  const performanceTabs = useMemo(() => {
+    const tabs = [
+      {
+        key: "routes",
+        label: "Routes",
+        rows: data?.routePerformance ?? [],
+        columns: routeColumns,
+        emptyText: "No route activity in this period",
+      },
+      {
+        key: "buses",
+        label: "Buses",
+        rows: data?.busPerformance ?? [],
+        columns: busColumns,
+        emptyText: "No bus activity in this period",
+      },
+    ];
+    if (isAdmin) {
+      tabs.push({
+        key: "operators",
+        label: "Operators",
+        rows: data?.operatorPerformance ?? [],
+        columns: operatorColumns,
+        emptyText: "No operator activity in this period",
+      });
+    }
+    return tabs;
+  }, [data, isAdmin]);
 
-  const routeColumns = useMemo(
-    () => [
-      {
-        key: "routeName",
-        label: "Route",
-        render: (row) => <span className="font-medium text-neutral-900">{row.routeName}</span>,
-      },
-      { key: "tripCount", label: "Trips", align: "right", render: (row) => formatCount(row.tripCount) },
-      { key: "bookingCount", label: "Bookings", align: "right", render: (row) => formatCount(row.bookingCount) },
-      { key: "passengerCount", label: "Passengers", align: "right", render: (row) => formatCount(row.passengerCount) },
-      {
-        key: "occupancyRate",
-        label: "Occupancy",
-        align: "right",
-        render: (row) => formatPercent(row.occupancyRate),
-      },
-      { key: "revenue", label: "Revenue", align: "right", render: (row) => formatCurrency(row.revenue) },
-    ],
-    [],
-  );
-
-  const busColumns = useMemo(
-    () => [
-      {
-        key: "registrationNumber",
-        label: "Bus",
-        render: (row) => (
-          <span className="font-medium text-neutral-900">{row.registrationNumber}</span>
-        ),
-      },
-      { key: "tripCount", label: "Trips", align: "right", render: (row) => formatCount(row.tripCount) },
-      { key: "bookingCount", label: "Bookings", align: "right", render: (row) => formatCount(row.bookingCount) },
-      { key: "passengerCount", label: "Passengers", align: "right", render: (row) => formatCount(row.passengerCount) },
-      {
-        key: "occupancyRate",
-        label: "Occupancy",
-        align: "right",
-        render: (row) => formatPercent(row.occupancyRate),
-      },
-      { key: "revenue", label: "Revenue", align: "right", render: (row) => formatCurrency(row.revenue) },
-    ],
-    [],
-  );
-
-  const operatorColumns = useMemo(
-    () => [
-      {
-        key: "operatorName",
-        label: "Operator",
-        render: (row) => <span className="font-medium text-neutral-900">{row.operatorName}</span>,
-      },
-      { key: "busCount", label: "Buses", align: "right", render: (row) => formatCount(row.busCount) },
-      { key: "tripCount", label: "Trips", align: "right", render: (row) => formatCount(row.tripCount) },
-      { key: "bookingCount", label: "Bookings", align: "right", render: (row) => formatCount(row.bookingCount) },
-      { key: "passengerCount", label: "Passengers", align: "right", render: (row) => formatCount(row.passengerCount) },
-      {
-        key: "occupancyRate",
-        label: "Occupancy",
-        align: "right",
-        render: (row) => formatPercent(row.occupancyRate),
-      },
-      { key: "revenue", label: "Revenue", align: "right", render: (row) => formatCurrency(row.revenue) },
-    ],
-    [],
-  );
-
-  if (loading) {
-    return (
-      <LoadingPage
-        message="Loading Analytics"
-        subMessage="Aggregating bookings, trips, and revenue"
-        showLogo={false}
-      />
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="alert alert-error">
-        {error}
-        <button type="button" className="btn btn-sm btn-secondary ml-4" onClick={load}>
-          Retry
-        </button>
-      </div>
-    );
-  }
+  const trendModeOptions = TREND_MODES.map((mode) => ({
+    value: mode.key,
+    label: mode.label,
+  }));
 
   return (
-    <section className="space-y-6 py-6">
-      {/* Header + filters */}
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-semibold text-neutral-900">Analytics</h2>
-          <p className="mt-1 text-sm text-neutral-500">
-            {formatFullDate(data?.from)} – {formatFullDate(data?.to)}
-            {isAdmin && operatorId !== "all" ? " · filtered to one operator" : ""}
-          </p>
+    <section className="py-6">
+      <AnalyticsHeader
+        isAdmin={isAdmin}
+        range={range}
+        onRangeChange={setRange}
+        onPreset={setPreset}
+        operatorId={operatorId}
+        onOperatorChange={setOperatorId}
+        operators={operators}
+      />
+
+      {loading ? (
+        <AnalyticsSkeleton isAdmin={isAdmin} />
+      ) : error ? (
+        <div className="alert alert-error flex items-center justify-between">
+          <span>{error}</span>
+          <button type="button" className="btn btn-sm btn-secondary" onClick={reload}>
+            Retry
+          </button>
         </div>
-        <DateRangeFilter
-          from={range.from}
-          to={range.to}
-          onChange={(from, to) => setRange({ from, to })}
-        />
-      </div>
+      ) : (
+        <div className="space-y-6">
+          <KpiGrid items={kpis} />
 
-      {/* Operator filter (admin only) */}
-      {isAdmin && (
-        <label className="inline-flex items-center gap-2 text-sm font-medium text-neutral-600">
-          Operator scope
-          <select
-            className="select h-9"
-            value={operatorId}
-            onChange={(e) => setOperatorId(e.target.value)}
-          >
-            <option value="all">All operators</option>
-            {operators.map((operator) => (
-              <option key={operator.id} value={String(operator.id)}>
-                {operator.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
+          <div className={`grid gap-6 ${isAdmin ? "lg:grid-cols-5" : ""}`}>
+            <ChartCard
+              title="Bookings & Revenue Trend"
+              subtitle="Daily confirmed bookings, passengers and collections"
+              className={isAdmin ? "lg:col-span-3" : ""}
+              actions={
+                <SegmentedControl
+                  options={trendModeOptions}
+                  value={trendMode.key}
+                  onChange={setTrendKey}
+                />
+              }
+            >
+              <TrendChart
+                data={data?.trend ?? []}
+                valueKey={trendMode.key}
+                formatter={trendMode.formatter}
+                valueLabel={trendMode.valueLabel}
+              />
+            </ChartCard>
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-        {kpis.map((kpi) => (
-          <MetricCard key={kpi.label} {...kpi} />
-        ))}
-      </div>
-
-      {/* Trend chart */}
-      <div className="card p-5">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h3 className="text-lg font-semibold text-neutral-900">Bookings & Revenue Trend</h3>
-            <p className="text-xs text-neutral-500">Daily confirmed bookings and collections</p>
-          </div>
-          <div className="flex rounded-lg border border-neutral-200 bg-neutral-50 p-1">
-            {trendModes.map((mode) => (
-              <button
-                key={mode.key}
-                type="button"
-                className={`rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
-                  trendMode === mode.key
-                    ? "bg-white text-primary-600 shadow-sm"
-                    : "text-neutral-600 hover:text-neutral-900"
-                }`}
-                onClick={() => setTrendMode(mode.key)}
+            {isAdmin && (
+              <ChartCard
+                title="New User Signups"
+                subtitle="Accounts created per day"
+                className="lg:col-span-2"
               >
-                {mode.label}
-              </button>
-            ))}
+                <TrendChart
+                  data={data?.userGrowth ?? []}
+                  valueKey="count"
+                  formatter={countFormatter}
+                  valueLabel="Signups"
+                />
+              </ChartCard>
+            )}
           </div>
-        </div>
-        <TrendChart
-          data={data?.trend ?? []}
-          valueKey={trendMode}
-          formatter={trendFormatter}
-        />
-      </div>
 
-      {/* User growth (admin only) */}
-      {isAdmin && (
-        <div className="card p-5">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-neutral-900">New User Registrations</h3>
-            <p className="text-xs text-neutral-500">Accounts created per day</p>
-          </div>
-          <TrendChart data={data?.userGrowth ?? []} valueKey="count" formatter={compactCount} />
-        </div>
-      )}
+          <PerformancePanel tabs={performanceTabs} />
 
-      {/* Ranked lists */}
-      <div className={`grid gap-6 ${isAdmin ? "lg:grid-cols-3" : "lg:grid-cols-2"}`}>
-        <RankedPanel title="Top Routes" subtitle="By revenue">
-          <RankedBarList
-            items={data?.routePerformance ?? []}
-            valueOf={(row) => row.revenue}
-            labelOf={(row) => row.routeName}
-            subLabelOf={(row) => `${formatCount(row.tripCount)} trips · ${formatPercent(row.occupancyRate)} occupancy`}
-            formatter={revenueFormatter}
-            accent={accent.primary}
-          />
-        </RankedPanel>
-        <RankedPanel title="Top Buses" subtitle="By revenue">
-          <RankedBarList
-            items={data?.busPerformance ?? []}
-            valueOf={(row) => row.revenue}
-            labelOf={(row) => row.registrationNumber}
-            subLabelOf={(row) => `${formatCount(row.tripCount)} trips · ${formatPercent(row.occupancyRate)} occupancy`}
-            formatter={revenueFormatter}
-            accent={accent.success}
-          />
-        </RankedPanel>
-        {isAdmin && (
-          <RankedPanel title="Top Operators" subtitle="By revenue">
-            <RankedBarList
-              items={data?.operatorPerformance ?? []}
-              valueOf={(row) => row.revenue}
-              labelOf={(row) => row.operatorName}
-              subLabelOf={(row) => `${formatCount(row.busCount)} buses · ${formatCount(row.tripCount)} trips`}
-              formatter={revenueFormatter}
-              accent={accent.info}
-            />
-          </RankedPanel>
-        )}
-      </div>
+          <section>
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-neutral-500">
+              Top Performers
+            </h3>
+            <div className={`grid gap-6 ${isAdmin ? "lg:grid-cols-3" : "md:grid-cols-2"}`}>
+              <ChartCard title="Top Routes" subtitle="By revenue">
+                <RankedBarChart
+                  items={data?.routePerformance ?? []}
+                  valueOf={(row) => row.revenue}
+                  labelOf={(row) => row.routeName}
+                  detailOf={routeDetail}
+                  formatValue={revenueFormatter}
+                  color="bg-primary-500"
+                />
+              </ChartCard>
 
-      {/* Detailed tables */}
-      <div className="card p-5">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-neutral-900">Route Performance</h3>
-          <p className="text-xs text-neutral-500">Aggregated across the selected range</p>
-        </div>
-        <PerformanceTable rows={data?.routePerformance ?? []} columns={routeColumns} />
-      </div>
+              <ChartCard title="Top Buses" subtitle="By revenue">
+                <RankedBarChart
+                  items={data?.busPerformance ?? []}
+                  valueOf={(row) => row.revenue}
+                  labelOf={(row) => row.registrationNumber}
+                  detailOf={busDetail}
+                  formatValue={revenueFormatter}
+                  color="bg-success-500"
+                />
+              </ChartCard>
 
-      <div className="card p-5">
-        <div className="mb-4">
-          <h3 className="text-lg font-semibold text-neutral-900">Bus Performance</h3>
-          <p className="text-xs text-neutral-500">Aggregated across the selected range</p>
-        </div>
-        <PerformanceTable rows={data?.busPerformance ?? []} columns={busColumns} />
-      </div>
-
-      {isAdmin && (
-        <div className="card p-5">
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold text-neutral-900">Operator Performance</h3>
-            <p className="text-xs text-neutral-500">Aggregated across the selected range</p>
-          </div>
-          <PerformanceTable rows={data?.operatorPerformance ?? []} columns={operatorColumns} />
+              {isAdmin && (
+                <ChartCard title="Top Operators" subtitle="By revenue">
+                  <RankedBarChart
+                    items={data?.operatorPerformance ?? []}
+                    valueOf={(row) => row.revenue}
+                    labelOf={(row) => row.operatorName}
+                    detailOf={operatorDetail}
+                    formatValue={revenueFormatter}
+                    color="bg-info-500"
+                  />
+                </ChartCard>
+              )}
+            </div>
+          </section>
         </div>
       )}
     </section>
-  );
-}
-
-function RankedPanel({ title, subtitle, children }) {
-  return (
-    <div className="card p-5">
-      <div className="mb-4">
-        <h3 className="text-sm font-semibold text-neutral-900">{title}</h3>
-        <p className="text-xs text-neutral-500">{subtitle}</p>
-      </div>
-      {children}
-    </div>
   );
 }
