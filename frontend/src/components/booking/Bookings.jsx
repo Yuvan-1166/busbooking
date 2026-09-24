@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { LoadingPage } from "../common/Loading";
 import Pagination from "../common/Pagination";
@@ -15,6 +15,14 @@ const filters = [
   { value: "past", label: "Past bookings" },
 ];
 
+const SORT_OPTIONS = [
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+  { value: "amount-desc", label: "Amount: high to low" },
+  { value: "amount-asc", label: "Amount: low to high" },
+  { value: "reference", label: "Booking ref: A to Z" },
+];
+
 const TICKETS_PER_PAGE = 5;
 
 function isPast(ticket) {
@@ -23,59 +31,147 @@ function isPast(ticket) {
   );
 }
 
+function matchesQuery(ticket, query) {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  const haystack = [
+    ticket.bookingReference,
+    ticket.ticketNumber,
+    ticket.tripId,
+    ticket.routeName,
+    ticket.pickupLocationName,
+    ticket.dropLocationName,
+    ticket.operatorName,
+    ticket.busModel,
+    ticket.busRegistrationNumber,
+    ...(ticket.passengers || []).map((p) =>
+      [p.firstName, p.lastName].filter(Boolean).join(" "),
+    ),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(q);
+}
+
+function sortTickets(tickets, sort) {
+  const sorted = [...tickets];
+
+  const byTripDate = (a, b, direction) => {
+    const dateA = a.tripDate || (a.expiresAt || "").slice(0, 10);
+    const dateB = b.tripDate || (b.expiresAt || "").slice(0, 10);
+    return dateA.localeCompare(dateB) * direction || (a.id - b.id) * direction;
+  };
+
+  switch (sort) {
+    case "oldest":
+      return sorted.sort((a, b) => byTripDate(a, b, 1));
+    case "amount-desc":
+      return sorted.sort(
+        (a, b) => Number(b.totalAmount || 0) - Number(a.totalAmount || 0),
+      );
+    case "amount-asc":
+      return sorted.sort(
+        (a, b) => Number(a.totalAmount || 0) - Number(b.totalAmount || 0),
+      );
+    case "reference":
+      return sorted.sort((a, b) =>
+        String(a.bookingReference || "").localeCompare(
+          String(b.bookingReference || ""),
+        ),
+      );
+    case "newest":
+    default:
+      return sorted.sort((a, b) => byTripDate(a, b, -1));
+  }
+}
+
 export default function Bookings({ tickets, loading, onFind, onCancel }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [ticketAction, setTicketAction] = useState("details");
-  
+
   const selectedFilter = filters.some(
     (filter) => filter.value === searchParams.get("status"),
   )
     ? searchParams.get("status")
     : "all";
-  
-  const visibleTickets = useMemo(() => 
-    tickets.filter((ticket) =>
-      selectedFilter === "all"
-        ? true
-        : selectedFilter === "active"
-          ? !isPast(ticket)
-          : isPast(ticket),
-    ),
-    [tickets, selectedFilter]
+
+  const rawQuery = searchParams.get("q") || "";
+  const query = rawQuery.trim();
+
+  const sort = SORT_OPTIONS.some((option) => option.value === searchParams.get("sort"))
+    ? searchParams.get("sort")
+    : "newest";
+
+  // Set a query parameter, removing it when it equals the default/empty value.
+  const setParam = (key, value, options) => {
+    const next = { ...Object.fromEntries(searchParams.entries()) };
+    if (value == null || value === "" || value === "all" || value === "newest") {
+      delete next[key];
+    } else {
+      next[key] = String(value);
+    }
+    setSearchParams(next, options);
+  };
+
+  const selectFilter = (status) => setParam("status", status);
+
+  // Reset to page 1 whenever the visible set changes (filters, search, sort,
+  // or the underlying tickets), so filters stay consistent across pages.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [tickets, selectedFilter, query, sort]);
+
+  const statusFilteredTickets = useMemo(
+    () =>
+      tickets.filter((ticket) =>
+        selectedFilter === "all"
+          ? true
+          : selectedFilter === "active"
+            ? !isPast(ticket)
+            : isPast(ticket),
+      ),
+    [tickets, selectedFilter],
   );
 
-  // Calculate pagination
-  const totalPages = useMemo(
-    () => Math.ceil(visibleTickets.length / TICKETS_PER_PAGE),
-    [visibleTickets.length]
+  const searchedTickets = useMemo(
+    () => statusFilteredTickets.filter((ticket) => matchesQuery(ticket, query)),
+    [statusFilteredTickets, query],
   );
+
+  const filteredTickets = useMemo(
+    () => sortTickets(searchedTickets, sort),
+    [searchedTickets, sort],
+  );
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredTickets.length / TICKETS_PER_PAGE),
+  );
+  const safePage = Math.min(currentPage, totalPages);
 
   const paginatedTickets = useMemo(() => {
-    const startIndex = (currentPage - 1) * TICKETS_PER_PAGE;
-    const endIndex = startIndex + TICKETS_PER_PAGE;
-    return visibleTickets.slice(startIndex, endIndex);
-  }, [visibleTickets, currentPage]);
+    const startIndex = (safePage - 1) * TICKETS_PER_PAGE;
+    return filteredTickets.slice(startIndex, startIndex + TICKETS_PER_PAGE);
+  }, [filteredTickets, safePage]);
 
-  // Reset to page 1 when filter changes
-  useMemo(() => {
-    setCurrentPage(1);
-  }, [visibleTickets.length]);
-
-  const selectFilter = (status) => {
-    setSearchParams({ status });
-    setCurrentPage(1);
-  };
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const hasActiveCriteria = query !== "" || selectedFilter !== "all";
 
   const openTicket = (ticket, action = "details") => {
     setSelectedTicket(ticket);
     setTicketAction(action);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const clearFilters = () => {
+    setParam("q", "", { replace: true });
+    selectFilter("all");
   };
 
   return (
@@ -104,14 +200,14 @@ export default function Bookings({ tickets, loading, onFind, onCancel }) {
       </div>
 
       {/* Filter Tabs */}
-      <nav className="mb-6 flex gap-1 rounded-lg border border-neutral-200 bg-neutral-50 p-1" aria-label="Booking filters">
+      <nav className="mb-4 flex gap-1 rounded-lg border border-neutral-200 bg-neutral-50 p-1" aria-label="Booking filters">
         {filters.map((filter) => {
           const count = filter.value === "all"
             ? tickets.length
             : tickets.filter((ticket) =>
                 filter.value === "active" ? !isPast(ticket) : isPast(ticket)
               ).length;
-          
+
           return (
             <button
               className={`flex-1 rounded-md px-4 py-2.5 text-sm font-medium transition-all ${
@@ -135,16 +231,54 @@ export default function Bookings({ tickets, loading, onFind, onCancel }) {
         })}
       </nav>
 
+      {/* Search & order controls */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <label className="relative block w-full sm:max-w-xs">
+          <svg
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <input
+            type="search"
+            value={rawQuery}
+            onChange={(event) =>
+              setParam("q", event.target.value, { replace: true })
+            }
+            placeholder="       Search by ref, ticket, passenger, bus..."
+            className="input pl-9"
+          />
+        </label>
+
+        <label className="flex items-center gap-2">
+          <span className="text-sm text-neutral-600">Order by</span>
+          <select
+            className="select"
+            value={sort}
+            onChange={(event) => setParam("sort", event.target.value)}
+          >
+            {SORT_OPTIONS.map((option) => (
+              <option value={option.value} key={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
       {/* Content */}
       {loading ? (
         <LoadingPage message="Loading Bookings" subMessage="Fetching your ticket history" showLogo={false} />
-      ) : visibleTickets.length ? (
+      ) : filteredTickets.length ? (
         <>
           {/* Results Summary */}
           <div className="mb-6 flex items-center justify-between">
             <p className="text-sm text-neutral-600">
               Showing <span className="font-semibold text-neutral-900">{paginatedTickets.length}</span> of{" "}
-              <span className="font-semibold text-neutral-900">{visibleTickets.length}</span> bookings
+              <span className="font-semibold text-neutral-900">{filteredTickets.length}</span> bookings
             </p>
           </div>
 
@@ -163,7 +297,7 @@ export default function Bookings({ tickets, loading, onFind, onCancel }) {
           {totalPages > 1 && (
             <div className="mt-8">
               <Pagination
-                currentPage={currentPage}
+                currentPage={safePage}
                 totalPages={totalPages}
                 onPageChange={handlePageChange}
               />
@@ -178,22 +312,31 @@ export default function Bookings({ tickets, loading, onFind, onCancel }) {
             </svg>
           </div>
           <h2 className="mb-2 text-xl font-semibold text-neutral-900">
-            No bookings found
+            {hasActiveCriteria ? "No matching bookings" : "No bookings found"}
           </h2>
           <p className="mb-6 text-neutral-600">
-            {selectedFilter === "all"
-              ? "Start your journey by booking your first bus ticket"
-              : `You don't have any ${selectedFilter} bookings`}
+            {hasActiveCriteria
+              ? "No tickets match your current filters or search."
+              : "Start your journey by booking your first bus ticket"}
           </p>
-          <button
-            className="btn btn-primary"
-            onClick={onFind}
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            Find Buses
-          </button>
+          {hasActiveCriteria ? (
+            <button
+              className="btn btn-ghost"
+              onClick={clearFilters}
+            >
+              Clear filters
+            </button>
+          ) : (
+            <button
+              className="btn btn-primary"
+              onClick={onFind}
+            >
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              Find Buses
+            </button>
+          )}
         </div>
       )}
     </main>
@@ -266,6 +409,28 @@ function BookingTicket({ ticket, onOpen }) {
             </div>
           </div>
         </div>
+
+        {/* Operator & bus info */}
+        {(ticket.operatorName || ticket.busModel) && (
+          <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-neutral-600">
+            {ticket.operatorName && (
+              <span>
+                Operator: <span className="font-semibold text-neutral-900">{ticket.operatorName}</span>
+              </span>
+            )}
+            {ticket.busModel && (
+              <span>
+                Bus: <span className="font-semibold text-neutral-900">{ticket.busModel}</span>
+              </span>
+            )}
+            {ticket.pickupLocationName && ticket.dropLocationName && (
+              <span>
+                {ticket.pickupLocationName} <span className="text-neutral-400">→</span>{" "}
+                <span className="font-semibold text-neutral-900">{ticket.dropLocationName}</span>
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Expiration Info */}
         {ticket.expiresAt && (
