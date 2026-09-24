@@ -11,6 +11,11 @@ import {
   getTripStatusLabel,
   isTripCancellable,
 } from "../../utils/status";
+import {
+  INDIAN_PLATE_ERROR,
+  isValidIndianPlate,
+  normalizeIndianPlate,
+} from "../../utils/registrationPlate";
 import StateMessage from "../common/StateMessage";
 import Pagination from "../common/Pagination";
 import { LoadingPage } from "../common/Loading";
@@ -142,16 +147,24 @@ export default function OperatorDashboard() {
   // ── Bus CRUD Operations ────────────────────────────────────────────────────
   const saveBus = async (event) => {
     event.preventDefault();
-    setSaving("Bus");
     setError("");
     setMessage("");
+
+    const registrationNumber = normalizeIndianPlate(busForm.registrationNumber);
+    if (!isValidIndianPlate(busForm.registrationNumber)) {
+      setError(INDIAN_PLATE_ERROR);
+      return;
+    }
+
+    const payload = { ...busForm, registrationNumber };
+    setSaving("Bus");
     try {
       if (editingBusId) {
-        await api.updateBus(editingBusId, busForm);
+        await api.updateBus(editingBusId, payload);
         setMessage("Bus updated successfully.");
         setEditingBusId(null);
       } else {
-        await api.createBus(busForm);
+        await api.createBus(payload);
         setMessage("Bus created successfully.");
       }
       setBusForm(emptyBus);
@@ -785,10 +798,13 @@ const BusesView = ({
               required
               value={busForm.registrationNumber}
               onChange={(e) =>
-                onBusChange("registrationNumber", e.target.value)
+                onBusChange(
+                  "registrationNumber",
+                  e.target.value.toUpperCase(),
+                )
               }
               className="input"
-              placeholder="e.g., KA-01-AB-1234"
+              placeholder="e.g., KA 01 AB 1234"
             />
           </div>
 
