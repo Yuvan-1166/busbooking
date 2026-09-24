@@ -1,7 +1,45 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../../auth/AuthContext";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const { session, hasRole } = useAuth();
+
+  const isAdmin = hasRole("ADMIN");
+  const isOperator = hasRole("OPERATOR");
+  const isPassenger = hasRole("PASSENGER");
+
+  const platformLinks = [];
+  if (isAdmin) {
+    platformLinks.push(
+      { to: "/admin", label: "Dashboard" },
+      { to: "/admin/users", label: "Users" },
+      { to: "/admin/locations", label: "Locations" },
+      { to: "/admin/routes", label: "Routes" },
+    );
+  }
+  if (isOperator) {
+    platformLinks.push(
+      { to: "/operator", label: "Dashboard" },
+      { to: "/operator/buses", label: "Buses" },
+      { to: "/operator/seats", label: "Seat Layouts" },
+      { to: "/operator/schedules", label: "Schedules" },
+      { to: "/operator/trips", label: "Trips" },
+    );
+  }
+  if (isPassenger || !session) {
+    platformLinks.push(
+      { to: "/", label: "Search Buses" },
+      { to: "/bookings", label: "My Bookings" },
+      { to: "/profile", label: "My Profile" },
+    );
+  }
+
+  const description = isOperator
+    ? "Manage your buses, seats, schedules, and trips across your fleet."
+    : isAdmin
+      ? "Manage users, locations, and routes across the BusBooking platform."
+      : "Find buses, book your seats, and manage all your journeys in one place.";
 
   return (
     <footer className="border-t border-neutral-200 bg-white">
@@ -10,7 +48,10 @@ export default function Footer() {
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           {/* Brand */}
           <div className="max-w-xs">
-            <Link to="/" className="inline-flex items-center gap-3">
+            <Link
+              to={isAdmin ? "/admin" : isOperator ? "/operator" : "/"}
+              className="inline-flex items-center gap-3"
+            >
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-600 text-white shadow-sm">
                 <svg
                   className="h-5 w-5"
@@ -31,15 +72,18 @@ export default function Footer() {
                   BusBooking
                 </div>
                 <div className="text-[11px] text-neutral-500">
-                  Your Journey, Simplified.
+                  {isOperator
+                    ? "Operator Control Center"
+                    : isAdmin
+                      ? "Admin Control Center"
+                      : "Your Journey, Simplified."}
                 </div>
               </div>
             </Link>
 
             <div className="pt-6">
               <p className="max-w-sm text-xs leading-relaxed text-neutral-500">
-                Find buses, book your seats, and manage all your journeys in one
-                place.
+                {description}
               </p>
             </div>
           </div>
@@ -52,26 +96,15 @@ export default function Footer() {
               </h4>
 
               <div className="space-y-1.5">
-                <Link
-                  to="/"
-                  className="block text-sm text-neutral-500 transition-colors hover:text-primary-600"
-                >
-                  Search Buses
-                </Link>
-
-                <Link
-                  to="/bookings"
-                  className="block text-sm text-neutral-500 transition-colors hover:text-primary-600"
-                >
-                  My Bookings
-                </Link>
-
-                <Link
-                  to="/profile"
-                  className="block text-sm text-neutral-500 transition-colors hover:text-primary-600"
-                >
-                  My Profile
-                </Link>
+                {platformLinks.map((link) => (
+                  <Link
+                    key={link.to + link.label}
+                    to={link.to}
+                    className="block text-sm text-neutral-500 transition-colors hover:text-primary-600"
+                  >
+                    {link.label}
+                  </Link>
+                ))}
               </div>
             </div>
 
