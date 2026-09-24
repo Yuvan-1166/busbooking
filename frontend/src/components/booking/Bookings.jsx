@@ -2,6 +2,12 @@ import { useState, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { LoadingPage } from "../common/Loading";
 import Pagination from "../common/Pagination";
+import TicketDetailDrawer from "./TicketDetailDrawer";
+import {
+  getTicketStatus,
+  getTicketStatusConfig,
+  isTicketCancellable,
+} from "../../utils/status";
 
 const filters = [
   { value: "all", label: "All bookings" },
@@ -10,13 +16,6 @@ const filters = [
 ];
 
 const TICKETS_PER_PAGE = 5;
-
-function getTicketStatus(ticket) {
-  if (ticket?.ticketStatus) return ticket.ticketStatus.toLowerCase();
-  return ticket?.expiresAt && new Date(ticket.expiresAt) <= new Date()
-    ? "expired"
-    : "active";
-}
 
 function isPast(ticket) {
   return ["expired", "used", "cancelled"].includes(
@@ -27,6 +26,8 @@ function isPast(ticket) {
 export default function Bookings({ tickets, loading, onFind, onCancel }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [ticketAction, setTicketAction] = useState("details");
   
   const selectedFilter = filters.some(
     (filter) => filter.value === searchParams.get("status"),
@@ -72,8 +73,21 @@ export default function Bookings({ tickets, loading, onFind, onCancel }) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const openTicket = (ticket, action = "details") => {
+    setSelectedTicket(ticket);
+    setTicketAction(action);
+  };
+
   return (
     <main className="w-full mx-auto mb-20 mt-8 min-h-screen max-w-6xl px-4 sm:px-6">
+      {/* Ticket Detail Drawer */}
+      <TicketDetailDrawer
+        key={`${selectedTicket?.id}-${ticketAction}`}
+        ticket={selectedTicket}
+        onClose={() => setSelectedTicket(null)}
+        onCancel={onCancel}
+        initialAction={ticketAction}
+      />
       {/* Header */}
       <div className="mb-8">
         <div className="mb-2 flex items-center gap-2">
@@ -137,7 +151,11 @@ export default function Bookings({ tickets, loading, onFind, onCancel }) {
           {/* Ticket Cards Grid */}
           <div className="grid gap-4">
             {paginatedTickets.map((ticket) => (
-              <BookingTicket ticket={ticket} key={ticket.id} onCancel={onCancel} />
+              <BookingTicket
+                ticket={ticket}
+                key={ticket.id}
+                onOpen={openTicket}
+              />
             ))}
           </div>
 
@@ -182,40 +200,25 @@ export default function Bookings({ tickets, loading, onFind, onCancel }) {
   );
 }
 
-function BookingTicket({ ticket, onCancel }) {
-  const [cancelling, setCancelling] = useState(false);
-  const [reason, setReason] = useState("");
-  const [cancelError, setCancelError] = useState("");
-  const [refund, setRefund] = useState(null);
-  const [showCancellation, setShowCancellation] = useState(false);
+function BookingTicket({ ticket, onOpen }) {
   const status = getTicketStatus(ticket);
-
-  const submitCancellation = async (event) => {
-    event.preventDefault();
-    setCancelling(true);
-    setCancelError("");
-    try {
-      const response = await onCancel(ticket, reason.trim());
-      setRefund(response?.refundAmount ?? null);
-      setReason("");
-    } catch (error) {
-      setCancelError(error.message);
-    } finally {
-      setCancelling(false);
-    }
-  };
-
-  const statusConfig = {
-    active: { color: "badge-success", icon: "✓", text: "Active" },
-    expired: { color: "badge-warning", icon: "⏱", text: "Expired" },
-    used: { color: "badge-neutral", icon: "✓", text: "Used" },
-    cancelled: { color: "badge-error", icon: "✕", text: "Cancelled" },
-  };
-
+  const statusConfig = getTicketStatusConfig();
   const currentStatus = statusConfig[status] || statusConfig.active;
+  const cancellable = isTicketCancellable(ticket);
 
   return (
-    <article className="card card-hover overflow-hidden">
+    <article
+      className="card card-hover cursor-pointer overflow-hidden transition-smooth hover-lift"
+      onClick={() => onOpen(ticket, "details")}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpen(ticket, "details");
+        }
+      }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between border-b border-neutral-200 bg-neutral-50 px-6 py-3">
         <div className="flex items-center gap-3">
@@ -277,97 +280,25 @@ function BookingTicket({ ticket, onCancel }) {
         )}
       </div>
 
-      {/* Cancel Button */}
-      {status === "active" && ticket.bookingId && !showCancellation && (
-        <div className="border-t border-neutral-200 px-6 py-4 text-right">
+      {/* Actions */}
+      <div className="flex items-center justify-between border-t border-neutral-200 px-6 py-4">
+        <span className="text-xs text-neutral-500">Click to view details</span>
+        {cancellable && (
           <button
             className="btn-ghost text-error-600 hover:bg-error-50"
             type="button"
-            onClick={() => setShowCancellation(true)}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpen(ticket, "cancel");
+            }}
           >
             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
             Cancel Booking
           </button>
-        </div>
-      )}
-
-      {/* Cancellation Form */}
-      {status === "active" && ticket.bookingId && showCancellation && (
-        <form className="border-t border-warning-200 bg-warning-50 p-6" onSubmit={submitCancellation}>
-          <div className="mb-4">
-            <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-warning-900">
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-              Cancel this booking?
-            </div>
-            <p className="text-sm text-warning-800">
-              Your payment will be refunded after the cancellation is confirmed by the server.
-            </p>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">
-              Reason for cancellation <span className="text-neutral-500">(optional)</span>
-            </label>
-            <textarea
-              className="input min-h-[80px] resize-y"
-              maxLength="500"
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              placeholder="Let us know why you're cancelling..."
-              disabled={cancelling}
-            />
-          </div>
-
-          {cancelError && (
-            <div className="alert alert-error mb-4">
-              {cancelError}
-            </div>
-          )}
-
-          <div className="flex gap-3">
-            <button 
-              className="btn btn-danger" 
-              disabled={cancelling} 
-              type="submit"
-            >
-              {cancelling ? (
-                <>
-                  <span className="spinner"></span>
-                  Cancelling...
-                </>
-              ) : (
-                "Confirm Cancellation"
-              )}
-            </button>
-            {!cancelling && (
-              <button
-                className="btn btn-ghost"
-                type="button"
-                onClick={() => {
-                  setShowCancellation(false);
-                  setCancelError("");
-                }}
-              >
-                Keep Booking
-              </button>
-            )}
-          </div>
-        </form>
-      )}
-
-      {/* Refund Success */}
-      {refund !== null && (
-        <div className="alert alert-success border-t-0 rounded-t-none">
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Booking cancelled successfully. Refund initiated: <strong>{formatCurrency(refund)}</strong>
-        </div>
-      )}
+        )}
+      </div>
     </article>
   );
 }

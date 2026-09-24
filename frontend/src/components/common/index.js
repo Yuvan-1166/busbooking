@@ -31,6 +31,7 @@ export {
 
 // Feedback Components
 export { default as Modal } from './Modal'
+export { default as RightDrawer } from './RightDrawer'
 export { default as StateMessage } from './StateMessage'
 export { default as Pagination } from './Pagination'
 

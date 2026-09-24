@@ -2,13 +2,22 @@ import { cloneElement, useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api";
 import { parseApiError, getErrorMessage } from "../../utils/errorHandler";
-import { generateTripDates, validateTripGeneration } from "../../utils/tripGeneration";
+import {
+  generateTripDates,
+  validateTripGeneration,
+} from "../../utils/tripGeneration";
+import {
+  getTripStatusBadgeClass,
+  getTripStatusLabel,
+  isTripCancellable,
+} from "../../utils/status";
 import StateMessage from "../common/StateMessage";
 import Pagination from "../common/Pagination";
 import { LoadingPage } from "../common/Loading";
 import MetricCard from "./MetricCard";
 import SeatsWorkspace from "./SeatsWorkspace";
 import ScheduleFormModal from "./ScheduleFormModal";
+import TripDetailDrawer from "./TripDetailDrawer";
 import FilterBar from "./FilterBar";
 
 const emptyBus = {
@@ -68,20 +77,6 @@ const busOptions = (buses) =>
     value: String(bus.id),
     label: `${bus.model} • ${bus.registrationNumber}`,
   }));
-
-const getTripStatusBadgeClass = (status) => {
-  switch (status) {
-    case "CANCELLED":
-      return "badge-error";
-    case "COMPLETED":
-      return "badge-neutral";
-    case "BOARDING":
-    case "IN_PROGRESS":
-      return "badge-info";
-    default:
-      return "badge-success";
-  }
-};
 
 export default function OperatorDashboard() {
   const [buses, setBuses] = useState([]);
@@ -176,7 +171,11 @@ export default function OperatorDashboard() {
   };
 
   const deleteBus = async (busId) => {
-    if (!window.confirm("Are you sure you want to delete this bus? All associated schedules and trips will be affected.")) {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this bus? All associated schedules and trips will be affected.",
+      )
+    ) {
       return;
     }
     setSaving("Bus");
@@ -206,7 +205,7 @@ export default function OperatorDashboard() {
       const validationErrors = validateTripGeneration(
         scheduleForm.effectiveFrom,
         scheduleForm.effectiveUntil,
-        scheduleForm.operatingDays
+        scheduleForm.operatingDays,
       );
 
       if (validationErrors.length > 0) {
@@ -219,7 +218,7 @@ export default function OperatorDashboard() {
       const tripDates = generateTripDates(
         scheduleForm.effectiveFrom,
         scheduleForm.effectiveUntil,
-        scheduleForm.operatingDays
+        scheduleForm.operatingDays,
       );
 
       const scheduleData = {
@@ -241,11 +240,13 @@ export default function OperatorDashboard() {
       let createdSchedule;
       if (editingScheduleId) {
         await api.updateSchedule(editingScheduleId, scheduleData);
-        setMessage(`Schedule updated. ${tripDates.length} trips ready for publishing.`);
+        setMessage(
+          `Schedule updated. ${tripDates.length} trips ready for publishing.`,
+        );
         setEditingScheduleId(null);
       } else {
         createdSchedule = await api.createSchedule(scheduleData);
-        
+
         // Bulk create trips
         if (tripDates.length > 0) {
           try {
@@ -254,14 +255,14 @@ export default function OperatorDashboard() {
               tripDates: tripDates,
             });
             setMessage(
-              `Schedule created successfully! ${tripDates.length} trips published.`
+              `Schedule created successfully! ${tripDates.length} trips published.`,
             );
           } catch (tripError) {
             // Schedule created but trip bulk creation failed
             const appError = parseApiError(tripError);
             console.error("Bulk trip creation failed:", appError);
             setMessage(
-              `Schedule created but only ${tripDates.length} trips are pending. Please try publishing them individually.`
+              `Schedule created but only ${tripDates.length} trips are pending. Please try publishing them individually.`,
             );
             setError(getErrorMessage(appError));
           }
@@ -287,7 +288,11 @@ export default function OperatorDashboard() {
   };
 
   const deleteSchedule = async (scheduleId) => {
-    if (!window.confirm("Are you sure you want to delete this schedule? All associated trips will be deleted.")) {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this schedule? All associated trips will be deleted.",
+      )
+    ) {
       return;
     }
     setSaving("Schedule");
@@ -317,57 +322,20 @@ export default function OperatorDashboard() {
     }));
   };
 
-  // ── Trip CRUD Operations ───────────────────────────────────────────────────
-  const saveTrip = async (event) => {
-    event.preventDefault();
+  // ── Trip Operations ───────────────────────────────────────────────────────
+  const updateTripRequest = async (tripId, tripPayload) => {
     setSaving("Trip");
     setError("");
     setMessage("");
     try {
-      const tripData = {
-        scheduleId: Number(tripForm.scheduleId),
-        tripDate: tripForm.tripDate,
-      };
-
-      if (editingTripId) {
-        await api.updateTrip(editingTripId, tripData);
-        setMessage("Trip updated successfully.");
-        setEditingTripId(null);
-      } else {
-        await api.createTrip(tripData);
-        setMessage("Trip created successfully.");
-      }
-      setTripForm(emptyTrip);
+      await api.updateTrip(tripId, tripPayload);
+      setMessage("Trip updated successfully.");
       await loadData();
     } catch (saveError) {
       const appError = parseApiError(saveError);
       setError(getErrorMessage(appError));
-      console.error("Trip save failed:", appError);
-    } finally {
-      setSaving("");
-    }
-  };
-
-  const editTrip = (trip) => {
-    setTripForm(trip);
-    setEditingTripId(trip.id);
-  };
-
-  const deleteTrip = async (tripId) => {
-    if (!window.confirm("Are you sure you want to delete this trip? Passengers with bookings will be affected.")) {
-      return;
-    }
-    setSaving("Trip");
-    setError("");
-    setMessage("");
-    try {
-      await api.deleteTrip(tripId);
-      setMessage("Trip deleted successfully.");
-      await loadData();
-    } catch (deleteError) {
-      const appError = parseApiError(deleteError);
-      setError(getErrorMessage(appError));
-      console.error("Trip delete failed:", appError);
+      console.error("Trip update failed:", appError);
+      throw appError;
     } finally {
       setSaving("");
     }
@@ -378,7 +346,9 @@ export default function OperatorDashboard() {
     setMessage("");
     try {
       await api.cancelTrip(tripId, cancellationReason);
-      setMessage("Trip cancelled successfully. All passengers have been refunded.");
+      setMessage(
+        "Trip cancelled successfully. All passengers have been refunded.",
+      );
       await loadData();
     } catch (cancelError) {
       const appError = parseApiError(cancelError);
@@ -430,8 +400,7 @@ export default function OperatorDashboard() {
   };
   const updateSeat = (seatId, payload) =>
     saveSeat(() => api.updateSeat(seatId, payload), "Seat");
-  const deleteSeat = (seatId) =>
-    saveSeat(() => api.deleteSeat(seatId), "Seat");
+  const deleteSeat = (seatId) => saveSeat(() => api.deleteSeat(seatId), "Seat");
 
   return (
     <main className="w-full mx-auto mb-20 min-h-screen max-w-7xl px-4 sm:px-6">
@@ -446,66 +415,126 @@ export default function OperatorDashboard() {
               Manage Your Fleet
             </h1>
             <p className="max-w-md text-neutral-700">
-              Set up buses, add seats, create schedules, and publish trips to passengers.
+              Set up buses, add seats, create schedules, and publish trips to
+              passengers.
             </p>
           </div>
           <div className="card flex h-32 w-32 flex-col items-center justify-center bg-white text-center max-[768px]:ml-auto">
-            <div className="mb-1 text-sm font-medium text-neutral-600">Total Buses</div>
-            <div className="text-4xl font-bold text-primary-600">{buses.length}</div>
+            <div className="mb-1 text-sm font-medium text-neutral-600">
+              Total Buses
+            </div>
+            <div className="text-4xl font-bold text-primary-600">
+              {buses.length}
+            </div>
             <div className="text-xs text-neutral-500">registered</div>
           </div>
         </div>
       </section>
 
       {/* Navigation Tabs */}
-      <nav className="mb-6 flex gap-1 rounded-lg border border-neutral-200 bg-neutral-50 p-1" aria-label="Dashboard sections">
-        <NavTab active={view === "overview"} onClick={() => setView("overview")}>
-          <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      <nav
+        className="mb-6 flex gap-1 rounded-lg border border-neutral-200 bg-neutral-50 p-1"
+        aria-label="Dashboard sections"
+      >
+        <NavTab
+          active={view === "overview"}
+          onClick={() => setView("overview")}
+        >
+          <svg
+            className="mb-1 inline-block h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            />
           </svg>
           Overview
         </NavTab>
         <NavTab active={view === "buses"} onClick={() => setView("buses")}>
-          <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          <svg
+            className="mb-1 inline-block h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+            />
           </svg>
           Buses
         </NavTab>
         <NavTab active={view === "seats"} onClick={() => setView("seats")}>
-          <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+          <svg
+            className="mb-1 inline-block h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+            />
           </svg>
           Seats
         </NavTab>
-        <NavTab active={view === "schedules"} onClick={() => setView("schedules")}>
-          <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        <NavTab
+          active={view === "schedules"}
+          onClick={() => setView("schedules")}
+        >
+          <svg
+            className="mb-1 inline-block h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
           </svg>
           Schedules
         </NavTab>
         <NavTab active={view === "trips"} onClick={() => setView("trips")}>
-          <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="mb-1 inline-block h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           Trips
         </NavTab>
       </nav>
 
       {/* Alerts */}
-      {error && (
-        <div className="alert alert-error mb-6">
-          {error}
-        </div>
-      )}
-      {message && (
-        <div className="alert alert-success mb-6">
-          {message}
-        </div>
-      )}
+      {error && <div className="alert alert-error mb-6">{error}</div>}
+      {message && <div className="alert alert-success mb-6">{message}</div>}
 
       {/* Content */}
       {loading ? (
-        <LoadingPage message="Loading Dashboard" subMessage="Setting up your operator workspace" showLogo={false} />
+        <LoadingPage
+          message="Loading Dashboard"
+          subMessage="Setting up your operator workspace"
+          showLogo={false}
+        />
       ) : (
         <>
           {view === "overview" && (
@@ -522,7 +551,9 @@ export default function OperatorDashboard() {
               buses={buses}
               busForm={busForm}
               editingBusId={editingBusId}
-              onBusChange={(field, value) => setBusForm(prev => ({ ...prev, [field]: value }))}
+              onBusChange={(field, value) =>
+                setBusForm((prev) => ({ ...prev, [field]: value }))
+              }
               onSaveBus={saveBus}
               onEditBus={editBus}
               onDeleteBus={deleteBus}
@@ -551,7 +582,9 @@ export default function OperatorDashboard() {
               buses={buses}
               scheduleForm={scheduleForm}
               editingScheduleId={editingScheduleId}
-              onScheduleChange={(field, value) => setScheduleForm(prev => ({ ...prev, [field]: value }))}
+              onScheduleChange={(field, value) =>
+                setScheduleForm((prev) => ({ ...prev, [field]: value }))
+              }
               onOperatingDayChange={handleOperatingDayChange}
               onSaveSchedule={saveSchedule}
               onEditSchedule={editSchedule}
@@ -571,7 +604,7 @@ export default function OperatorDashboard() {
             />
           )}
           {view === "trips" && (
-            <TripsViewReadOnly
+            <TripsView
               trips={trips}
               schedules={schedules}
               routes={routes}
@@ -580,6 +613,8 @@ export default function OperatorDashboard() {
               tripsPage={tripsPage}
               onTripsPageChange={setTripsPage}
               onCancelTrip={cancelTrip}
+              onUpdateTrip={updateTripRequest}
+              updating={saving === "Trip"}
             />
           )}
         </>
@@ -605,15 +640,27 @@ const NavTab = ({ active, onClick, children }) => (
 // ── Overview Component ────────────────────────────────────────────────────
 const Overview = ({ buses, seats, schedules, trips, setView }) => (
   <section className="py-6">
-    <h2 className="mb-6 text-2xl font-semibold text-neutral-900">Dashboard Overview</h2>
+    <h2 className="mb-6 text-2xl font-semibold text-neutral-900">
+      Dashboard Overview
+    </h2>
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
       <MetricCard
         label="Buses"
         value={buses.length}
         onClick={() => setView("buses")}
         icon={
-          <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+          <svg
+            className="h-8 w-8"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+            />
           </svg>
         }
         color="primary"
@@ -623,8 +670,18 @@ const Overview = ({ buses, seats, schedules, trips, setView }) => (
         value={seats.length}
         onClick={() => setView("seats")}
         icon={
-          <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+          <svg
+            className="h-8 w-8"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+            />
           </svg>
         }
         color="success"
@@ -634,8 +691,18 @@ const Overview = ({ buses, seats, schedules, trips, setView }) => (
         value={schedules.length}
         onClick={() => setView("schedules")}
         icon={
-          <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <svg
+            className="h-8 w-8"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
           </svg>
         }
         color="warning"
@@ -645,8 +712,18 @@ const Overview = ({ buses, seats, schedules, trips, setView }) => (
         value={trips.length}
         onClick={() => setView("trips")}
         icon={
-          <svg className="h-8 w-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="h-8 w-8"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
         }
         color="info"
@@ -699,7 +776,7 @@ const BusesView = ({
         <h3 className="mb-6 text-lg font-semibold text-neutral-900">
           {editingBusId ? "Edit Bus" : "Add New Bus"}
         </h3>
-        
+
         <div className="space-y-4">
           <div className="form-group">
             <label className="form-label">Registration Number *</label>
@@ -707,7 +784,9 @@ const BusesView = ({
               type="text"
               required
               value={busForm.registrationNumber}
-              onChange={(e) => onBusChange("registrationNumber", e.target.value)}
+              onChange={(e) =>
+                onBusChange("registrationNumber", e.target.value)
+              }
               className="input"
               placeholder="e.g., KA-01-AB-1234"
             />
@@ -773,8 +852,10 @@ const BusesView = ({
                   <span className="spinner"></span>
                   Saving...
                 </>
+              ) : editingBusId ? (
+                "Update Bus"
               ) : (
-                editingBusId ? "Update Bus" : "Create Bus"
+                "Create Bus"
               )}
             </button>
             {editingBusId && (
@@ -805,19 +886,28 @@ const BusesView = ({
               label: "Bus Type",
               value: busType,
               onChange: setBusType,
-              options: toSelectOptions(uniqueValues(buses, "busType"), formatEnumLabel),
+              options: toSelectOptions(
+                uniqueValues(buses, "busType"),
+                formatEnumLabel,
+              ),
             },
             {
               label: "Deck",
               value: deckType,
               onChange: setDeckType,
-              options: toSelectOptions(uniqueValues(buses, "deckType"), (value) => `${formatEnumLabel(value)} Deck`),
+              options: toSelectOptions(
+                uniqueValues(buses, "deckType"),
+                (value) => `${formatEnumLabel(value)} Deck`,
+              ),
             },
             {
               label: "Status",
               value: status,
               onChange: setStatus,
-              options: toSelectOptions(uniqueValues(buses, "status"), formatEnumLabel),
+              options: toSelectOptions(
+                uniqueValues(buses, "status"),
+                formatEnumLabel,
+              ),
             },
           ]}
           onClear={clearFilters}
@@ -828,11 +918,23 @@ const BusesView = ({
         {filteredBuses.length === 0 ? (
           <div className="rounded-lg border-2 border-dashed border-neutral-300 bg-neutral-50 p-8 text-center">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-neutral-200">
-              <svg className="h-6 w-6 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              <svg
+                className="h-6 w-6 text-neutral-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                />
               </svg>
             </div>
-            <p className="text-sm text-neutral-600">No buses match your filters. Adjust the search or clear filters.</p>
+            <p className="text-sm text-neutral-600">
+              No buses match your filters. Adjust the search or clear filters.
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -842,24 +944,37 @@ const BusesView = ({
                 className="card card-hover flex items-center justify-between"
               >
                 <div>
-                  <h4 className="mb-1 font-semibold text-neutral-900">{bus.model}</h4>
+                  <h4 className="mb-1 font-semibold text-neutral-900">
+                    {bus.model}
+                  </h4>
                   <p className="text-sm text-neutral-600">
-                    {bus.registrationNumber} · {bus.busType.replace(/_/g, ' ')}
+                    {bus.registrationNumber} · {bus.busType.replace(/_/g, " ")}
                   </p>
                   <div className="mt-2 flex items-center gap-2">
-                    <span className={`badge ${bus.status === 'ACTIVE' ? 'badge-success' : 'badge-neutral'}`}>
+                    <span
+                      className={`badge ${bus.status === "ACTIVE" ? "badge-success" : "badge-neutral"}`}
+                    >
                       {bus.status}
                     </span>
-                    <span className="badge badge-neutral">{bus.deckType} Deck</span>
+                    <span className="badge badge-neutral">
+                      {bus.deckType} Deck
+                    </span>
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => onEditBus(bus)}
-                    className="btn-ghost"
-                  >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  <button onClick={() => onEditBus(bus)} className="btn-ghost">
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
                     </svg>
                     Edit
                   </button>
@@ -867,8 +982,18 @@ const BusesView = ({
                     onClick={() => onDeleteBus(bus.id)}
                     className="btn-ghost text-error-600"
                   >
-                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
                     </svg>
                     Delete
                   </button>
@@ -962,7 +1087,9 @@ const SchedulesViewWithForm = ({
 
       <section className="py-8">
         <div className="mb-6 flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-neutral-900">Schedules ({schedules.length})</h3>
+          <h3 className="text-lg font-semibold text-neutral-900">
+            Schedules ({schedules.length})
+          </h3>
           <button onClick={onOpenModal} className="btn btn-primary">
             + Create Schedule
           </button>
@@ -989,7 +1116,10 @@ const SchedulesViewWithForm = ({
               label: "Status",
               value: status,
               onChange: setStatus,
-              options: toSelectOptions(uniqueValues(schedules, "status"), formatEnumLabel),
+              options: toSelectOptions(
+                uniqueValues(schedules, "status"),
+                formatEnumLabel,
+              ),
             },
           ]}
           onClear={clearFilters}
@@ -1021,14 +1151,17 @@ const SchedulesViewWithForm = ({
                         {route?.name || "Unknown Route"}
                       </h4>
                       <p className="text-xs text-neutral-500">
-                        {bus?.model || "Unknown Bus"} • Reg: {bus?.registrationNumber || "—"}
+                        {bus?.model || "Unknown Bus"} • Reg:{" "}
+                        {bus?.registrationNumber || "—"}
                       </p>
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 mb-3 text-xs">
                       <div>
                         <p className="text-neutral-500">Departure</p>
-                        <p className="font-semibold text-neutral-900">{schedule.departureTime}</p>
+                        <p className="font-semibold text-neutral-900">
+                          {schedule.departureTime}
+                        </p>
                       </div>
                       <div>
                         <p className="text-neutral-500">Pricing</p>
@@ -1039,12 +1172,16 @@ const SchedulesViewWithForm = ({
                       <div>
                         <p className="text-neutral-500">Effective</p>
                         <p className="text-[11px] font-semibold text-neutral-900">
-                          {schedule.effectiveFrom ? `${schedule.effectiveFrom.substring(5)}` : "—"}
+                          {schedule.effectiveFrom
+                            ? `${schedule.effectiveFrom.substring(5)}`
+                            : "—"}
                         </p>
                       </div>
                       <div>
                         <p className="text-neutral-500">Status</p>
-                        <span className={`badge ${schedule.status === "ACTIVE" ? "badge-success" : "badge-neutral"}`}>
+                        <span
+                          className={`badge ${schedule.status === "ACTIVE" ? "badge-success" : "badge-neutral"}`}
+                        >
                           {schedule.status}
                         </span>
                       </div>
@@ -1087,13 +1224,22 @@ const SchedulesViewWithForm = ({
   );
 };
 
-// ── Trips View (Read-only) with Pagination ────────────────────────────────
-const TripsViewReadOnly = ({ trips, schedules, routes, buses, onCreateNew, tripsPage, onTripsPageChange, onCancelTrip }) => {
+// ── Trips View with Detail Drawer ─────────────────────────────────────────
+const TripsView = ({
+  trips,
+  schedules,
+  routes,
+  buses,
+  onCreateNew,
+  tripsPage,
+  onTripsPageChange,
+  onCancelTrip,
+  onUpdateTrip,
+  updating,
+}) => {
   const ITEMS_PER_PAGE = 8;
-  const [showCancelModal, setShowCancelModal] = useState(false);
-  const [selectedTripId, setSelectedTripId] = useState(null);
-  const [cancellationReason, setCancellationReason] = useState("");
-  const [cancelling, setCancelling] = useState(false);
+  const [selectedTrip, setSelectedTrip] = useState(null);
+  const [drawerAction, setDrawerAction] = useState("details");
   const [search, setSearch] = useState("");
   const [routeId, setRouteId] = useState("");
   const [busId, setBusId] = useState("");
@@ -1116,7 +1262,14 @@ const TripsViewReadOnly = ({ trips, schedules, routes, buses, onCreateNew, trips
       const matchesStatus = !status || trip.status === status;
       const matchesFrom = !dateFrom || trip.tripDate >= dateFrom;
       const matchesTo = !dateTo || trip.tripDate <= dateTo;
-      return matchesSearch && matchesRoute && matchesBus && matchesStatus && matchesFrom && matchesTo;
+      return (
+        matchesSearch &&
+        matchesRoute &&
+        matchesBus &&
+        matchesStatus &&
+        matchesFrom &&
+        matchesTo
+      );
     });
   }, [trips, routes, buses, search, routeId, busId, status, dateFrom, dateTo]);
 
@@ -1140,77 +1293,34 @@ const TripsViewReadOnly = ({ trips, schedules, routes, buses, onCreateNew, trips
     return filteredTrips.slice(startIdx, startIdx + ITEMS_PER_PAGE);
   }, [filteredTrips, tripsPage]);
 
-  const handleCancelClick = (tripId) => {
-    setSelectedTripId(tripId);
-    setCancellationReason("");
-    setShowCancelModal(true);
-  };
-
-  const handleConfirmCancel = async () => {
-    if (!cancellationReason.trim()) {
-      alert("Please provide a reason for trip cancellation");
-      return;
-    }
-    setCancelling(true);
-    try {
-      await onCancelTrip(selectedTripId, cancellationReason);
-      setShowCancelModal(false);
-      setCancellationReason("");
-      setSelectedTripId(null);
-    } catch (error) {
-      console.error("Failed to cancel trip:", error);
-    } finally {
-      setCancelling(false);
-    }
+  const openTrip = (trip, action = "details") => {
+    setSelectedTrip(trip);
+    setDrawerAction(action);
   };
 
   return (
     <>
-      {/* Cancellation Modal */}
-      {showCancelModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="mx-4 w-full max-w-sm rounded-lg border border-neutral-200 bg-white p-6 shadow-xl">
-            <h3 className="mb-4 text-lg font-semibold text-neutral-900">Cancel Trip</h3>
-            <p className="mb-4 text-sm text-neutral-500">
-              This will cancel the trip, refund all passengers, and move their bookings to past trips.
-            </p>
-            <label className="mb-4 block">
-              <span className="mb-1 block text-sm font-medium text-neutral-700">
-                Reason for Cancellation *
-              </span>
-              <textarea
-                value={cancellationReason}
-                onChange={(e) => setCancellationReason(e.target.value)}
-                placeholder="e.g., Driver unavailable, Bus breakdown, Route issues"
-                className="w-full rounded border border-neutral-300 p-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100"
-                rows={4}
-              />
-            </label>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowCancelModal(false)}
-                className="flex-1 rounded border border-neutral-200 py-2 font-semibold text-neutral-900 transition-colors hover:bg-neutral-50"
-              >
-                Keep Trip
-              </button>
-              <button
-                onClick={handleConfirmCancel}
-                disabled={cancelling}
-                className="flex-1 rounded bg-error-600 py-2 font-semibold text-white transition-colors hover:bg-error-700 disabled:opacity-50"
-              >
-                {cancelling ? "Cancelling..." : "Cancel Trip"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <TripDetailDrawer
+        key={`${selectedTrip?.id}-${drawerAction}`}
+        trip={selectedTrip}
+        schedules={schedules}
+        routes={routes}
+        buses={buses}
+        onClose={() => setSelectedTrip(null)}
+        onUpdate={onUpdateTrip}
+        onCancelTrip={onCancelTrip}
+        saving={updating}
+        initialAction={drawerAction}
+      />
 
       <section className="py-8">
         <div className="mb-6 flex items-center justify-between max-[600px]:flex-col max-[600px]:gap-3">
           <div>
-            <h3 className="mb-2 text-lg font-semibold text-neutral-900">Published Trips</h3>
+            <h3 className="mb-2 text-lg font-semibold text-neutral-900">
+              Published Trips
+            </h3>
             <p className="text-sm text-neutral-500">
-              {trips.length} trips • Auto-created from schedules
+              {trips.length} trips • Click a trip to view details or edit
             </p>
           </div>
           <button onClick={onCreateNew} className="btn btn-primary">
@@ -1239,7 +1349,10 @@ const TripsViewReadOnly = ({ trips, schedules, routes, buses, onCreateNew, trips
               label: "Status",
               value: status,
               onChange: setStatus,
-              options: toSelectOptions(uniqueValues(trips, "status"), formatEnumLabel),
+              options: toSelectOptions(
+                uniqueValues(trips, "status"),
+                formatEnumLabel,
+              ),
             },
           ]}
           dateFrom={dateFrom}
@@ -1263,13 +1376,24 @@ const TripsViewReadOnly = ({ trips, schedules, routes, buses, onCreateNew, trips
           <>
             <div className="grid gap-3 mb-6">
               {paginatedTrips.map((trip) => {
-                const schedule = schedules.find((s) => s.id === trip.scheduleId);
+                const schedule = schedules.find(
+                  (s) => s.id === trip.scheduleId,
+                );
                 const route = routes.find((r) => r.id === schedule?.routeId);
                 const bus = buses.find((b) => b.id === schedule?.busId);
                 return (
                   <div
                     key={trip.id}
-                    className="rounded-lg border border-neutral-200 bg-white p-4 transition-all hover:border-neutral-300 hover:shadow-sm"
+                    onClick={() => openTrip(trip)}
+                    className="cursor-pointer rounded-lg border border-neutral-200 bg-white p-4 transition-all hover:border-primary-300 hover:shadow-sm"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openTrip(trip);
+                      }
+                    }}
                   >
                     <div className="grid items-start gap-4 grid-cols-2 max-[600px]:grid-cols-1">
                       {/* Left: Route & Bus */}
@@ -1289,22 +1413,33 @@ const TripsViewReadOnly = ({ trips, schedules, routes, buses, onCreateNew, trips
                       <div>
                         <div className="mb-2 flex items-start justify-between">
                           <div>
-                            <p className="mb-1 text-xs text-neutral-500">Trip Date</p>
-                            <p className="text-sm font-semibold text-neutral-900">{trip.tripDate}</p>
+                            <p className="mb-1 text-xs text-neutral-500">
+                              Trip Date
+                            </p>
+                            <p className="text-sm font-semibold text-neutral-900">
+                              {trip.tripDate}
+                            </p>
                             <p className="mt-1 text-xs text-neutral-500">
                               Departure: {schedule?.departureTime || "—"}
                             </p>
                           </div>
-                          <span className={`badge ${getTripStatusBadgeClass(trip.status)}`}>
-                            {trip.status?.replace(/_/g, " ") || "Active"}
+                          <span
+                            className={`badge ${getTripStatusBadgeClass(trip.status)}`}
+                          >
+                            {getTripStatusLabel(trip.status)}
                           </span>
                         </div>
-                        <button
-                          onClick={() => handleCancelClick(trip.id)}
-                          className="mt-2 w-full rounded border border-error-200 px-3 py-1.5 text-xs font-semibold text-error-600 transition-colors hover:bg-error-50"
-                        >
-                          Cancel Trip
-                        </button>
+                        {isTripCancellable(trip) && (
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openTrip(trip, "cancel");
+                            }}
+                            className="mt-2 w-full rounded border border-error-200 px-3 py-1.5 text-xs font-semibold text-error-600 transition-colors hover:bg-error-50"
+                          >
+                            Cancel Trip
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
