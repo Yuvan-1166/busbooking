@@ -767,7 +767,7 @@ const BusesView = ({
   const [deckType, setDeckType] = useState("");
   const [status, setStatus] = useState("");
 
-  const ITEMS_PER_PAGE = 8;
+  const ITEMS_PER_PAGE = 5;
 
   const filteredBuses = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -1269,6 +1269,39 @@ const SchedulesViewWithForm = ({
 };
 
 // ── Trips View with Detail Drawer ─────────────────────────────────────────
+const TRIP_SORT_OPTIONS = [
+  { value: "newest", label: "Newest first" },
+  { value: "oldest", label: "Oldest first" },
+  { value: "fare-desc", label: "Fare: high to low" },
+  { value: "fare-asc", label: "Fare: low to high" },
+];
+
+function sortTrips(trips, sort) {
+  const sorted = [...trips];
+
+  const byTripDate = (a, b) => {
+    const dateCompare = (a.tripDate || "").localeCompare(b.tripDate || "");
+    if (dateCompare !== 0) return dateCompare;
+    return (a.departureTime || "").localeCompare(b.departureTime || "");
+  };
+
+  switch (sort) {
+    case "oldest":
+      return sorted.sort(byTripDate);
+    case "fare-desc":
+      return sorted.sort(
+        (a, b) => Number(b.startingFare || 0) - Number(a.startingFare || 0),
+      );
+    case "fare-asc":
+      return sorted.sort(
+        (a, b) => Number(a.startingFare || 0) - Number(b.startingFare || 0),
+      );
+    case "newest":
+    default:
+      return sorted.sort((a, b) => byTripDate(b, a));
+  }
+}
+
 const TripsView = ({
   trips,
   schedules,
@@ -1290,6 +1323,7 @@ const TripsView = ({
   const [status, setStatus] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [sort, setSort] = useState("newest");
 
   const filteredTrips = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -1329,13 +1363,18 @@ const TripsView = ({
   useEffect(() => {
     onTripsPageChange(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, routeId, busId, status, dateFrom, dateTo]);
+  }, [search, routeId, busId, status, dateFrom, dateTo, sort]);
 
-  const totalPages = Math.ceil(filteredTrips.length / ITEMS_PER_PAGE);
+  const sortedTrips = useMemo(
+    () => sortTrips(filteredTrips, sort),
+    [filteredTrips, sort],
+  );
+
+  const totalPages = Math.ceil(sortedTrips.length / ITEMS_PER_PAGE);
   const paginatedTrips = useMemo(() => {
     const startIdx = (tripsPage - 1) * ITEMS_PER_PAGE;
-    return filteredTrips.slice(startIdx, startIdx + ITEMS_PER_PAGE);
-  }, [filteredTrips, tripsPage]);
+    return sortedTrips.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+  }, [sortedTrips, tripsPage]);
 
   const openTrip = (trip, action = "details") => {
     setSelectedTrip(trip);
@@ -1367,9 +1406,27 @@ const TripsView = ({
               {trips.length} trips • Click a trip to view details or edit
             </p>
           </div>
-          <button onClick={onCreateNew} className="btn btn-primary">
-            + Create Schedule
-          </button>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2">
+              <span className="whitespace-nowrap text-sm text-neutral-600">
+                Order by
+              </span>
+              <select
+                className="select"
+                value={sort}
+                onChange={(event) => setSort(event.target.value)}
+              >
+                {TRIP_SORT_OPTIONS.map((option) => (
+                  <option value={option.value} key={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button onClick={onCreateNew} className="btn btn-primary">
+              + Create Schedule
+            </button>
+          </div>
         </div>
 
         <FilterBar
