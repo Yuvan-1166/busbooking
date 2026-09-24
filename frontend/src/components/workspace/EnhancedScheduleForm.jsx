@@ -23,8 +23,6 @@ const emptyScheduleForm = {
     sat: true,
     sun: true,
   },
-  tripGenerationFrom: "",
-  tripGenerationTo: "",
 };
 
 export default function EnhancedScheduleForm({
@@ -40,36 +38,36 @@ export default function EnhancedScheduleForm({
 }) {
   const [showPreview, setShowPreview] = useState(false);
 
-  // Calculate generated trip dates
+  // Calculate trip dates derived from the schedule date range
   const generatedDates = useMemo(() => {
     if (
-      scheduleForm.tripGenerationFrom &&
-      scheduleForm.tripGenerationTo &&
+      scheduleForm.effectiveFrom &&
+      scheduleForm.effectiveUntil &&
       Object.values(scheduleForm.operatingDays).some((v) => v)
     ) {
       return generateTripDates(
-        scheduleForm.tripGenerationFrom,
-        scheduleForm.tripGenerationTo,
+        scheduleForm.effectiveFrom,
+        scheduleForm.effectiveUntil,
         scheduleForm.operatingDays,
       );
     }
     return [];
   }, [
-    scheduleForm.tripGenerationFrom,
-    scheduleForm.tripGenerationTo,
+    scheduleForm.effectiveFrom,
+    scheduleForm.effectiveUntil,
     scheduleForm.operatingDays,
   ]);
 
   // Validate trip generation
   const validationErrors = useMemo(() => {
     return validateTripGeneration(
-      scheduleForm.tripGenerationFrom,
-      scheduleForm.tripGenerationTo,
+      scheduleForm.effectiveFrom,
+      scheduleForm.effectiveUntil,
       scheduleForm.operatingDays,
     );
   }, [
-    scheduleForm.tripGenerationFrom,
-    scheduleForm.tripGenerationTo,
+    scheduleForm.effectiveFrom,
+    scheduleForm.effectiveUntil,
     scheduleForm.operatingDays,
   ]);
 
@@ -164,14 +162,15 @@ export default function EnhancedScheduleForm({
         </label>
       </div>
 
-      {/* Row 3: Effective Dates */}
+      {/* Row 3: Schedule Date Range (single source for schedule & trips) */}
       <div className="grid grid-cols-2 gap-5 mb-7">
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-neutral-700">
-            From
+            From *
           </span>
           <input
             type="date"
+            required
             value={scheduleForm.effectiveFrom}
             onChange={(e) => onScheduleChange("effectiveFrom", e.target.value)}
             className="w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100"
@@ -179,10 +178,11 @@ export default function EnhancedScheduleForm({
         </label>
         <label className="block">
           <span className="mb-1 block text-sm font-medium text-neutral-700">
-            Until
+            Until *
           </span>
           <input
             type="date"
+            required
             value={scheduleForm.effectiveUntil}
             onChange={(e) => onScheduleChange("effectiveUntil", e.target.value)}
             className="w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100"
@@ -231,46 +231,15 @@ export default function EnhancedScheduleForm({
         </p>
       </div>
 
-      {/* Trip Generation - Compact */}
+      {/* Trip Generation - Derived from Schedule Dates */}
       <div className="mb-7 border-t border-neutral-200 pt-4">
-        <p className="mb-2 text-sm font-medium text-neutral-700">
-          Generate Trips
+        <p className="mb-1 text-sm font-medium text-neutral-700">
+          Trips
         </p>
-        {validationErrors.length > 0 && (
-          <div className="mb-3 text-xs text-error-600">
-            {validationErrors.map((err, i) => (
-              <div key={i}>• {err.substring(0, 40)}</div>
-            ))}
-          </div>
-        )}
-        <div className="grid grid-cols-2 gap-3 mb-2">
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-neutral-700">
-              From *
-            </span>
-            <input
-              type="date"
-              value={scheduleForm.tripGenerationFrom}
-              onChange={(e) =>
-                onScheduleChange("tripGenerationFrom", e.target.value)
-              }
-              className="w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium text-neutral-700">
-              To *
-            </span>
-            <input
-              type="date"
-              value={scheduleForm.tripGenerationTo}
-              onChange={(e) =>
-                onScheduleChange("tripGenerationTo", e.target.value)
-              }
-              className="w-full border-b border-neutral-300 bg-transparent py-1.5 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-100"
-            />
-          </label>
-        </div>
+        <p className="mb-2 text-xs text-neutral-500">
+          A trip is created for every operating day within the schedule’s
+          From–Until date range.
+        </p>
 
         {generatedDates.length > 0 && (
           <div className="mt-2 flex items-center justify-between rounded border border-success-200 bg-success-50 p-2 text-xs">

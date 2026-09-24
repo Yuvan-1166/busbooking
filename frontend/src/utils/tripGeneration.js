@@ -40,17 +40,17 @@ export function validateTripGeneration(fromDate, toDate, operatingDays) {
   const errors = [];
 
   if (!fromDate) {
-    errors.push("Trip generation start date is required.");
+    errors.push("From date is required.");
   }
   if (!toDate) {
-    errors.push("Trip generation end date is required.");
+    errors.push("Until date is required.");
   }
 
   if (fromDate && toDate) {
     const from = new Date(fromDate);
     const to = new Date(toDate);
     if (from > to) {
-      errors.push("Trip generation start date cannot be after end date.");
+      errors.push("From date cannot be after until date.");
     }
   }
 

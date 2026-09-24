@@ -42,8 +42,6 @@ const emptySchedule = {
     sat: true,
     sun: true,
   },
-  tripGenerationFrom: "",
-  tripGenerationTo: "",
 };
 
 // ── Filter helpers ────────────────────────────────────────────────────────
@@ -204,10 +202,10 @@ export default function OperatorDashboard() {
     setError("");
     setMessage("");
     try {
-      // Validate trip generation
+      // Validate trips derived from the schedule date range
       const validationErrors = validateTripGeneration(
-        scheduleForm.tripGenerationFrom,
-        scheduleForm.tripGenerationTo,
+        scheduleForm.effectiveFrom,
+        scheduleForm.effectiveUntil,
         scheduleForm.operatingDays
       );
 
@@ -217,10 +215,10 @@ export default function OperatorDashboard() {
         return;
       }
 
-      // Generate trip dates
+      // Generate trip dates within the schedule date range
       const tripDates = generateTripDates(
-        scheduleForm.tripGenerationFrom,
-        scheduleForm.tripGenerationTo,
+        scheduleForm.effectiveFrom,
+        scheduleForm.effectiveUntil,
         scheduleForm.operatingDays
       );
 
