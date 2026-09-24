@@ -55,7 +55,7 @@ export default function BusSeatLayout({
       <div className="mb-6 flex justify-between gap-[18px]">
         <div>
           <span className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-            BUS {bus.id}
+            BUS LAYOUT
           </span>
 
           <h3 className="mb-1 mt-1 text-xl font-semibold text-neutral-900">

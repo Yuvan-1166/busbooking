@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { LoadingPage } from "../common/Loading";
 import Pagination from "../common/Pagination";
 import TicketDetailDrawer from "./TicketDetailDrawer";
+import { tripLabel } from "../../utils/reference";
 import {
   getTicketStatus,
   getTicketStatusConfig,
@@ -37,8 +38,8 @@ function matchesQuery(ticket, query) {
   const haystack = [
     ticket.bookingReference,
     ticket.ticketNumber,
-    ticket.tripId,
     ticket.routeName,
+    ticket.tripDate,
     ticket.pickupLocationName,
     ticket.dropLocationName,
     ticket.operatorName,
@@ -380,13 +381,15 @@ function BookingTicket({ ticket, onOpen }) {
       {/* Main Content */}
       <div className="p-6">
         <div className="mb-6 grid gap-6 md:grid-cols-3">
-          {/* Booking ID */}
+          {/* Booking Reference */}
           <div>
-            <div className="mb-2 text-xs font-medium text-neutral-600">Booking ID</div>
+            <div className="mb-2 text-xs font-medium text-neutral-600">Booking Reference</div>
             <div className="font-mono text-xl font-bold text-neutral-900">
               #{ticket.bookingReference}
             </div>
-            <div className="mt-1 text-sm text-neutral-600">Trip #{ticket.tripId}</div>
+            <div className="mt-1 text-sm text-neutral-600">
+              {ticket.routeName || tripLabel(ticket)}
+            </div>
           </div>
 
           {/* Ticket Number */}

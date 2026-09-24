@@ -464,7 +464,13 @@ function App() {
                       setError("Fare is unavailable for this route.");
                       return;
                     }
-                    if (await openTrip({ ...trip, startingFare: fare })) {
+                    if (
+                      await openTrip({
+                        ...trip,
+                        startingFare: fare,
+                        routeName: matchingRoute?.name,
+                      })
+                    ) {
                       navigate(`/book/${trip.id}`);
                     }
                   }}

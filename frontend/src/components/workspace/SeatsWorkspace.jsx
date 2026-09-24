@@ -570,7 +570,7 @@ function SeatEditor({
         <div>
           <p className="mb-1 text-sm font-semibold text-neutral-900">
             {isEditing
-              ? `Seat ${selectedSeat.seatNumber || selectedSeat.id}`
+              ? `Seat ${selectedSeat.seatNumber || "—"}`
               : "Single seat"}
           </p>
           <p className="text-xs text-neutral-500">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import BusSeatLayout from "../workspace/BusSeatLayout";
 import { api } from "../../api";
+import { seatNumber, tripLabel } from "../../utils/reference";
 
 /** Returns the gender locked by a strict policy, or null if open. */
 function lockedGender(policy) {
@@ -53,8 +54,7 @@ export default function BookingPanel({
           console.error("Failed to load bus details:", err);
           // Fallback to basic info
           setBusDetails({
-            id: trip.busId,
-            registrationNumber: `Bus ${trip.busId}`,
+            registrationNumber: "Bus",
             model: trip.busModel || "Bus",
             deckType: "SINGLE", // fallback
           });
@@ -105,7 +105,7 @@ export default function BookingPanel({
       if (chosen !== forced) {
         const label = seat.genderPolicy === "FEMALE_ONLY" ? "female" : "male";
         window.alert(
-          `Seat ${seat.seatNumber || seat.id} is reserved for ${label} passengers. Please correct the gender before confirming.`,
+          `Seat ${seatNumber(seat)} is reserved for ${label} passengers. Please correct the gender before confirming.`,
         );
         return;
       }
@@ -143,8 +143,15 @@ export default function BookingPanel({
       <div className="mb-8 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="mb-2 flex flex-wrap items-center gap-2">
-            <span className="badge badge-info">Trip #{trip.id}</span>
-            <span className="badge badge-neutral">Route {trip.routeId}</span>
+            <span className="badge badge-info">
+              {trip.routeName || tripLabel(trip)}
+            </span>
+            {trip.tripDate && (
+              <span className="badge badge-neutral">
+                {trip.tripDate}
+                {trip.departureTime ? ` · ${trip.departureTime}` : ""}
+              </span>
+            )}
           </div>
           <h1 className="mb-2 text-2xl font-semibold text-neutral-900 sm:text-3xl">
             Select Your Seats
@@ -247,7 +254,7 @@ export default function BookingPanel({
                       key={seat.id}
                     >
                       <legend className="px-2 text-sm font-semibold text-neutral-900">
-                        Seat {seat.seatNumber || seat.id}
+                        Seat {seatNumber(seat)}
                         {badge && (
                           <span className={`ml-2 rounded px-2 py-1 text-xs ${badgeClass}`}>
                             {badge}

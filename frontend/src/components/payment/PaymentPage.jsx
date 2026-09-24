@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api";
 import { LoadingPage } from "../common/Loading";
+import { locationLabel, tripLabel } from "../../utils/reference";
 
 const PAYMENT_METHODS = [
   { value: "RAZORPAY", label: "Razorpay", description: "UPI, cards, net banking & wallets — powered by Razorpay" },
@@ -77,7 +78,7 @@ export default function PaymentPage({ locations, onPaymentSuccess }) {
 
   const getLocationName = (id) => {
     const loc = locations?.find((l) => String(l.id) === String(id));
-    return loc ? `${loc.name}, ${loc.city}` : `Location #${id}`;
+    return loc ? locationLabel(loc) : "Unknown location";
   };
 
   const handlePay = async () => {
@@ -162,7 +163,7 @@ export default function PaymentPage({ locations, onPaymentSuccess }) {
       <div className="mb-8">
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <span className="badge badge-info">Booking {booking.bookingReference}</span>
-          <span className="badge badge-neutral">Trip #{booking.tripId}</span>
+          <span className="badge badge-neutral">{tripLabel(booking)}</span>
         </div>
         <h1 className="mb-2 text-2xl font-semibold text-neutral-900 sm:text-3xl">
           Review &amp; Complete Payment

@@ -3,6 +3,7 @@ package com.yuvan.busbooking.booking.dto;
 import com.yuvan.busbooking.booking.entity.BookingStatus;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -11,6 +12,8 @@ public record BookingResponse(
         String bookingReference,
         Long userId,
         Long tripId,
+        String routeName,
+        LocalDate tripDate,
         BookingStatus status,
         BigDecimal totalAmount,
         Long pickupLocationId,

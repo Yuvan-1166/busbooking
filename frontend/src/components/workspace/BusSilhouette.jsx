@@ -51,7 +51,7 @@ export default function BusSilhouette({
         {rows.length ? (
           rows.map((row) => (
             <SeatRow
-              key={row[0]?.seatNumber || row[0]?.id}
+              key={row[0]?.seatNumber}
               row={row}
               selectedSeat={selectedSeat}
               selectedSeats={selectedSeats}
@@ -90,7 +90,7 @@ function groupSeatsByRow(seats) {
 
   const rowMap = {};
   for (const seat of sorted) {
-    const rowNum = String(seat.seatNumber || seat.id).match(/^\D*(\d+)/)?.[1] || "0";
+    const rowNum = String(seat.seatNumber || "").match(/^\D*(\d+)/)?.[1] || "0";
     if (!rowMap[rowNum]) {
       rowMap[rowNum] = [];
     }
@@ -239,11 +239,11 @@ function SeatButton({ seat, selected, multiSelect, disabled, onSelect, compact }
       } hover:brightness-[0.97] active:scale-[0.97]`}
       disabled={disabled || unavailable}
       onClick={() => onSelect(seat)}
-      title={[seat.seatNumber || seat.id, seat.seatType, seat.position, policyLabel]
+      title={[seat.seatNumber || "—", seat.seatType, seat.position, policyLabel]
         .filter(Boolean)
         .join(" · ")}
     >
-      <strong>{seat.seatNumber || seat.id}</strong>
+      <strong>{seat.seatNumber || "—"}</strong>
       <small className={`opacity-70 ${compact ? "text-[7px]" : "text-[8px]"}`}>
         {isFemale ? "♀" : isMale ? "♂" : seat.position?.slice(0, 1)}
       </small>

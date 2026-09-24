@@ -380,6 +380,8 @@ public class BookingService {
                 booking.getBookingReference(),
                 booking.getUser().getId(),
                 booking.getTrip().getId(),
+                booking.getTrip().getRoute().getName(),
+                booking.getTrip().getTripDate(),
                 booking.getStatus(),
                 booking.getTotalAmount(),
                 booking.getPickupLocation().getId(),

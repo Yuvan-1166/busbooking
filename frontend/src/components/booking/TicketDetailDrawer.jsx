@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import RightDrawer from "../common/RightDrawer";
 import { api } from "../../api";
 import { enrichTicketData } from "../../utils/ticketEnricher";
+import { busLabel, passengerName, seatNumber, tripLabel } from "../../utils/reference";
 import { getErrorMessage } from "../../utils/errorHandler";
 import {
   getCancellationReason,
@@ -150,7 +151,7 @@ export default function TicketDetailDrawer({
               )}
               <DetailRow
                 label="Trip"
-                value={details.tripId ? `Trip #${details.tripId}` : "—"}
+                value={tripLabel(details)}
               />
               {details.tripDate && (
                 <DetailRow label="Trip Date" value={details.tripDate} />
@@ -192,7 +193,7 @@ export default function TicketDetailDrawer({
 
         {/* Booking references */}
         <section className="overflow-hidden rounded-lg border border-neutral-200">
-          <DetailRow label="Booking ID" value={`#${details.bookingReference}`} />
+          <DetailRow label="Booking Reference" value={details.bookingReference || "—"} />
           <DetailRow label="Ticket Number" value={details.ticketNumber || "—"} />
           {details.expiresAt && (
             <DetailRow
@@ -367,7 +368,7 @@ function DetailRow({ label, value }) {
 
 function getBusLabel(bus) {
   if (!bus) return "—";
-  return bus.model || (bus.id ? `Bus #${bus.id}` : "Bus");
+  return busLabel(bus);
 }
 
 function getBusTypeLabel(busType) {
@@ -375,15 +376,7 @@ function getBusTypeLabel(busType) {
 }
 
 function getPassengerName(passenger) {
-  const full = [passenger.firstName, passenger.lastName]
-    .filter(Boolean)
-    .join(" ");
-  return (
-    full ||
-    passenger.name ||
-    passenger.fullName ||
-    (passenger.id ? `Passenger #${passenger.id}` : "Passenger")
-  );
+  return passengerName(passenger);
 }
 
 function getPassengerMeta(passenger) {
@@ -399,9 +392,7 @@ function getPassengerMeta(passenger) {
 
 function getSeatNumber(passenger) {
   if (passenger.seatNumber) return passenger.seatNumber;
-  if (passenger.seat?.seatNumber) return passenger.seat.seatNumber;
-  if (passenger.tripSeatId) return `#${passenger.tripSeatId}`;
-  return "—";
+  return passenger.seat ? seatNumber(passenger.seat) : "—";
 }
 
 function formatCurrency(amount) {

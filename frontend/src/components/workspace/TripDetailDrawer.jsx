@@ -93,7 +93,7 @@ export default function TripDetailDrawer({
   const scheduleLabel = (schedule) => {
     const optionBus = buses.find((bus) => bus.id === schedule.busId);
     const current = String(schedule.id) === String(trip.scheduleId);
-    return `${optionBus?.registrationNumber || `Bus #${schedule.busId}`} • ${schedule.departureTime}${current ? " (current)" : ""}`;
+    return `${optionBus?.registrationNumber || "Unknown bus"} • ${schedule.departureTime}${current ? " (current)" : ""}`;
   };
 
   return (
@@ -114,7 +114,12 @@ export default function TripDetailDrawer({
           >
             {getTripStatusLabel(trip.status)}
           </span>
-          <span className="text-xs text-neutral-500">Trip #{trip.id}</span>
+          <span className="text-xs text-neutral-500">
+            {trip.tripDate || "—"}
+            {currentSchedule?.departureTime
+              ? ` · ${currentSchedule.departureTime}`
+              : ""}
+          </span>
         </div>
 
         {/* Read-only trip details */}
