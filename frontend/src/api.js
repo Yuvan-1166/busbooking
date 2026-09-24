@@ -136,6 +136,14 @@ export const api = {
   sendMobileOtp: (mobileNumber) => request('/verifynow/send-otp', { method: 'POST', body: JSON.stringify({ mobileNumber }) }),
   validateMobileOtp: (verificationId, mobileNumber, code) => request('/verifynow/validate-otp', { method: 'POST', body: JSON.stringify({ verificationId, mobileNumber, code }) }),
   updateMobileVerificationStatus: () => request('/users/me/verify-mobile', { method: 'POST' }),
+  getAnalytics: (from, to, operatorId) => {
+    const params = new URLSearchParams()
+    if (from) params.set('from', from)
+    if (to) params.set('to', to)
+    if (operatorId) params.set('operatorId', operatorId)
+    const qs = params.toString()
+    return request(`/analytics/dashboard${qs ? `?${qs}` : ''}`)
+  },
 }
 
 export { API_BASE }

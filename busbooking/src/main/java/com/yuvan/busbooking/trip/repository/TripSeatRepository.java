@@ -4,12 +4,15 @@ import com.yuvan.busbooking.trip.entity.TripSeat;
 import com.yuvan.busbooking.trip.entity.TripSeatStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 public interface TripSeatRepository extends JpaRepository<TripSeat, Long> {
 
     List<TripSeat> findByTripId(Long tripId);
+
+    List<TripSeat> findByTripIdIn(Collection<Long> tripIds);
 
     List<TripSeat> findByTripIdAndStatus(
             Long tripId,

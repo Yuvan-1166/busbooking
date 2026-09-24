@@ -24,6 +24,7 @@ import SeatsWorkspace from "./SeatsWorkspace";
 import ScheduleFormModal from "./ScheduleFormModal";
 import TripDetailDrawer from "./TripDetailDrawer";
 import FilterBar from "./FilterBar";
+import AnalyticsPage from "./analytics/AnalyticsPage";
 
 const emptyBus = {
   registrationNumber: "",
@@ -536,6 +537,22 @@ export default function OperatorDashboard() {
           </svg>
           Trips
         </NavTab>
+        <NavTab active={view === "analytics"} onClick={() => setView("analytics")}>
+          <svg
+            className="mb-1 inline-block h-4 w-4"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 19V5a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2zm3-9h10M7 14h6"
+            />
+          </svg>
+          Analytics
+        </NavTab>
       </nav>
 
       {/* Alerts */}
@@ -633,6 +650,7 @@ export default function OperatorDashboard() {
               updating={saving === "Trip"}
             />
           )}
+          {view === "analytics" && <AnalyticsPage role="operator" />}
         </>
       )}
     </main>

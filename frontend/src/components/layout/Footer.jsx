@@ -16,6 +16,7 @@ export default function Footer() {
       { to: "/admin/users", label: "Users" },
       { to: "/admin/locations", label: "Locations" },
       { to: "/admin/routes", label: "Routes" },
+      { to: "/admin/analytics", label: "Analytics" },
     );
   }
   if (isOperator) {
@@ -25,6 +26,7 @@ export default function Footer() {
       { to: "/operator/seats", label: "Seat Layouts" },
       { to: "/operator/schedules", label: "Schedules" },
       { to: "/operator/trips", label: "Trips" },
+      { to: "/operator/analytics", label: "Analytics" },
     );
   }
   if (isPassenger || !session) {

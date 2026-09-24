@@ -29,4 +29,26 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     List<Ticket> findTicketsToExpire(
             @Param("status") TicketStatus status,
             @Param("now") LocalDateTime now);
+
+    @Query("""
+                SELECT t
+                FROM Ticket t
+                WHERE t.booking.createdAt BETWEEN :from AND :to
+                ORDER BY t.issuedAt
+            """)
+    List<Ticket> findForAnalytics(
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to);
+
+    @Query("""
+                SELECT t
+                FROM Ticket t
+                WHERE t.booking.createdAt BETWEEN :from AND :to
+                  AND t.booking.trip.bus.operator.id = :operatorId
+                ORDER BY t.issuedAt
+            """)
+    List<Ticket> findForAnalyticsByOperator(
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to,
+            @Param("operatorId") Long operatorId);
 }

@@ -54,4 +54,26 @@ public interface TripRepository extends JpaRepository<Trip, Long> {
             """)
     List<Trip> findActiveTripsWithoutExpiration(
             @Param("statuses") List<TripStatus> statuses);
+
+    @Query("""
+                SELECT t
+                FROM Trip t
+                WHERE t.tripDate BETWEEN :from AND :to
+                ORDER BY t.tripDate
+            """)
+    List<Trip> findForAnalytics(
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to);
+
+    @Query("""
+                SELECT t
+                FROM Trip t
+                WHERE t.tripDate BETWEEN :from AND :to
+                  AND t.bus.operator.id = :operatorId
+                ORDER BY t.tripDate
+            """)
+    List<Trip> findForAnalyticsByOperator(
+            @Param("from") LocalDate from,
+            @Param("to") LocalDate to,
+            @Param("operatorId") Long operatorId);
 }
