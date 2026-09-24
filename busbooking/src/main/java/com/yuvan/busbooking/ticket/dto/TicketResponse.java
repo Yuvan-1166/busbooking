@@ -1,5 +1,6 @@
 package com.yuvan.busbooking.ticket.dto;
 
+import com.yuvan.busbooking.bus.entity.BusType;
 import com.yuvan.busbooking.booking.dto.BookingPassengerResponse;
 import com.yuvan.busbooking.ticket.entity.TicketStatus;
 
@@ -23,13 +24,29 @@ public record TicketResponse(
 
         Long tripId,
 
+        String routeName,
+
         LocalDate tripDate,
 
         LocalTime departureTime,
 
         Long pickupLocationId,
 
+        String pickupLocationName,
+
         Long dropLocationId,
+
+        String dropLocationName,
+
+        Long busId,
+
+        String busModel,
+
+        String busRegistrationNumber,
+
+        BusType busType,
+
+        String operatorName,
 
         BigDecimal totalAmount,
 

@@ -258,6 +258,7 @@ public class TicketService {
         private TicketResponse toResponse(Ticket ticket) {
 
                 Booking booking = ticket.getBooking();
+                Trip trip = booking.getTrip();
 
                 List<BookingPassengerResponse> passengers = bookingPassengerRepository
                                 .findByBookingId(booking.getId())
@@ -278,11 +279,19 @@ public class TicketService {
                                 ticket.getTicketNumber(),
                                 booking.getBookingReference(),
                                 booking.getUser().getId(),
-                                booking.getTrip().getId(),
-                                booking.getTrip().getTripDate(),
-                                booking.getTrip().getDepartureTime(),
+                                trip.getId(),
+                                trip.getRoute().getName(),
+                                trip.getTripDate(),
+                                trip.getDepartureTime(),
                                 booking.getPickupLocation().getId(),
+                                booking.getPickupLocation().getName(),
                                 booking.getDropLocation().getId(),
+                                booking.getDropLocation().getName(),
+                                trip.getBus().getId(),
+                                trip.getBus().getModel(),
+                                trip.getBus().getRegistrationNumber(),
+                                trip.getBus().getBusType(),
+                                trip.getBus().getOperator().getName(),
                                 booking.getTotalAmount(),
                                 passengers,
                                 ticket.getIssuedAt(),

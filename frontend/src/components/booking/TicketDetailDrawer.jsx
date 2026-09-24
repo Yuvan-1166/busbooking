@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import RightDrawer from "../common/RightDrawer";
+import { api } from "../../api";
+import { enrichTicketData } from "../../utils/ticketEnricher";
 import { getErrorMessage } from "../../utils/errorHandler";
 import {
   getCancellationReason,
@@ -11,6 +13,12 @@ import {
 const INITIAL_ACTIONS = {
   details: false,
   cancel: true,
+};
+
+const BUS_TYPE_LABELS = {
+  SEATER: "Seater",
+  SLEEPER: "Sleeper",
+  SEMI_SLEEPER: "Semi-Sleeper",
 };
 
 export default function TicketDetailDrawer({
@@ -26,15 +34,54 @@ export default function TicketDetailDrawer({
   const [cancelling, setCancelling] = useState(false);
   const [cancelError, setCancelError] = useState("");
   const [refund, setRefund] = useState(null);
+  const [details, setDetails] = useState(ticket);
+  const [loadingDetails, setLoadingDetails] = useState(false);
+
+  useEffect(() => {
+    if (!ticket) return;
+    let active = true;
+    setDetails(ticket);
+    setLoadingDetails(true);
+    enrichTicketData(ticket, api)
+      .then((enriched) => {
+        if (active) setDetails(enriched);
+      })
+      .finally(() => {
+        if (active) setLoadingDetails(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [ticket]);
 
   if (!ticket) return null;
 
-  const status = getTicketStatus(ticket);
+  const status = getTicketStatus(details);
   const statusConfig = getTicketStatusConfig();
   const currentStatus = statusConfig[status] || statusConfig.active;
-  const cancellable = isTicketCancellable(ticket);
-  const cancellationReason = getCancellationReason(ticket);
-  const passengerCount = ticket.passengers?.length || 0;
+  const cancellable = isTicketCancellable(details);
+  const cancellationReason = getCancellationReason(details);
+  const journey = details.journey || {};
+  const passengers = details.passengers || [];
+  const routeName =
+    details.routeName ||
+    journey.routeName ||
+    (details.route?.name ?? "");
+  const from =
+    details.pickupLocationName ||
+    journey.pickupLocationName ||
+    "";
+  const to =
+    details.dropLocationName ||
+    journey.dropLocationName ||
+    "";
+  const departureTime =
+    details.departureTime ||
+    journey.schedule?.departureTime ||
+    journey.trip?.departureTime ||
+    "";
+  const bus = journey.bus || (details.bus && typeof details.bus === "object" ? details.bus : null);
+  const operatorName = journey.operatorName || details.operatorName || "";
 
   const submitCancellation = async (event) => {
     event.preventDefault();
@@ -67,27 +114,128 @@ export default function TicketDetailDrawer({
             {currentStatus.icon} {currentStatus.text}
           </span>
           <span className="text-sm text-neutral-500">
-            {formatCurrency(ticket.totalAmount)}
+            {formatCurrency(details.totalAmount)}
           </span>
         </div>
 
-        {/* Read-only ticket details */}
-        <div className="overflow-hidden rounded-lg border border-neutral-200">
-          <DetailRow label="Booking ID" value={`#${ticket.bookingReference}`} />
-          <DetailRow label="Ticket Number" value={ticket.ticketNumber || "—"} />
-          <DetailRow label="Trip" value={ticket.tripId ? `Trip #${ticket.tripId}` : "—"} />
-          <DetailRow label="Trip Date" value={ticket.tripDate || "—"} />
-          <DetailRow
-            label="Passengers"
-            value={passengerCount ? `${passengerCount} ${passengerCount === 1 ? "passenger" : "passengers"}` : "—"}
-          />
-          {ticket.expiresAt && (
+        {loadingDetails && (
+          <p className="text-xs text-neutral-400">
+            Loading journey details...
+          </p>
+        )}
+
+        {/* Journey */}
+        {(routeName || from || to) && (
+          <section className="overflow-hidden rounded-lg border border-neutral-200">
+            <div className="border-b border-neutral-200 bg-neutral-50 px-4 py-3">
+              <p className="text-sm font-semibold text-neutral-900">Journey</p>
+              {routeName && (
+                <p className="mt-0.5 text-xs text-neutral-500">
+                  Route: {routeName}
+                </p>
+              )}
+            </div>
+            <div className="py-2">
+              {from && to && (
+                <DetailRow
+                  label="From"
+                  value={from}
+                />
+              )}
+              {from && to && (
+                <DetailRow
+                  label="To"
+                  value={to}
+                />
+              )}
+              <DetailRow
+                label="Trip"
+                value={details.tripId ? `Trip #${details.tripId}` : "—"}
+              />
+              {details.tripDate && (
+                <DetailRow label="Trip Date" value={details.tripDate} />
+              )}
+              {departureTime && (
+                <DetailRow label="Departure" value={departureTime} />
+              )}
+            </div>
+          </section>
+        )}
+
+        {/* Bus & operator */}
+        {(operatorName || bus) && (
+          <section className="overflow-hidden rounded-lg border border-neutral-200">
+            <div className="border-b border-neutral-200 bg-neutral-50 px-4 py-3">
+              <p className="text-sm font-semibold text-neutral-900">
+                Bus &amp; Operator
+              </p>
+            </div>
+            <div className="py-2">
+              {operatorName ? (
+                <DetailRow label="Operator" value={operatorName} />
+              ) : null}
+              {bus ? (
+                <DetailRow label="Bus" value={getBusLabel(bus)} />
+              ) : null}
+              {bus?.busType ? (
+                <DetailRow label="Bus Type" value={getBusTypeLabel(bus.busType)} />
+              ) : null}
+              {bus?.registrationNumber ? (
+                <DetailRow
+                  label="Registration"
+                  value={bus.registrationNumber}
+                />
+              ) : null}
+            </div>
+          </section>
+        )}
+
+        {/* Booking references */}
+        <section className="overflow-hidden rounded-lg border border-neutral-200">
+          <DetailRow label="Booking ID" value={`#${details.bookingReference}`} />
+          <DetailRow label="Ticket Number" value={details.ticketNumber || "—"} />
+          {details.expiresAt && (
             <DetailRow
               label="Valid Until"
-              value={new Date(ticket.expiresAt).toLocaleString()}
+              value={new Date(details.expiresAt).toLocaleString()}
             />
           )}
-        </div>
+        </section>
+
+        {/* Passengers */}
+        <section className="overflow-hidden rounded-lg border border-neutral-200">
+          <div className="border-b border-neutral-200 bg-neutral-50 px-4 py-3">
+            <p className="text-sm font-semibold text-neutral-900">
+              Passengers ({passengers.length})
+            </p>
+          </div>
+          {passengers.length ? (
+            <div className="divide-y divide-neutral-100">
+              {passengers.map((passenger, index) => (
+                <div
+                  key={passenger.id ?? index}
+                  className="flex items-center justify-between gap-3 px-4 py-3"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-neutral-900">
+                      {getPassengerName(passenger)}
+                    </p>
+                    <p className="mt-0.5 text-sm text-neutral-500">
+                      {getPassengerMeta(passenger)}
+                    </p>
+                  </div>
+                  <span className="badge badge-neutral shrink-0">
+                    Seat {getSeatNumber(passenger)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="px-4 py-3 text-sm text-neutral-500">
+              No passenger details available.
+            </p>
+          )}
+        </section>
 
         {/* Cancellation reason */}
         {status === "cancelled" && cancellationReason && (
@@ -208,13 +356,52 @@ export default function TicketDetailDrawer({
 
 function DetailRow({ label, value }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-neutral-100 px-4 py-3 last:border-b-0">
+    <div className="flex items-center justify-between gap-4 border-b border-neutral-100 px-4 py-2.5 last:border-b-0">
       <span className="text-sm text-neutral-500">{label}</span>
       <span className="text-right text-sm font-semibold text-neutral-900">
         {value}
       </span>
     </div>
   );
+}
+
+function getBusLabel(bus) {
+  if (!bus) return "—";
+  return bus.model || (bus.id ? `Bus #${bus.id}` : "Bus");
+}
+
+function getBusTypeLabel(busType) {
+  return BUS_TYPE_LABELS[busType] || (busType ? String(busType).replace(/_/g, " ") : "—");
+}
+
+function getPassengerName(passenger) {
+  const full = [passenger.firstName, passenger.lastName]
+    .filter(Boolean)
+    .join(" ");
+  return (
+    full ||
+    passenger.name ||
+    passenger.fullName ||
+    (passenger.id ? `Passenger #${passenger.id}` : "Passenger")
+  );
+}
+
+function getPassengerMeta(passenger) {
+  const gender =
+    passenger.gender &&
+    passenger.gender.charAt(0).toUpperCase() +
+      passenger.gender.slice(1).toLowerCase();
+  const parts = [];
+  if (gender) parts.push(gender);
+  if (passenger.age != null) parts.push(`${passenger.age} years`);
+  return parts.join(" · ") || "Passenger";
+}
+
+function getSeatNumber(passenger) {
+  if (passenger.seatNumber) return passenger.seatNumber;
+  if (passenger.seat?.seatNumber) return passenger.seat.seatNumber;
+  if (passenger.tripSeatId) return `#${passenger.tripSeatId}`;
+  return "—";
 }
 
 function formatCurrency(amount) {
