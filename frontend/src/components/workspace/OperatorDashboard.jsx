@@ -105,6 +105,7 @@ export default function OperatorDashboard() {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [schedulePage, setSchedulePage] = useState(1);
   const [tripsPage, setTripsPage] = useState(1);
+  const [busesPage, setBusesPage] = useState(1);
 
   const ITEMS_PER_PAGE = 8;
 
@@ -575,6 +576,8 @@ export default function OperatorDashboard() {
                 setEditingBusId(null);
               }}
               saving={saving === "Bus"}
+              busesPage={busesPage}
+              onBusesPageChange={setBusesPage}
             />
           )}
           {view === "seats" && (
@@ -756,11 +759,15 @@ const BusesView = ({
   onDeleteBus,
   onCancelEdit,
   saving,
+  busesPage,
+  onBusesPageChange,
 }) => {
   const [search, setSearch] = useState("");
   const [busType, setBusType] = useState("");
   const [deckType, setDeckType] = useState("");
   const [status, setStatus] = useState("");
+
+  const ITEMS_PER_PAGE = 8;
 
   const filteredBuses = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -781,6 +788,18 @@ const BusesView = ({
     setDeckType("");
     setStatus("");
   };
+
+  useEffect(() => {
+    onBusesPageChange(1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, busType, deckType, status]);
+
+  const totalPages = Math.ceil(filteredBuses.length / ITEMS_PER_PAGE);
+  const safePage = Math.min(busesPage, Math.max(1, totalPages));
+  const paginatedBuses = useMemo(() => {
+    const startIdx = (safePage - 1) * ITEMS_PER_PAGE;
+    return filteredBuses.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+  }, [filteredBuses, safePage]);
 
   return (
     <section className="grid gap-6 lg:grid-cols-[400px_1fr]">
@@ -954,7 +973,7 @@ const BusesView = ({
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredBuses.map((bus) => (
+            {paginatedBuses.map((bus) => (
               <div
                 key={bus.id}
                 className="card card-hover flex items-center justify-between"
@@ -1017,6 +1036,15 @@ const BusesView = ({
               </div>
             ))}
           </div>
+        )}
+
+        {filteredBuses.length > 0 && totalPages > 1 && (
+          <Pagination
+            currentPage={safePage}
+            totalPages={totalPages}
+            onPageChange={onBusesPageChange}
+            isLoading={false}
+          />
         )}
       </div>
     </section>
