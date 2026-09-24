@@ -1,11 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../../api";
+import { templatesForBus } from "../../utils/busSeatTemplates";
 
 const SEAT_CLASS_LABELS = {
   SEAT: "Seater",
   SEMI_SLEEPER: "Semi-Sleeper",
   SLEEPER: "Sleeper",
 };
+
+const formatEnumLabel = (value) =>
+  (value || "")
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+const formatBusType = (busType) => formatEnumLabel(busType);
+const formatDeckType = (deckType) =>
+  deckType === "DOUBLE" ? "Double Decker" : "Single Deck";
 
 function Chevron({ direction }) {
   const d = direction === "up" ? "M5 12l5-5 5 5" : "M5 8l5 5 5-5";
@@ -16,11 +27,10 @@ function Chevron({ direction }) {
   );
 }
 
-export default function TemplateGallery({ onSelectTemplate, onClose }) {
+export default function TemplateGallery({ bus, onSelectTemplate, onClose }) {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filter, setFilter] = useState("ALL"); // ALL, SINGLE, DOUBLE
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [rowCounts, setRowCounts] = useState([]);
   const [expanded, setExpanded] = useState(false);
@@ -33,7 +43,7 @@ export default function TemplateGallery({ onSelectTemplate, onClose }) {
     try {
       setLoading(true);
       setError(null);
-      const data = await api.getSeatTemplates();
+      const data = await api.getSeatTemplates(bus?.deckType);
       setTemplates(data);
     } catch (err) {
       setError(err.message || "Failed to load templates");
@@ -42,10 +52,10 @@ export default function TemplateGallery({ onSelectTemplate, onClose }) {
     }
   };
 
-  const filteredTemplates = templates.filter((template) => {
-    if (filter === "ALL") return true;
-    return template.deckType === filter;
-  });
+  const filteredTemplates = useMemo(
+    () => templatesForBus(templates, bus),
+    [templates, bus],
+  );
 
   const handleSelect = (template) => {
     setSelectedTemplate(template);
@@ -127,9 +137,13 @@ export default function TemplateGallery({ onSelectTemplate, onClose }) {
                 Bus Seat Arrangements
               </h2>
               <p className="mt-2 text-sm text-neutral-500">
-                Choose a real-world arrangement - seater, semi-sleeper or
-                sleeper, on a single or double-decker bus - then set the number
-                of rows to match your bus. The rest of the layout stays fixed.
+                Templates shown here are pre-filtered for the selected{" "}
+                <strong className="text-neutral-700">
+                  {formatBusType(bus?.busType)} ·{" "}
+                  {formatDeckType(bus?.deckType)}
+                </strong>{" "}
+                bus. Choose an arrangement, then set the number of rows to match
+                your bus. The rest of the layout stays fixed.
               </p>
             </div>
             <button
@@ -142,41 +156,15 @@ export default function TemplateGallery({ onSelectTemplate, onClose }) {
             </button>
           </div>
 
-          {/* Filter */}
-          <div className="mt-5 flex gap-3">
-            <button
-              type="button"
-              className={`rounded-md border-0 px-4 py-2 text-sm font-semibold transition-colors ${
-                filter === "ALL"
-                  ? "bg-primary-600 text-white"
-                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-              }`}
-              onClick={() => setFilter("ALL")}
-            >
-              All ({templates.length})
-            </button>
-            <button
-              type="button"
-              className={`rounded-md border-0 px-4 py-2 text-sm font-semibold transition-colors ${
-                filter === "SINGLE"
-                  ? "bg-primary-600 text-white"
-                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-              }`}
-              onClick={() => setFilter("SINGLE")}
-            >
-              Single Deck ({templates.filter((t) => t.deckType === "SINGLE").length})
-            </button>
-            <button
-              type="button"
-              className={`rounded-md border-0 px-4 py-2 text-sm font-semibold transition-colors ${
-                filter === "DOUBLE"
-                  ? "bg-primary-600 text-white"
-                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200"
-              }`}
-              onClick={() => setFilter("DOUBLE")}
-            >
-              Double Decker ({templates.filter((t) => t.deckType === "DOUBLE").length})
-            </button>
+          {/* Context badge */}
+          <div className="mt-5 flex items-center gap-2">
+            <span className="rounded-full bg-primary-50 px-3 py-1 text-xs font-semibold text-primary-700">
+              {formatBusType(bus?.busType)}
+            </span>
+            <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold text-neutral-600">
+              {formatDeckType(bus?.deckType)} · {filteredTemplates.length}{" "}
+              template{filteredTemplates.length === 1 ? "" : "s"}
+            </span>
           </div>
         </div>
 
@@ -188,7 +176,9 @@ export default function TemplateGallery({ onSelectTemplate, onClose }) {
         >
           {filteredTemplates.length === 0 ? (
             <p className="text-center text-neutral-500">
-              No templates found for this filter.
+              {templates.length === 0
+                ? "No templates found for this filter."
+                : "No templates match the selected bus type."}
             </p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

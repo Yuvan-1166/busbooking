@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Navigate,
   Route,
   Routes,
   useLocation,
   useNavigate,
+  useSearchParams,
 } from "react-router-dom";
 import { api } from "./api";
 import { enrichTripsData } from "./utils/tripEnricher";
@@ -35,9 +36,13 @@ function App() {
   const [routes, setRoutes] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [routeStops, setRouteStops] = useState([]);
-  const [from, setFrom] = useState("");
-  const [to, setTo] = useState("");
-  const [date, setDate] = useState("");
+  const [searchParams] = useSearchParams();
+  const lastSearchedKey = useRef("");
+  const [from, setFrom] = useState(() => searchParams.get("from") || "");
+  const [to, setTo] = useState(() => searchParams.get("to") || "");
+  const [date, setDate] = useState(
+    () => searchParams.get("date") || new Date().toISOString().slice(0, 10),
+  );
   const [trips, setTrips] = useState([]);
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [tripSeats, setTripSeats] = useState([]);
@@ -108,7 +113,6 @@ function App() {
       setLoading(false);
       return;
     }
-    setDate(new Date().toISOString().slice(0, 10));
     Promise.all([api.getLocations(), api.getRoutes(), api.getSchedules()])
       .then(async ([locationData, routeData, scheduleData]) => {
         setLocations(locationData);
@@ -198,25 +202,61 @@ function App() {
     );
   };
 
-  const searchTrips = async (event) => {
-    event.preventDefault();
+  const buildSearchUrl = () => {
+    const params = new URLSearchParams();
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+    if (date) params.set("date", date);
+    return params.toString() ? `/search?${params.toString()}` : "/search";
+  };
+
+  const performSearch = async () => {
     setError("");
-    if (!matchingRoute)
-      return setError("No route connects the selected locations.");
+    if (!matchingRoute) {
+      setError("No route connects the selected locations.");
+      return false;
+    }
     setSearching(true);
     try {
       const rawTrips = await api.getTrips(matchingRoute.id, date);
       const enrichedTrips = await enrichTripsData(rawTrips, api);
       setTrips(enrichedTrips);
-      navigate("/search");
+      lastSearchedKey.current = `${from}:${to}:${date}`;
+      return true;
     } catch (searchError) {
       const appError = parseApiError(searchError);
       setError(getErrorMessage(appError));
       console.error("Failed to search trips:", appError);
+      return false;
     } finally {
       setSearching(false);
     }
   };
+
+  const searchTrips = async (event) => {
+    event.preventDefault();
+    const searched = await performSearch();
+    if (searched) navigate(buildSearchUrl());
+  };
+
+  // Restore a search shared via URL (e.g. after a reload on /search): when the
+  // query params match the current from/to/date but the trips were never loaded
+  // for that query, run the search once.
+  useEffect(() => {
+    if (location.pathname !== "/search" || loading || !matchingRoute) return;
+    if (!from || !to || !date) return;
+    if (
+      searchParams.get("from") !== from ||
+      searchParams.get("to") !== to ||
+      searchParams.get("date") !== date
+    )
+      return;
+    const key = `${from}:${to}:${date}`;
+    if (lastSearchedKey.current) return;
+    lastSearchedKey.current = key;
+    performSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname, loading, matchingRoute, from, to, date, searchParams]);
 
   const openTrip = async (trip) => {
     setError("");
@@ -451,7 +491,7 @@ function App() {
                   onConfirm={confirmBooking}
                   bookingInProgress={bookingInProgress}
                   onBack={() => {
-                    navigate("/search");
+                    navigate(buildSearchUrl());
                   }}
                 />
               ) : (

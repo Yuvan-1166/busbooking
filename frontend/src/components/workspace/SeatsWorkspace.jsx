@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import BusSeatLayout from "./BusSeatLayout";
 import StateMessage from "../common/StateMessage";
 import TemplateGallery from "./TemplateGallery";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../../api";
 
 const emptyDimensions = { rows: 10, seatsPerRow: 4, aisleAfter: 2, deckNumber: 1, deckName: "Lower Deck" };
@@ -67,6 +68,7 @@ export default function SeatsWorkspace({
   onDelete,
   saving,
 }) {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [selectedBusId, setSelectedBusId] = useState(
     String(buses[0]?.id || ""),
   );
@@ -88,19 +90,50 @@ export default function SeatsWorkspace({
   const isEditing = Boolean(selectedSeat);
 
   useEffect(() => {
-    if (!selectedBusId && buses[0]) {
-      setSelectedBusId(String(buses[0].id));
-      setForm({ ...emptySeat, busId: String(buses[0].id) });
+    if (!buses.length) return;
+    const currentIsValid = Boolean(selectedBusId) &&
+      buses.some((bus) => String(bus.id) === String(selectedBusId));
+
+    const urlReg = searchParams.get("bus");
+    const urlBus = urlReg
+      ? buses.find((bus) => bus.registrationNumber === urlReg)
+      : null;
+
+    let nextId = null;
+    if (urlBus) {
+      if (
+        !currentIsValid ||
+        String(urlBus.id) !== String(selectedBusId)
+      ) {
+        nextId = String(urlBus.id);
+      }
+    } else if (!currentIsValid) {
+      nextId = String(buses[0].id);
     }
-  }, [buses, selectedBusId]);
+
+    if (nextId) {
+      setSelectedBusId(nextId);
+      setForm({ ...emptySeat, busId: nextId });
+    }
+  }, [buses, selectedBusId, searchParams]);
 
   const selectBus = (event) => {
     const busId = event.target.value;
+    const registrationNumber = buses.find(
+      (bus) => String(bus.id) === String(busId),
+    )?.registrationNumber;
     setSelectedBusId(busId);
     setSelectedSeat(null);
     setPreviewMode(false);
     setPreviewSeats([]);
     setForm({ ...emptySeat, busId });
+    if (registrationNumber) {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.set("bus", registrationNumber);
+        return next;
+      }, { replace: true });
+    }
   };
 
   const generatePreview = (event) => {
@@ -241,10 +274,15 @@ export default function SeatsWorkspace({
               Quick Setup with Templates
             </p>
             <p className="text-sm text-neutral-600">
-              Choose a real-world bus arrangement - seater, semi-sleeper or
-              sleeper, on a single or double-decker - and set the number of
-              rows to fit your bus. Templates include proper seat numbering
-              and female-reserved front rows.
+              Pick a real-world{" "}
+              {selectedBus?.busType?.toLowerCase().replace(/_/g, " ") ||
+                "seater"}{" "}
+              arrangement for this{" "}
+              {selectedBus?.deckType === "DOUBLE"
+                ? "double-decker"
+                : "single-deck bus"}{" "}
+              and set the number of rows to fit. Templates include proper seat
+              numbering and female-reserved front rows.
             </p>
           </div>
           <button
@@ -402,6 +440,7 @@ export default function SeatsWorkspace({
       {/* Template Gallery Modal */}
       {showTemplateGallery && (
         <TemplateGallery
+          bus={selectedBus}
           onSelectTemplate={handleApplyTemplate}
           onClose={() => setShowTemplateGallery(false)}
         />
