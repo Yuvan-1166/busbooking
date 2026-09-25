@@ -144,6 +144,11 @@ export const api = {
     const qs = params.toString()
     return request(`/analytics/dashboard${qs ? `?${qs}` : ''}`)
   },
+  // Recurring emailed reports (operators & admins)
+  getReportPreferences: () => request('/report-preferences'),
+  upsertReportPreference: (preference) => request('/report-preferences', { method: 'PUT', body: JSON.stringify(preference) }),
+  deleteReportPreference: (reportType) => request(`/report-preferences/${reportType}`, { method: 'DELETE' }),
+  sendReportNow: (reportType) => request(`/report-preferences/${reportType}/send-now`, { method: 'POST' }),
 }
 
 export { API_BASE }

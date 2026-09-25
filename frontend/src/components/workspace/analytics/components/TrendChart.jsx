@@ -51,7 +51,10 @@ export default function TrendChart({
   }
 
   const linePath = model.pts
-    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`)
+    .map(
+      (point, index) =>
+        `${index === 0 ? "M" : "L"} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`,
+    )
     .join(" ");
   const areaPath = `${linePath} L ${model.pts[model.pts.length - 1].x.toFixed(1)} ${PAD.top + model.innerH} L ${model.pts[0].x.toFixed(1)} ${PAD.top + model.innerH} Z`;
 
@@ -60,7 +63,11 @@ export default function TrendChart({
     label: formatter(model.max * frac),
   }));
 
-  const xLabels = [0, Math.floor((model.pts.length - 1) / 2), model.pts.length - 1];
+  const xLabels = [
+    0,
+    Math.floor((model.pts.length - 1) / 2),
+    model.pts.length - 1,
+  ];
 
   const handleMove = (event) => {
     const rect = wrapRef.current?.getBoundingClientRect();
@@ -128,17 +135,19 @@ export default function TrendChart({
           strokeLinecap="round"
         />
 
-        {model.pts.map((point) => (
-          <circle
-            key={point.x}
-            cx={point.x}
-            cy={point.y}
-            r="3"
-            fill="#fff"
-            stroke="#3b82f6"
-            strokeWidth="2"
-          />
-        ))}
+        {model.pts.map((point) =>
+          point.value > 0 ? (
+            <circle
+              key={point.x}
+              cx={point.x}
+              cy={point.y}
+              r="3"
+              fill="#fff"
+              stroke="#3b82f6"
+              strokeWidth="2"
+            />
+          ) : null,
+        )}
 
         {xLabels.map((index, i) => {
           const point = model.pts[index];
@@ -147,7 +156,9 @@ export default function TrendChart({
               key={index}
               x={point.x}
               y={H - 6}
-              textAnchor={i === 0 ? "start" : i === xLabels.length - 1 ? "end" : "middle"}
+              textAnchor={
+                i === 0 ? "start" : i === xLabels.length - 1 ? "end" : "middle"
+              }
               fill="#9ba6b1"
               fontSize="10"
             >

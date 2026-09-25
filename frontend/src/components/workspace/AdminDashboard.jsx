@@ -7,6 +7,7 @@ import RouteBuilder from './RouteBuilder'
 import ItemList from '../common/ItemList'
 import { LoadingPage } from '../common/Loading'
 import AnalyticsPage from './analytics/AnalyticsPage'
+import ReportPreferencesPage from './reports/ReportPreferencesPage'
 
 const formatEnumLabel = (value) =>
   String(value || '')
@@ -193,6 +194,12 @@ export default function AdminDashboard() {
           </svg>
           Analytics
         </NavTab>
+        <NavTab active={view === 'reports'} onClick={() => setView('reports')}>
+          <svg className="mb-1 inline-block h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+          </svg>
+          Reports
+        </NavTab>
       </nav>
 
       {/* Alerts */}
@@ -210,6 +217,8 @@ export default function AdminDashboard() {
         <LocationsView data={data} {...locationProps} onDeleteLocation={deleteLocation} onStartEdit={startLocationEdit} />
       ) : view === 'analytics' ? (
         <AnalyticsPage role="admin" />
+      ) : view === 'reports' ? (
+        <ReportPreferencesPage role="admin" />
       ) : (
         <RoutesView
           data={data}
