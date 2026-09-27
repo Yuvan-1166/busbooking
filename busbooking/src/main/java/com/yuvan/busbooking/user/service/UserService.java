@@ -4,7 +4,8 @@ import com.yuvan.busbooking.auth.dto.VerifyTwitterEmailRequest;
 import com.yuvan.busbooking.auth.dto.VerifyTwitterEmailResponse;
 import com.yuvan.busbooking.auth.entity.OtpPurpose;
 import com.yuvan.busbooking.auth.service.JwtService;
-import com.yuvan.busbooking.auth.service.OtpService;
+import com.yuvan.busbooking.auth.otp.dto.VerifyOtpRequest;
+import com.yuvan.busbooking.auth.otp.service.OtpService;
 import com.yuvan.busbooking.auth.service.CustomUserDetailsService;
 import com.yuvan.busbooking.common.exception.ResourceNotFoundException;
 import com.yuvan.busbooking.common.util.SecurityUtils;
@@ -228,7 +229,8 @@ public class UserService {
         }
 
         // Verify OTP for the new email
-        otpService.verify(request.email(), request.otp(), OtpPurpose.REGISTRATION);
+        otpService.confirm(VerifyOtpRequest.forEmail(
+                request.email(), OtpPurpose.REGISTRATION, request.otp()));
 
         // Check if email is already registered
         if (userRepository.existsByEmail(request.email())) {

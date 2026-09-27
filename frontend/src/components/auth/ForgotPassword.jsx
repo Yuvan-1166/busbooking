@@ -1,8 +1,17 @@
 import { useState } from "react";
 import { api } from "../../api";
+import {
+  DEFAULT_CHANNEL,
+  channelById,
+  digitsOnly,
+  isValidDestination,
+  maskDestination,
+} from "../../utils/otpChannel";
+import OtpChannelPicker from "./OtpChannelPicker";
 
 export default function ForgotPassword({ onBack }) {
-  const [email, setEmail] = useState("");
+  const [channel, setChannel] = useState(DEFAULT_CHANNEL);
+  const [target, setTarget] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -10,14 +19,33 @@ export default function ForgotPassword({ onBack }) {
   const [otp, setOtp] = useState("");
   const [newPassword, setNewPassword] = useState("");
 
+  const selectedChannel = channelById(channel);
+  const isMobile = selectedChannel.inputType === "tel";
+  const destinationValid = isValidDestination(channel, target);
+
+  const chooseChannel = (nextChannel) => {
+    if (nextChannel === channel) return;
+    setChannel(nextChannel);
+    setTarget("");
+    setMessage("");
+    setError("");
+    setShowResetForm(false);
+    setOtp("");
+    setNewPassword("");
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
     setMessage("");
     setSubmitting(true);
     try {
-      await api.forgotPassword(email);
-      setMessage("We've sent a password reset code to your email.");
+      await api.forgotPassword(target, channel);
+      setMessage(
+        isMobile
+          ? "If that number is registered, a reset code has been sent by SMS."
+          : "If that email is registered, a reset code has been sent.",
+      );
       setShowResetForm(true);
     } catch (submitError) {
       setError(submitError.message);
@@ -32,7 +60,7 @@ export default function ForgotPassword({ onBack }) {
     setMessage("");
     setSubmitting(true);
     try {
-      await api.resetPassword(email, otp.trim(), newPassword);
+      await api.resetPassword(target, otp.trim(), newPassword, channel);
       setMessage("Password reset successfully! You can now sign in.");
       setShowResetForm(false);
       setOtp("");
@@ -50,7 +78,6 @@ export default function ForgotPassword({ onBack }) {
 
   return (
     <div>
-
       {/* Messages */}
       {message && (
         <div
@@ -72,23 +99,43 @@ export default function ForgotPassword({ onBack }) {
       {/* Forgot Password Form */}
       {!showResetForm && (
         <form className="grid gap-[15px]" onSubmit={handleSubmit}>
+          <div className="grid gap-1.5">
+            <span className="font-mono text-[10px] uppercase text-muted">
+              Send code by
+            </span>
+            <OtpChannelPicker
+              value={channel}
+              onChange={chooseChannel}
+              disabled={submitting}
+            />
+          </div>
+
           <label className={labelClass}>
-            Email address
+            {selectedChannel.destinationLabel}
             <input
               className={inputClass}
               required
-              type="email"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              autoComplete="email"
+              type={selectedChannel.inputType}
+              inputMode={selectedChannel.inputMode}
+              name={isMobile ? "mobile" : "email"}
+              pattern={isMobile ? "\\d{10}" : undefined}
+              maxLength={selectedChannel.maxLength}
+              value={target}
+              onChange={(e) =>
+                setTarget(
+                  isMobile
+                    ? digitsOnly(e.target.value).slice(0, 10)
+                    : e.target.value,
+                )
+              }
+              autoComplete={selectedChannel.autoComplete}
               autoFocus
             />
           </label>
 
           <button
             className="mt-2 border-0 bg-orange px-[17px] py-3.5 text-left font-bold text-white disabled:opacity-45"
-            disabled={submitting || !email}
+            disabled={submitting || !destinationValid}
           >
             {submitting ? "Sending…" : "Send reset code"}
             <span className="float-right text-lg">→</span>
@@ -107,6 +154,10 @@ export default function ForgotPassword({ onBack }) {
       {/* Reset Password Form */}
       {showResetForm && (
         <form className="grid gap-[15px]" onSubmit={handleReset}>
+          <p className="font-mono text-[10px] uppercase text-muted">
+            Enter the code sent to {maskDestination(channel, target)}
+          </p>
+
           <label className={labelClass}>
             Verification code
             <input

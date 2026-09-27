@@ -1,23 +1,17 @@
-package com.yuvan.busbooking.auth.otp;
+package com.yuvan.busbooking.auth.otp.flow;
 
 import com.yuvan.busbooking.auth.entity.OtpPurpose;
-import com.yuvan.busbooking.auth.service.EmailService;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.entity.UserStatus;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
  * OTP flow for {@code PASSWORD_RESET}.
- * <p>The user must be ACTIVE, and reset codes are delivered via the dedicated
- * password-reset email template. No post-verification mutation is applied —
+ * <p>The user must be ACTIVE, and no post-verification mutation is applied —
  * the password update is handled separately by the caller.</p>
  */
 @Component
-@RequiredArgsConstructor
 public class PasswordResetOtpFlow implements OtpFlow {
-
-    private final EmailService emailService;
 
     @Override
     public OtpPurpose getPurpose() {
@@ -33,12 +27,7 @@ public class PasswordResetOtpFlow implements OtpFlow {
     }
 
     @Override
-    public void deliver(String email, String plainOtp, int expiryMinutes) {
-        emailService.sendPasswordResetOtp(email, plainOtp, expiryMinutes);
-    }
-
-    @Override
     public void applyPostVerification(User user) {
-        // No-op: password update is handled separately after verification.
+        // No-op: the password update is applied separately after verification.
     }
 }

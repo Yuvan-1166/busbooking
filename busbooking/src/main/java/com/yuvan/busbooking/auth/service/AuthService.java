@@ -1,11 +1,19 @@
 package com.yuvan.busbooking.auth.service;
 
-import com.yuvan.busbooking.auth.dto.ForgotPasswordRequest;
 import com.yuvan.busbooking.auth.dto.LoginRequest;
 import com.yuvan.busbooking.auth.dto.LoginResponse;
-import com.yuvan.busbooking.auth.dto.ResetPasswordRequest;
-import com.yuvan.busbooking.auth.dto.ResetPasswordResponse;
 import com.yuvan.busbooking.auth.dto.TotpVerifyRequest;
+import com.yuvan.busbooking.auth.entity.OtpPurpose;
+import com.yuvan.busbooking.auth.otp.channel.OtpChannel;
+import com.yuvan.busbooking.auth.otp.channel.OtpChannelFactory;
+import com.yuvan.busbooking.auth.otp.dto.ForgotPasswordRequest;
+import com.yuvan.busbooking.auth.otp.dto.ResetPasswordRequest;
+import com.yuvan.busbooking.auth.otp.dto.ResetPasswordResponse;
+import com.yuvan.busbooking.auth.otp.dto.SendOtpRequest;
+import com.yuvan.busbooking.auth.otp.dto.VerifyOtpRequest;
+import com.yuvan.busbooking.auth.otp.service.OtpService;
+import com.yuvan.busbooking.common.exception.OtpVerificationException;
+import com.yuvan.busbooking.common.exception.ResourceNotFoundException;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.repository.UserRepository;
 
@@ -24,6 +32,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final OtpService otpService;
+    private final OtpChannelFactory otpChannelFactory;
     private final PasswordEncoder passwordEncoder;
     private final TotpService totpService;
     private final CustomUserDetailsService customUserDetailsService;
@@ -33,6 +42,7 @@ public class AuthService {
             AuthenticationManager authenticationManager,
             JwtService jwtService,
             OtpService otpService,
+            OtpChannelFactory otpChannelFactory,
             PasswordEncoder passwordEncoder,
             TotpService totpService,
             CustomUserDetailsService customUserDetailsService
@@ -41,6 +51,7 @@ public class AuthService {
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.otpService = otpService;
+        this.otpChannelFactory = otpChannelFactory;
         this.passwordEncoder = passwordEncoder;
         this.totpService = totpService;
         this.customUserDetailsService = customUserDetailsService;
@@ -132,31 +143,43 @@ public class AuthService {
     }
 
     /**
-     * Initiates a password reset by sending an OTP to the given email.
-     * Silently succeeds even if the email is not registered (prevents user enumeration).
+     * Initiates a password reset by sending an OTP to the requested destination
+     * on the requested channel. Silently succeeds even if the destination is not
+     * registered (prevents user enumeration).
      */
     public ResetPasswordResponse forgotPassword(ForgotPasswordRequest request) {
         try {
-            otpService.generateAndSendPasswordReset(request.email());
+            OtpChannel channel = otpChannelFactory.getChannel(request.resolvedChannel());
+            otpService.send(new SendOtpRequest(
+                    channel.normalizeTarget(request.target()),
+                    channel.getType(),
+                    OtpPurpose.PASSWORD_RESET
+            ));
         } catch (Exception ignored) {
-            // Don't reveal whether the email exists or not
+            // Don't reveal whether the destination exists or not
         }
         return new ResetPasswordResponse(
-                "If an account with that email exists, a reset code has been sent.");
+                "If an account exists for that destination, a reset code has been sent.");
     }
 
     /**
-     * Verifies the OTP and updates the user's password in one step.
+     * Verifies the OTP and updates the user's password in one step. The code is
+     * confirmed on the channel it was sent to, and the account is resolved the
+     * same way.
      */
-    @Transactional
+    @Transactional(noRollbackFor = OtpVerificationException.class)
     public ResetPasswordResponse resetPassword(ResetPasswordRequest request) {
+        OtpChannel channel = otpChannelFactory.getChannel(request.resolvedChannel());
+        String target = channel.normalizeTarget(request.target());
+
         // Verify OTP — throws on failure
-        otpService.verifyForPasswordReset(request.email(), request.otp().trim());
+        otpService.confirm(new VerifyOtpRequest(
+                target, request.otp().trim(), channel.getType(), OtpPurpose.PASSWORD_RESET));
 
         // Update the password
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() ->
-                        new IllegalArgumentException("User not found: " + request.email()));
+        User user = channel.findOwner(target)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "No account found for " + channel.maskTarget(target)));
 
         if(passwordEncoder.matches(request.newPassword(), user.getPasswordHash())) {
                 throw new IllegalArgumentException(

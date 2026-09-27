@@ -9,6 +9,17 @@ import {
   createSession,
 } from "./authStorage";
 import { parseApiError, getErrorMessage } from "../utils/errorHandler";
+import {
+  OTP_CHANNELS,
+  OTP_PURPOSE,
+  DEFAULT_CHANNEL,
+  channelById,
+  digitsOnly,
+  isValidDestination,
+  maskDestination,
+  describeDestination,
+} from "../utils/otpChannel";
+import OtpChannelPicker from "../components/auth/OtpChannelPicker";
 import ForgotPassword from "../components/auth/ForgotPassword";
 
 const STATE_KEY = "twitter_oauth_state";
@@ -47,6 +58,11 @@ export default function AuthPage() {
   const [pendingEmail, setPendingEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [resending, setResending] = useState(false);
+
+  // The account can be verified by whichever channel the code was sent to
+  const [otpChannel, setOtpChannel] = useState(DEFAULT_CHANNEL);
+  const [smsTarget, setSmsTarget] = useState("");
+  const [sentChannel, setSentChannel] = useState(DEFAULT_CHANNEL);
 
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -118,6 +134,9 @@ export default function AuthPage() {
         });
         // Registration succeeded → move to OTP verification step
         setPendingEmail(response.email);
+        setSmsTarget(form.phone || "");
+        setOtpChannel("EMAIL");
+        setSentChannel("EMAIL");
         setOtp("");
         setMode("verify");
         setMessage(
@@ -137,6 +156,8 @@ export default function AuthPage() {
               submitError.response?.data?.message?.toLowerCase().includes("not verified")) {
             // Account not verified → go to verify screen
             setPendingEmail(form.email);
+            setOtpChannel("EMAIL");
+            setSentChannel("EMAIL");
             setOtp("");
             setMode("verify");
             setMessage(
@@ -176,21 +197,37 @@ export default function AuthPage() {
   };
 
   // ── OTP submission ────────────────────────────────────────────────────────
+  // The destination the code is sent to and confirmed against, per channel
+  const selectedChannel = channelById(otpChannel);
+  const isMobile = selectedChannel.inputType === "tel";
+
+  const otpTarget = () => (isMobile ? digitsOnly(smsTarget) : pendingEmail);
+
+  const canSendToSelectedChannel = isValidDestination(otpChannel, otpTarget());
+
+  const channelDestinationLabel = describeDestination(otpChannel, otpTarget());
+
   const submitOtp = async (event) => {
     event.preventDefault();
     setError("");
     setMessage("");
     setSubmitting(true);
     try {
-      const response = await api.verifyOtp(pendingEmail, otp.trim());
+      await api.verifyOtp(otpTarget(), otp.trim(), {
+        channel: otpChannel,
+        purpose: OTP_PURPOSE.REGISTRATION,
+      });
 
       // OTP verified successfully - user can now login
-      console.log("OTP verification response:", response);
 
       // Switch to login with success message
       setMode("login");
       setForm({ email: pendingEmail, password: "" });
-      setMessage("Email verified! You can now sign in.");
+      setMessage(
+        isMobile
+          ? "Mobile number verified! You can now sign in."
+          : "Email verified! You can now sign in.",
+      );
       setOtp("");
     } catch (otpError) {
       const appError = parseApiError(otpError);
@@ -223,14 +260,25 @@ export default function AuthPage() {
   };
 
   // ── Resend OTP ────────────────────────────────────────────────────────────
-  const resendOtp = async () => {
+  const sendOtpTo = async (channel, target) => {
+    const mobile = channelById(channel).inputType === "tel";
     setResending(true);
     setError("");
     setMessage("");
     try {
-      await api.sendOtp(pendingEmail);
-      setMessage("A new verification code has been sent to " + pendingEmail);
+      const response = await api.sendOtp(target, {
+        channel,
+        purpose: OTP_PURPOSE.REGISTRATION,
+      });
+      setSentChannel(channel);
       setOtp("");
+      setMessage(
+        response?.message ??
+          `A new verification code has been sent to ${describeDestination(
+            channel,
+            target,
+          )}`,
+      );
     } catch (resendError) {
       const appError = parseApiError(resendError);
       let userMessage = getErrorMessage(appError);
@@ -240,9 +288,13 @@ export default function AuthPage() {
         userMessage =
           "Too many requests. Please wait a few minutes before requesting another code.";
       } else if (appError.statusCode === 404) {
-        userMessage = "Email not found in system. Please register first.";
+        userMessage = mobile
+          ? "No account found for that mobile number. Please check the number or use email."
+          : "Email not found in system. Please register first.";
       } else if (appError.statusCode === 400) {
         userMessage = "Cannot send verification code. Please try again.";
+      } else if (appError.statusCode === 502) {
+        userMessage = "We could not reach the delivery service. Please try again.";
       } else if (appError.statusCode === 0) {
         userMessage = "Connection error. Please check your internet and try again.";
       } else if (appError.statusCode === 408) {
@@ -254,6 +306,25 @@ export default function AuthPage() {
     } finally {
       setResending(false);
     }
+  };
+
+  const resendOtp = () => {
+    if (!canSendToSelectedChannel) return;
+    return sendOtpTo(otpChannel, otpTarget());
+  };
+
+  // ── Switch delivery channel ───────────────────────────────────────────────
+  // Switching sends a fresh code so the user is never left waiting for one
+  // that never arrives.
+  const changeOtpChannel = (channel) => {
+    if (channel === otpChannel) return;
+    setOtpChannel(channel);
+    setOtp("");
+    setError("");
+    setMessage("");
+    const target =
+      channelById(channel).inputType === "tel" ? digitsOnly(smsTarget) : pendingEmail;
+    if (isValidDestination(channel, target)) sendOtpTo(channel, target);
   };
 
   // ── Forgot Password ───────────────────────────────────────────────────────
@@ -492,6 +563,68 @@ export default function AuthPage() {
         {/* ── OTP verification form ─────────────────────────────────────────── */}
         {mode === "verify" && (
           <form className="space-y-3" onSubmit={submitOtp}>
+            {/* Delivery method: the same code flow, a different channel */}
+            <div className="form-group">
+              <span className="form-label">Send the code to</span>
+              <OtpChannelPicker
+                variant="app"
+                value={otpChannel}
+                onChange={changeOtpChannel}
+                disabled={resending || submitting}
+                channels={OTP_CHANNELS.map((option) => {
+                  const mobile = option.inputType === "tel";
+                  const unavailable = mobile && !isValidDestination(option.id, smsTarget);
+                  return {
+                    ...option,
+                    label: `${option.label}${
+                      option.id === otpChannel && sentChannel === otpChannel
+                        ? " ✓"
+                        : unavailable
+                          ? " (no number)"
+                          : ""
+                    }`,
+                  };
+                })}
+              />
+            </div>
+
+            {isMobile && (
+              <div className="form-group">
+                <label className="form-label">
+                  {selectedChannel.destinationLabel}{" "}
+                  <span className="text-error-500">*</span>
+                </label>
+                <input
+                  className="input"
+                  type={selectedChannel.inputType}
+                  inputMode={selectedChannel.inputMode}
+                  pattern="\d{10}"
+                  maxLength={selectedChannel.maxLength}
+                  required
+                  placeholder="9876543210"
+                  value={smsTarget}
+                  onChange={(e) =>
+                    setSmsTarget(digitsOnly(e.target.value).slice(0, 10))
+                  }
+                  onBlur={() => {
+                    if (
+                      isValidDestination("MOBILE", smsTarget) &&
+                      sentChannel !== "MOBILE" &&
+                      otp.length === 0
+                    ) {
+                      sendOtpTo("MOBILE", digitsOnly(smsTarget));
+                    }
+                  }}
+                  autoComplete={selectedChannel.autoComplete}
+                />
+                <p className="text-xs text-neutral-500">
+                  {sentChannel === "MOBILE"
+                    ? `Code sent to ${channelDestinationLabel}.`
+                    : "Enter the 10-digit number registered with your account."}
+                </p>
+              </div>
+            )}
+
             <div className="form-group">
               <label className="form-label">
                 Verification code <span className="text-error-500">*</span>
@@ -518,7 +651,11 @@ export default function AuthPage() {
               className="btn btn-primary btn-lg w-full"
               disabled={submitting || otp.length !== 6}
             >
-              {submitting ? "Verifying…" : "Verify email"}
+              {submitting
+                ? "Verifying…"
+                : isMobile
+                  ? "Verify mobile"
+                  : "Verify email"}
             </button>
 
             <div className="flex items-center justify-between border-t border-neutral-200 pt-4">
@@ -526,9 +663,15 @@ export default function AuthPage() {
                 type="button"
                 className="btn-ghost text-sm"
                 onClick={resendOtp}
-                disabled={resending || submitting}
+                disabled={
+                  resending || submitting || !canSendToSelectedChannel
+                }
               >
-                {resending ? "Sending…" : "Resend code"}
+                {resending
+                  ? "Sending…"
+                  : sentChannel === otpChannel
+                    ? "Resend code"
+                    : `Send code to ${isMobile ? "mobile" : "email"}`}
               </button>
               <button
                 type="button"

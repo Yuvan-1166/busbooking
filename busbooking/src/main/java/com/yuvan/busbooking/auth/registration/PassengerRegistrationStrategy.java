@@ -2,7 +2,7 @@ package com.yuvan.busbooking.auth.registration;
 
 import com.yuvan.busbooking.auth.dto.RegisterRequest;
 import com.yuvan.busbooking.auth.dto.RegisterResponse;
-import com.yuvan.busbooking.auth.service.OtpService;
+import com.yuvan.busbooking.auth.otp.service.OtpService;
 import com.yuvan.busbooking.user.entity.Role;
 import com.yuvan.busbooking.user.entity.RoleName;
 import com.yuvan.busbooking.user.entity.User;

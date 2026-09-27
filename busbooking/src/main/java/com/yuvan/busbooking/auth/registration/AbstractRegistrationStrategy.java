@@ -2,7 +2,8 @@ package com.yuvan.busbooking.auth.registration;
 
 import com.yuvan.busbooking.auth.dto.RegisterRequest;
 import com.yuvan.busbooking.auth.entity.OtpPurpose;
-import com.yuvan.busbooking.auth.service.OtpService;
+import com.yuvan.busbooking.auth.otp.dto.SendOtpRequest;
+import com.yuvan.busbooking.auth.otp.service.OtpService;
 import com.yuvan.busbooking.user.dto.UserRequest;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.entity.UserStatus;
@@ -39,9 +40,11 @@ public abstract class AbstractRegistrationStrategy implements RegistrationStrate
     }
 
     /**
-     * Dispatches the email verification OTP that completes registration.
+     * Dispatches the verification OTP that completes registration, over the
+     * channel that owns the user's email address.
      */
     protected void sendVerificationOtp(User user) {
-        otpService.generateAndSend(user.getEmail(), OtpPurpose.REGISTRATION);
+        otpService.send(
+                SendOtpRequest.forEmail(user.getEmail(), OtpPurpose.REGISTRATION));
     }
 }

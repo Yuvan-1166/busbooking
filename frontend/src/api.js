@@ -67,10 +67,16 @@ export const api = {
   oauthCallback: (payload) => request('/auth/oauth/callback', { method: 'POST', body: JSON.stringify(payload) }),
   verifyTwitterEmail: (email, otp) => request('/users/me/verify-twitter-email', { method: 'POST', body: JSON.stringify({ email, otp }) }),
   completeOnboarding: (payload) => request('/auth/onboarding/complete', { method: 'POST', body: JSON.stringify(payload) }),
-  sendOtp: (email) => request('/auth/verify/send', { method: 'POST', body: JSON.stringify({ email }) }),
-  verifyOtp: (email, otp) => request('/auth/verify/confirm', { method: 'POST', body: JSON.stringify({ email, otp }) }),
-  forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
-  resetPassword: (email, otp, newPassword) => request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ email, otp, newPassword }) }),
+  // Unified OTP endpoints: the channel decides how `target` is read, validated
+  // and delivered to, so no per-delivery-method endpoint is needed.
+  sendOtp: (target, { channel = 'EMAIL', purpose = 'REGISTRATION' } = {}) =>
+    request('/auth/verify/send', { method: 'POST', body: JSON.stringify({ target, channel, purpose }) }),
+  verifyOtp: (target, otp, { channel = 'EMAIL', purpose = 'REGISTRATION' } = {}) =>
+    request('/auth/verify/confirm', { method: 'POST', body: JSON.stringify({ target, otp, channel, purpose }) }),
+  forgotPassword: (target, channel = 'EMAIL') =>
+    request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ target, channel }) }),
+  resetPassword: (target, otp, newPassword, channel = 'EMAIL') =>
+    request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ target, otp, newPassword, channel }) }),
   setupTotp: () => request('/auth/totp/setup', { method: 'POST' }),
   verifyTotpSetup: (totpCode) => request('/auth/totp/verify-setup', { method: 'POST', body: JSON.stringify({ totpCode }) }),
   disableTotp: (data) => request('/auth/totp/disable', { method: 'POST', body: JSON.stringify(data) }),
@@ -132,7 +138,9 @@ export const api = {
   createRoute: (payload) => request('/routes', { method: 'POST', body: JSON.stringify(payload) }),
   updateRoute: (routeId, payload) => request(`/routes/${routeId}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteRoute: (routeId) => request(`/routes/${routeId}`, { method: 'DELETE' }),
-  // Mobile verification via MessageCentral
+  // Verifying the phone number on the profile is not part of the unified OTP
+  // flow (it flips user.mobileVerified rather than verifying the account), so
+  // it keeps using the Message Central endpoints directly.
   sendMobileOtp: (mobileNumber) => request('/verifynow/send-otp', { method: 'POST', body: JSON.stringify({ mobileNumber }) }),
   validateMobileOtp: (verificationId, mobileNumber, code) => request('/verifynow/validate-otp', { method: 'POST', body: JSON.stringify({ verificationId, mobileNumber, code }) }),
   updateMobileVerificationStatus: () => request('/users/me/verify-mobile', { method: 'POST' }),

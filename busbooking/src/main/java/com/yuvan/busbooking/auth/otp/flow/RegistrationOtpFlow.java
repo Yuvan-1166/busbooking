@@ -1,20 +1,18 @@
-package com.yuvan.busbooking.auth.otp;
+package com.yuvan.busbooking.auth.otp.flow;
 
 import com.yuvan.busbooking.auth.entity.OtpPurpose;
-import com.yuvan.busbooking.auth.service.EmailService;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.entity.UserStatus;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 /**
  * OTP flow for email verification during {@code REGISTRATION}.
+ * <p>Eligible once the account exists but is not yet active — or while a
+ * Twitter sign-up is still adding its email address. A successful
+ * verification activates the account and completes onboarding.</p>
  */
 @Component
-@RequiredArgsConstructor
 public class RegistrationOtpFlow implements OtpFlow {
-
-    private final EmailService emailService;
 
     @Override
     public OtpPurpose getPurpose() {
@@ -26,11 +24,6 @@ public class RegistrationOtpFlow implements OtpFlow {
         if (!user.getTwitterEmailPending() && user.getStatus() == UserStatus.ACTIVE) {
             throw new IllegalStateException("Email is already verified");
         }
-    }
-
-    @Override
-    public void deliver(String email, String plainOtp, int expiryMinutes) {
-        emailService.sendOtp(email, plainOtp, expiryMinutes);
     }
 
     @Override

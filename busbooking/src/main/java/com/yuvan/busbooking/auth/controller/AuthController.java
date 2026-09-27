@@ -1,21 +1,16 @@
 package com.yuvan.busbooking.auth.controller;
 
-import com.yuvan.busbooking.auth.dto.ForgotPasswordRequest;
 import com.yuvan.busbooking.auth.dto.LoginRequest;
 import com.yuvan.busbooking.auth.dto.LoginResponse;
 import com.yuvan.busbooking.auth.dto.OnboardingCompleteRequest;
-import com.yuvan.busbooking.auth.dto.OtpVerifyResponse;
 import com.yuvan.busbooking.auth.dto.RegisterRequest;
 import com.yuvan.busbooking.auth.dto.RegisterResponse;
-import com.yuvan.busbooking.auth.dto.ResetPasswordRequest;
-import com.yuvan.busbooking.auth.dto.ResetPasswordResponse;
-import com.yuvan.busbooking.auth.dto.SendOtpRequest;
 import com.yuvan.busbooking.auth.dto.TotpVerifyRequest;
-import com.yuvan.busbooking.auth.dto.VerifyOtpRequest;
-import com.yuvan.busbooking.auth.entity.OtpPurpose;
+import com.yuvan.busbooking.auth.otp.dto.ForgotPasswordRequest;
+import com.yuvan.busbooking.auth.otp.dto.ResetPasswordRequest;
+import com.yuvan.busbooking.auth.otp.dto.ResetPasswordResponse;
 import com.yuvan.busbooking.auth.service.AuthService;
 import com.yuvan.busbooking.auth.service.OnboardingService;
-import com.yuvan.busbooking.auth.service.OtpService;
 import com.yuvan.busbooking.auth.service.RegistrationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -26,18 +21,15 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
-    private final OtpService otpService;
     private final OnboardingService onboardingService;
     private final RegistrationService registrationService;
 
     public AuthController(
             AuthService authService,
-            OtpService otpService,
             OnboardingService onboardingService,
             RegistrationService registrationService
     ) {
         this.authService = authService;
-        this.otpService = otpService;
         this.onboardingService = onboardingService;
         this.registrationService = registrationService;
     }
@@ -69,38 +61,9 @@ public class AuthController {
     }
 
     /**
-     * Sends (or resends) a 6-digit OTP to the given email address.
-     * The account must exist and must still be PENDING_VERIFICATION.
-     *
-     * POST /api/v1/auth/verify/send
-     */
-    @PostMapping("/verify/send")
-    public OtpVerifyResponse sendOtp(
-            @Valid @RequestBody SendOtpRequest request
-    ) {
-        otpService.generateAndSend(request.email(), OtpPurpose.REGISTRATION);
-        return new OtpVerifyResponse(
-                "Verification code sent to " + request.email());
-    }
-
-    /**
-     * Confirms the 6-digit OTP submitted by the user.
-     * On success, activates the user account and allows them to log in.
-     * TOTP 2FA setup is now optional and can be done from the profile page.
-     *
-     * POST /api/v1/auth/verify/confirm
-     */
-    @PostMapping("/verify/confirm")
-    public OtpVerifyResponse confirmOtp(
-            @Valid @RequestBody VerifyOtpRequest request
-    ) {
-        otpService.verify(request.email(), request.otp(), OtpPurpose.REGISTRATION);
-        return new OtpVerifyResponse("Email verified successfully. You can now sign in.");
-    }
-
-    /**
-     * Initiates a password reset by sending an OTP to the given email address.
-     * Silently succeeds even if the email is not registered (prevents user enumeration).
+     * Initiates a password reset by sending an OTP to the requested destination
+     * on the requested channel. Silently succeeds even if the destination is not
+     * registered (prevents user enumeration).
      *
      * POST /api/v1/auth/forgot-password
      */

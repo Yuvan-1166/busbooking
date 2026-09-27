@@ -1,4 +1,4 @@
-package com.yuvan.busbooking.auth.otp;
+package com.yuvan.busbooking.auth.otp.flow;
 
 import com.yuvan.busbooking.auth.entity.OtpPurpose;
 import org.springframework.stereotype.Service;

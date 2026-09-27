@@ -1,4 +1,4 @@
-package com.yuvan.busbooking.auth.otp;
+package com.yuvan.busbooking.auth.otp.flow;
 
 import com.yuvan.busbooking.auth.entity.OtpPurpose;
 import com.yuvan.busbooking.user.entity.User;
@@ -7,8 +7,10 @@ import com.yuvan.busbooking.user.entity.User;
  * Strategy describing the lifecycle of OTPs issued for a given
  * {@link OtpPurpose}.
  * <p>Each implementation defines the purpose-specific behavior: preconditions
- * for issuing a new OTP, how the code is delivered, and any side effects to
- * apply once a submitted code verifies successfully.</p>
+ * for issuing a new OTP and any side effects to apply once a submitted code
+ * verifies successfully. Delivery is not its concern — that belongs to the
+ * channel, so a purpose works the same over email, SMS or any future
+ * transport.</p>
  */
 public interface OtpFlow {
 
@@ -24,15 +26,6 @@ public interface OtpFlow {
      * @throws IllegalStateException if the user is not eligible to receive an OTP.
      */
     void validateForSend(User user);
-
-    /**
-     * Delivers the plaintext OTP to the user.
-     *
-     * @param email         the recipient email.
-     * @param plainOtp      the code to deliver.
-     * @param expiryMinutes the validity window in minutes.
-     */
-    void deliver(String email, String plainOtp, int expiryMinutes);
 
     /**
      * Applies purpose-specific side effects after a successful verification.

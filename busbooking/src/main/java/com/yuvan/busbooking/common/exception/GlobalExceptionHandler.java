@@ -1,5 +1,6 @@
 package com.yuvan.busbooking.common.exception;
 
+import com.yuvan.busbooking.auth.otp.exception.OtpDeliveryException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -134,6 +135,23 @@ public class GlobalExceptionHandler {
                         "status", 400,
                         "message",
                         "This record is in use by another resource and cannot be deleted."
+                ));
+    }
+
+    /**
+     * The OTP flow could not hand the code to its channel (SMTP, SMS gateway, …).
+     * Reported separately from a bad code so the client knows to retry the
+     * whole request rather than re-enter the code.
+     */
+    @ExceptionHandler(OtpDeliveryException.class)
+    public ResponseEntity<?> handleOtpDelivery(OtpDeliveryException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.BAD_GATEWAY)
+                .body(Map.of(
+                        "timestamp", LocalDateTime.now(),
+                        "status", 502,
+                        "message", ex.getMessage()
                 ));
     }
 
