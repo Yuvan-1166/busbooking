@@ -16,14 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.Locale;
 
-/**
- * Builds a report on demand and hands it back as a downloadable file.
- *
- * <p>Reuses the scheduled-report pipeline — same generators, same entitlement
- * rules — so a downloaded report can never cover a different slice of data than
- * the emailed one. A download needs no subscription: the only question is
- * whether the caller is allowed to see that report at all.</p>
- */
 @Service
 @Transactional(readOnly = true)
 public class ReportExportService {
@@ -50,17 +42,6 @@ public class ReportExportService {
         this.pdfRenderer = pdfRenderer;
     }
 
-    /**
-     * Renders the requested report as a PDF.
-     *
-     * @param email    the caller, whose roles decide what they may see
-     * @param requested the report kind asked for; falls back to the platform
-     *                 report when an admin has no operator profile
-     * @param frequency window to use when no explicit range is given
-     * @param from     inclusive custom start date, or {@code null}
-     * @param to       inclusive custom end date, or {@code null}
-     * @return the encoded file and the name to save it under
-     */
     public ReportFile renderPdf(String email, ReportType requested,
                                 ReportFrequency frequency, LocalDate from, LocalDate to) {
         User user = userRepository.findByEmail(email)
@@ -75,10 +56,6 @@ public class ReportExportService {
         return new ReportFile(pdfRenderer.render(data), fileName(reportType, period));
     }
 
-    /**
-     * An explicit range wins over the cadence; supplying only one bound is
-     * rejected rather than guessed at.
-     */
     private ReportPeriod periodFor(ReportFrequency frequency, LocalDate from, LocalDate to) {
         boolean hasFrom = from != null;
         boolean hasTo = to != null;
@@ -98,9 +75,6 @@ public class ReportExportService {
                 + "-" + period.from() + "-to-" + period.to() + ".pdf";
     }
 
-    /**
-     * An encoded download.
-     */
     public record ReportFile(byte[] content, String fileName) {
     }
 }

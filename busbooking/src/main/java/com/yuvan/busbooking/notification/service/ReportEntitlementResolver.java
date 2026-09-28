@@ -52,12 +52,6 @@ public class ReportEntitlementResolver {
                 : ReportType.OPERATOR_PERFORMANCE;
     }
 
-    /**
-     * Rejects report kinds the user's roles do not entitle them to.
-     *
-     * @throws IllegalArgumentException with a message suitable for the caller
-     *                                  to surface verbatim
-     */
     public void requireEntitled(User user, ReportType reportType) {
         Set<RoleName> roles = roles(user);
 

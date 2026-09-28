@@ -334,16 +334,6 @@ public class ReportPdfRenderer {
         return cell;
     }
 
-    /**
-     * Shares the printable width between columns in proportion to the widest
-     * thing they must hold, damped by {@link #COLUMN_WIDTH_EXPONENT}. Widths are
-     * measured with the real font metrics rather than character counts, because
-     * the header and the body are set at different sizes and weights — an even
-     * split wraps every currency amount onto two lines and breaks headers
-     * mid-word.
-     *
-     * @return relative widths that sum to 1
-     */
     private static float[] columnWeights(ReportData.DataSection section, int shownRows) {
         int columns = section.headers().size();
         if (columns == 0) {
@@ -380,12 +370,6 @@ public class ReportPdfRenderer {
         return new Font(baseFont, size, style, color);
     }
 
-    // \u2500\u2500 Text folding \u2500\u2500
-
-    /**
-     * Folds a value into the printable ASCII range the base fonts can render,
-     * so a missing glyph never turns an amount into a blank cell.
-     */
     static String toAscii(String value) {
         if (value == null || value.isEmpty()) {
             return "";

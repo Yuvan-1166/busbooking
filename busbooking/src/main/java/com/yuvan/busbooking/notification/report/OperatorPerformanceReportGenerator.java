@@ -10,11 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-/**
- * Generates a fleet-scoped performance report for the operator linked to the
- * subscribed user. Metrics are aggregated by {@link AnalyticsService} limited
- * to that operator's buses.
- */
+
 @Service
 public class OperatorPerformanceReportGenerator extends AbstractReportGenerator {
 
