@@ -48,13 +48,6 @@ public class EmailService {
         }
     }
 
-    /**
-     * Sends a password reset OTP email.
-     *
-     * @param toEmail   recipient email
-     * @param otp       6-digit plain-text OTP
-     * @param expiryMin minutes until the OTP expires
-     */
     public void sendPasswordResetOtp(String toEmail, String otp, int expiryMin) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -129,22 +122,6 @@ public class EmailService {
                 """.formatted(expiryMin, otp);
     }
 
-    // ─── Booking Confirmation ────────────────────────────────────────────────
-
-    /**
-     * Sends a booking confirmation email after successful payment.
-     *
-     * @param toEmail         recipient email address
-     * @param passengerName   user's first name (used in the greeting)
-     * @param bookingRef      booking reference (e.g. BUS-ABCD1234EF56)
-     * @param ticketNumber    generated ticket number (e.g. TKT-ABCD12345678)
-     * @param tripDate        date of the trip
-     * @param departureTime   departure time of the trip
-     * @param fromCity        pickup city name
-     * @param toCity          drop city name
-     * @param passengers      list of booked passengers with seat numbers
-     * @param totalAmount     total fare charged
-     */
     public void sendBookingConfirmation(
             String toEmail,
             String passengerName,

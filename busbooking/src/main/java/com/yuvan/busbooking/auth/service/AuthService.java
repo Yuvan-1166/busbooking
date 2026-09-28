@@ -17,6 +17,8 @@ import com.yuvan.busbooking.common.exception.ResourceNotFoundException;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.repository.UserRepository;
 
+import javax.naming.AuthenticationException;
+
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -58,6 +60,16 @@ public class AuthService {
     }
 
     public LoginResponse login(LoginRequest request) {
+
+        // User user = userRepository.findByEmail(request.email())
+        //             .orElseThrow(
+        //                 () -> new IllegalArgumentException("User not found")
+        //             );
+        
+        // if(!passwordEncoder.matches(request.password(), user.getPasswordHash()))
+        //     throw new AuthenticationException();
+        // UserDetails userDeatails = userDetailsService.loadUserByUserName(user.getEmail());
+
         Authentication authentication =
                 authenticationManager.authenticate(
                         new UsernamePasswordAuthenticationToken(
@@ -82,9 +94,6 @@ public class AuthService {
         return new LoginResponse(token, "Bearer", 3600L);
     }
 
-    /**
-     * Verify TOTP code and complete login
-     */
     @Transactional
     public LoginResponse verifyTotpAndLogin(TotpVerifyRequest request) {
         // Validate and extract email from temp token
@@ -142,11 +151,6 @@ public class AuthService {
         return new LoginResponse(fullToken, "Bearer", 3600L);
     }
 
-    /**
-     * Initiates a password reset by sending an OTP to the requested destination
-     * on the requested channel. Silently succeeds even if the destination is not
-     * registered (prevents user enumeration).
-     */
     public ResetPasswordResponse forgotPassword(ForgotPasswordRequest request) {
         try {
             OtpChannel channel = otpChannelFactory.getChannel(request.resolvedChannel());
@@ -162,11 +166,6 @@ public class AuthService {
                 "If an account exists for that destination, a reset code has been sent.");
     }
 
-    /**
-     * Verifies the OTP and updates the user's password in one step. The code is
-     * confirmed on the channel it was sent to, and the account is resolved the
-     * same way.
-     */
     @Transactional(noRollbackFor = OtpVerificationException.class)
     public ResetPasswordResponse resetPassword(ResetPasswordRequest request) {
         OtpChannel channel = otpChannelFactory.getChannel(request.resolvedChannel());

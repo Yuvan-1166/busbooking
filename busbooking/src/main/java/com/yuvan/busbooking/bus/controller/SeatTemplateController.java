@@ -33,10 +33,6 @@ public class SeatTemplateController {
         this.seatService = seatService;
     }
 
-    /**
-     * GET /api/v1/seat-templates
-     * Get all active seat templates
-     */
     @GetMapping
     public ResponseEntity<List<SeatTemplateResponse>> getAllTemplates(
             @RequestParam(required = false) DeckType deckType
@@ -57,10 +53,6 @@ public class SeatTemplateController {
         }
     }
 
-    /**
-     * GET /api/v1/seat-templates/{id}
-     * Get a specific template by ID
-     */
     @GetMapping("/{id}")
     public ResponseEntity<SeatTemplateResponse> getTemplateById(@PathVariable Long id) {
         try {
@@ -75,12 +67,6 @@ public class SeatTemplateController {
         }
     }
 
-    /**
-     * GET /api/v1/seat-templates/{id}/preview
-     * Preview seats that would be created from this template
-     * Query params: rows - optional per-deck row counts (comma separated,
-     * in the same order as the template decks)
-     */
     @GetMapping("/{id}/preview")
     public ResponseEntity<List<SeatRequest>> previewTemplate(
             @PathVariable Long id,
@@ -98,10 +84,6 @@ public class SeatTemplateController {
         }
     }
 
-    /**
-     * POST /api/v1/seat-templates
-     * Create a new seat template
-     */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SeatTemplateResponse> createTemplate(
@@ -111,11 +93,7 @@ public class SeatTemplateController {
                 .status(HttpStatus.CREATED)
                 .body(seatTemplateService.createTemplate(request));
     }
-
-    /**
-     * PUT /api/v1/seat-templates/{id}
-     * Update an existing seat template
-     */
+    
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SeatTemplateResponse> updateTemplate(
@@ -127,10 +105,6 @@ public class SeatTemplateController {
         );
     }
 
-    /**
-     * DELETE /api/v1/seat-templates/{id}
-     * Delete a seat template
-     */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteTemplate(@PathVariable Long id) {
@@ -138,12 +112,6 @@ public class SeatTemplateController {
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * POST /api/v1/seat-templates/{id}/apply
-     * Apply a template to a bus. Operators may only apply to their own buses.
-     * Request body: { "busId": 123, "clearExisting": true, "rows": [10, 12] }
-     * rows is optional and overrides the template's default per-deck row counts.
-     */
     @PostMapping("/{id}/apply")
     @PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")
     public ResponseEntity<List<SeatResponse>> applyTemplate(
@@ -176,9 +144,6 @@ public class SeatTemplateController {
         }
     }
 
-    /**
-     * Read an optional "rows" array from a request body, e.g. [10, 12].
-     */
     private List<Integer> parseRowsOverride(Object raw) {
         if (!(raw instanceof List<?> values)) {
             return null;

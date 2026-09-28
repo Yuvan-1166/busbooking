@@ -1,62 +1,100 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api/v1'
 
-async function request(path, options = {}) {
+function authHeaders(extra = {}) {
   let session = null
   try {
     session = JSON.parse(localStorage.getItem('busbooking.auth'))
   } catch {
     localStorage.removeItem('busbooking.auth')
   }
+  return {
+    ...(session?.accessToken ? { Authorization: `${session.tokenType || 'Bearer'} ${session.accessToken}` } : {}),
+    ...extra,
+  }
+}
+
+async function throwIfFailed(response) {
+  if (response.ok) return
+  // Try to parse error response
+  let errorMessage = `${response.status} ${response.statusText}`
+  let errorData = null
+  try {
+    const contentType = response.headers.get('content-type')
+    if (contentType?.includes('application/json')) {
+      errorData = await response.json()
+      // Handle different error response formats
+      if (errorData.message) {
+        errorMessage = errorData.message
+      } else if (errorData.errorMessage) {
+        errorMessage = errorData.errorMessage
+      } else if (errorData.errors) {
+        // Handle validation errors
+        if (Array.isArray(errorData.errors)) {
+          errorMessage = errorData.errors.join(', ')
+        } else if (typeof errorData.errors === 'object') {
+          errorMessage = Object.values(errorData.errors).join(', ')
+        }
+      } else if (errorData.error) {
+        errorMessage = errorData.error
+      }
+    } else {
+      const text = await response.text()
+      if (text) errorMessage = text
+    }
+  } catch (parseError) {
+    // If parsing fails, use default message
+    console.error('Failed to parse error response:', parseError)
+  }
+
+  // Create error object that includes status code for proper error handling
+  const error = new Error(errorMessage)
+  error.response = {
+    status: response.status,
+    data: errorData || { message: errorMessage }
+  }
+  throw error
+}
+
+async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-      ...(session?.accessToken ? { Authorization: `${session.tokenType || 'Bearer'} ${session.accessToken}` } : {}),
-      ...options.headers,
+      ...authHeaders(options.headers),
     },
   })
   if (response.status === 401) window.dispatchEvent(new Event('auth:unauthorized'))
-  if (!response.ok) {
-    // Try to parse error response
-    let errorMessage = `${response.status} ${response.statusText}`
-    let errorData = null
-    try {
-      const contentType = response.headers.get('content-type')
-      if (contentType?.includes('application/json')) {
-        errorData = await response.json()
-        // Handle different error response formats
-        if (errorData.message) {
-          errorMessage = errorData.message
-        } else if (errorData.errorMessage) {
-          errorMessage = errorData.errorMessage
-        } else if (errorData.errors) {
-          // Handle validation errors
-          if (Array.isArray(errorData.errors)) {
-            errorMessage = errorData.errors.join(', ')
-          } else if (typeof errorData.errors === 'object') {
-            errorMessage = Object.values(errorData.errors).join(', ')
-          }
-        } else if (errorData.error) {
-          errorMessage = errorData.error
-        }
-      } else {
-        const text = await response.text()
-        if (text) errorMessage = text
-      }
-    } catch (parseError) {
-      // If parsing fails, use default message
-      console.error('Failed to parse error response:', parseError)
-    }
-    
-    // Create error object that includes status code for proper error handling
-    const error = new Error(errorMessage)
-    error.response = {
-      status: response.status,
-      data: errorData || { message: errorMessage }
-    }
-    throw error
-  }
+  await throwIfFailed(response)
   return response.status === 204 ? null : response.json()
+}
+
+// Binary endpoints (report PDFs) cannot go through `request`, which always
+// parses the body as JSON.
+async function download(path) {
+  const response = await fetch(`${API_BASE}${path}`, {
+    headers: authHeaders(),
+  })
+  if (response.status === 401) window.dispatchEvent(new Event('auth:unauthorized'))
+  await throwIfFailed(response)
+  return {
+    blob: await response.blob(),
+    fileName: fileNameFrom(response.headers.get('content-disposition')),
+  }
+}
+
+function fileNameFrom(contentDisposition) {
+  if (!contentDisposition) return null
+  // RFC 5987 form wins when present, since it survives non-ASCII names.
+  const encoded = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i)
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded[1].trim())
+    } catch {
+      // Fall through to the plain form.
+    }
+  }
+  const plain = contentDisposition.match(/filename="?([^";]+)"?/i)
+  return plain ? plain[1].trim() : null
 }
 
 export const api = {
@@ -157,6 +195,16 @@ export const api = {
   upsertReportPreference: (preference) => request('/report-preferences', { method: 'PUT', body: JSON.stringify(preference) }),
   deleteReportPreference: (reportType) => request(`/report-preferences/${reportType}`, { method: 'DELETE' }),
   sendReportNow: (reportType) => request(`/report-preferences/${reportType}/send-now`, { method: 'POST' }),
+  // On-demand PDF export. `period` covers the recurring windows; passing
+  // `from`/`to` instead asks for an explicit range.
+  downloadReportPdf: (reportType, { period, from, to } = {}) => {
+    const params = new URLSearchParams()
+    if (period) params.set('period', period)
+    if (from) params.set('from', from)
+    if (to) params.set('to', to)
+    const qs = params.toString()
+    return download(`/reports/${reportType}/pdf${qs ? `?${qs}` : ''}`)
+  },
 }
 
 export { API_BASE }

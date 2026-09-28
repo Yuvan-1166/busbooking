@@ -18,13 +18,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
-/**
- * REST Controller for TOTP alternative authentication methods
- * Handles SMS, Email, and other alternative OTP flows during login
- * 
- * These endpoints are used when the user cannot access their authenticator app
- * and need to fall back to SMS, Email, or backup codes
- */
 @RestController
 @RequestMapping("/api/v1/auth/totp-alternative")
 @RequiredArgsConstructor
@@ -35,19 +28,7 @@ public class TotpAlternativeController {
     private final JwtService jwtService;
     private final UserRepository userRepository;
     private final CustomUserDetailsService customUserDetailsService;
-    
-    /**
-     * Send alternative OTP to user
-     * 
-     * This is called during TOTP login when user chooses an alternative method
-     * (SMS, Email, etc.)
-     * 
-     * POST /api/v1/auth/totp-alternative/send
-     * 
-     * @param request Contains method (SMS/EMAIL) and temp token
-     * @param httpRequest For extracting IP and user agent
-     * @return OTP response with masked recipient and session ID
-     */
+
     @PostMapping("/send")
     public ResponseEntity<?> sendAlternativeOtp(
             @Valid @RequestBody TotpAlternativeOtpRequest request,
@@ -96,15 +77,6 @@ public class TotpAlternativeController {
         }
     }
     
-    /**
-     * Verify alternative OTP code and authenticate user
-     * 
-     * POST /api/v1/auth/totp-alternative/verify
-     * 
-     * @param request Contains temp token, session ID, and OTP code
-     * @param httpRequest For extracting IP and user agent
-     * @return Complete LoginResponse with access token on success
-     */
     @PostMapping("/verify")
     public ResponseEntity<?> verifyAlternativeOtp(
             @Valid @RequestBody TotpAlternativeVerifyRequest request,
@@ -171,13 +143,6 @@ public class TotpAlternativeController {
         }
     }
     
-    /**
-     * Extract user from temporary JWT token
-     * Temporary tokens are created during initial login attempt and contain user info
-     * 
-     * @param tempToken The temporary JWT token
-     * @return User if token is valid, null otherwise
-     */
     private User extractUserFromTempToken(String tempToken) {
         try {
             // Validate token first
@@ -203,10 +168,6 @@ public class TotpAlternativeController {
         }
     }
     
-    /**
-     * Get client IP address from HTTP request
-     * Handles X-Forwarded-For header for proxied requests
-     */
     private String getClientIpAddress(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if (xForwardedFor != null && !xForwardedFor.isEmpty()) {
@@ -221,8 +182,5 @@ public class TotpAlternativeController {
         return request.getRemoteAddr();
     }
     
-    /**
-     * Response DTO for error responses
-     */
     public record ErrorResponse(String message) {}
 }

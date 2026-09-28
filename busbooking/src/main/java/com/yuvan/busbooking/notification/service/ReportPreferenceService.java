@@ -6,19 +6,13 @@ import com.yuvan.busbooking.notification.dto.ReportPreferenceResponse;
 import com.yuvan.busbooking.notification.entity.ReportPreference;
 import com.yuvan.busbooking.notification.entity.ReportType;
 import com.yuvan.busbooking.notification.repository.ReportPreferenceRepository;
-import com.yuvan.busbooking.operator.repository.OperatorRepository;
-import com.yuvan.busbooking.user.entity.RoleName;
 import com.yuvan.busbooking.user.entity.User;
-import com.yuvan.busbooking.user.entity.UserRole;
 import com.yuvan.busbooking.user.repository.UserRepository;
-import com.yuvan.busbooking.user.repository.UserRoleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Lifecycle of report subscriptions: opting in, changing frequency, opting
@@ -31,22 +25,19 @@ public class ReportPreferenceService {
 
     private final ReportPreferenceRepository preferenceRepository;
     private final ReportDispatchService dispatchService;
+    private final ReportEntitlementResolver entitlementResolver;
     private final UserRepository userRepository;
-    private final UserRoleRepository userRoleRepository;
-    private final OperatorRepository operatorRepository;
 
     public ReportPreferenceService(
             ReportPreferenceRepository preferenceRepository,
             ReportDispatchService dispatchService,
-            UserRepository userRepository,
-            UserRoleRepository userRoleRepository,
-            OperatorRepository operatorRepository
+            ReportEntitlementResolver entitlementResolver,
+            UserRepository userRepository
     ) {
         this.preferenceRepository = preferenceRepository;
         this.dispatchService = dispatchService;
+        this.entitlementResolver = entitlementResolver;
         this.userRepository = userRepository;
-        this.userRoleRepository = userRoleRepository;
-        this.operatorRepository = operatorRepository;
     }
 
     @Transactional(readOnly = true)
@@ -60,7 +51,7 @@ public class ReportPreferenceService {
 
     public ReportPreferenceResponse upsert(String email, ReportPreferenceRequest request) {
         User user = resolveUser(email);
-        validateEntitlement(user, request.reportType());
+        entitlementResolver.requireEntitled(user, request.reportType());
 
         ReportPreference preference =
                 preferenceRepository.findByUserIdAndReportType(user.getId(), request.reportType())
@@ -106,34 +97,6 @@ public class ReportPreferenceService {
                     "Report delivery failed: " + result.errorMessage());
         }
         return toResponse(preference);
-    }
-
-    private void validateEntitlement(User user, ReportType reportType) {
-        Set<RoleName> roles = userRoleRepository.findByUserIdWithRoles(user.getId())
-                .stream()
-                .map(UserRole::getRole)
-                .map(role -> role.getName())
-                .collect(Collectors.toSet());
-
-        switch (reportType) {
-            case OPERATOR_PERFORMANCE -> {
-                if (!roles.contains(RoleName.OPERATOR) && !roles.contains(RoleName.ADMIN)) {
-                    throw new IllegalArgumentException(
-                            "OPERATOR_PERFORMANCE reports require the OPERATOR role");
-                }
-                if (roles.contains(RoleName.OPERATOR) && !roles.contains(RoleName.ADMIN)
-                        && operatorRepository.findByUserId(user.getId()).isEmpty()) {
-                    throw new IllegalArgumentException(
-                            "No operator profile is linked to this account");
-                }
-            }
-            case PLATFORM_SUMMARY -> {
-                if (!roles.contains(RoleName.ADMIN)) {
-                    throw new IllegalArgumentException(
-                            "PLATFORM_SUMMARY reports require the ADMIN role");
-                }
-            }
-        }
     }
 
     private User resolveUser(String email) {

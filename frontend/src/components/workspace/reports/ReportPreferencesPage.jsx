@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "../../../api";
 import { parseApiError, getErrorMessage } from "../../../utils/errorHandler";
+import { saveBlob } from "../../../utils/download";
 
 const REPORT_TYPES = {
   OPERATOR_PERFORMANCE: {
@@ -21,6 +22,8 @@ const FREQUENCIES = [
   { value: "MONTHLY", label: "Monthly" },
 ];
 
+const CUSTOM_RANGE = "CUSTOM";
+
 const FREQUENCY_LABELS = Object.fromEntries(
   FREQUENCIES.map((frequency) => [frequency.value, frequency.label]),
 );
@@ -38,6 +41,20 @@ const formatDateTime = (value) => {
   });
 };
 
+// Built from the local date parts rather than toISOString, which would shift
+// the day across the UTC boundary for anyone east or west of Greenwich.
+const toInputDate = (date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate(),
+  ).padStart(2, "0")}`;
+
+const defaultRange = () => {
+  const to = new Date();
+  const from = new Date();
+  from.setDate(from.getDate() - 30);
+  return { from: toInputDate(from), to: toInputDate(to) };
+};
+
 export default function ReportPreferencesPage({ role = "operator" }) {
   const isAdmin = role === "admin";
   const availableTypes = isAdmin
@@ -48,6 +65,8 @@ export default function ReportPreferencesPage({ role = "operator" }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sending, setSending] = useState(null);
+  const [downloadingCard, setDownloadingCard] = useState(null);
+  const [downloadingPanel, setDownloadingPanel] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
 
@@ -57,6 +76,14 @@ export default function ReportPreferencesPage({ role = "operator" }) {
     active: true,
   });
   const [editingType, setEditingType] = useState(null);
+
+  const [exportForm, setExportForm] = useState(() => ({
+    reportType: availableTypes[0],
+    window: "MONTHLY",
+    ...defaultRange(),
+  }));
+
+  const today = toInputDate(new Date());
 
   const resetForm = () => {
     setEditingType(null);
@@ -165,6 +192,45 @@ export default function ReportPreferencesPage({ role = "operator" }) {
     }
   };
 
+  // `onStart`/`onStop` let the caller show progress on whichever button kicked
+  // the request off, so the panel and the subscription cards never share state.
+  const downloadPdf = async (reportType, options, onStart, onStop) => {
+    onStart();
+    setError("");
+    setMessage("");
+    try {
+      const { blob, fileName } = await api.downloadReportPdf(reportType, options);
+      saveBlob(blob, fileName || `${reportType.toLowerCase()}.pdf`);
+      const title = REPORT_TYPES[reportType]?.title ?? reportType;
+      setMessage(`${title} PDF downloaded.`);
+    } catch (downloadError) {
+      setError(getErrorMessage(parseApiError(downloadError)));
+    } finally {
+      onStop();
+    }
+  };
+
+  const downloadFromPanel = async (event) => {
+    event.preventDefault();
+    const isCustom = exportForm.window === CUSTOM_RANGE;
+    if (isCustom && (!exportForm.from || !exportForm.to)) {
+      setError("Choose both a start and an end date for a custom range.");
+      return;
+    }
+
+    await downloadPdf(
+      exportForm.reportType,
+      isCustom
+        ? { from: exportForm.from, to: exportForm.to }
+        : { period: exportForm.window },
+      () => setDownloadingPanel(true),
+      () => setDownloadingPanel(false),
+    );
+  };
+
+  const changeExportField = (field, value) =>
+    setExportForm((current) => ({ ...current, [field]: value }));
+
   return (
     <section className="space-y-6">
       <div className="rounded-xl bg-gradient-to-br from-primary-50 to-primary-100 p-8">
@@ -184,97 +250,197 @@ export default function ReportPreferencesPage({ role = "operator" }) {
       {message && <div className="alert alert-success">{message}</div>}
 
       <div className="grid gap-6 xl:grid-cols-[minmax(320px,1fr)_2fr]">
-        <div className="card h-fit">
-          <h3 className="mb-6 text-lg font-semibold text-neutral-900">
-            {editingType
-              ? `Edit ${REPORT_TYPES[editingType]?.title ?? editingType}`
-              : "Subscribe to a Report"}
+        <div className="space-y-6">
+          <div className="card">
+            <h3 className="mb-6 text-lg font-semibold text-neutral-900">
+              {editingType
+                ? `Edit ${REPORT_TYPES[editingType]?.title ?? editingType}`
+                : "Subscribe to a Report"}
+            </h3>
+            <form className="space-y-4" onSubmit={submit}>
+              <div className="form-group">
+                <label className="form-label">Report *</label>
+                <select
+                  className="select"
+                  required
+                  value={form.reportType}
+                  onChange={(event) => changeField("reportType", event.target.value)}
+                  disabled={selectableTypes.length === 0}
+                >
+                  {selectableTypes.map((type) => (
+                    <option key={type} value={type}>
+                      {REPORT_TYPES[type]?.title ?? type}
+                    </option>
+                  ))}
+                </select>
+                {REPORT_TYPES[form.reportType] && (
+                  <p className="mt-1 text-xs text-neutral-600">
+                    {REPORT_TYPES[form.reportType].description}
+                  </p>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Frequency *</label>
+                <select
+                  className="select"
+                  required
+                  value={form.frequency}
+                  onChange={(event) => changeField("frequency", event.target.value)}
+                >
+                  {FREQUENCIES.map((frequency) => (
+                    <option key={frequency.value} value={frequency.value}>
+                      {frequency.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-primary-500"
+                  checked={form.active}
+                  onChange={(event) => changeField("active", event.target.checked)}
+                />
+                <span className="text-sm text-neutral-700">
+                  Deliver automatically on schedule
+                </span>
+              </label>
+              {!form.active && (
+                <p className="text-xs text-neutral-600">
+                  Paused subscriptions stay configured but won&apos;t be emailed
+                  until re-enabled.
+                </p>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  className="btn btn-primary flex-1"
+                  disabled={saving || selectableTypes.length === 0}
+                >
+                  {saving ? (
+                    <>
+                      <span className="spinner"></span>
+                      Saving...
+                    </>
+                  ) : editingType ? (
+                    "Save Changes"
+                  ) : (
+                    "Subscribe"
+                  )}
+                </button>
+                {editingType && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={resetForm}
+                    disabled={saving}
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+
+        <div className="card">
+          <h3 className="text-lg font-semibold text-neutral-900">
+            Download Report
           </h3>
-          <form className="space-y-4" onSubmit={submit}>
+          <p className="mb-6 mt-1 text-sm text-neutral-600">
+            Save a PDF copy of a report. No subscription needed.
+          </p>
+          <form className="space-y-4" onSubmit={downloadFromPanel}>
             <div className="form-group">
               <label className="form-label">Report *</label>
               <select
                 className="select"
                 required
-                value={form.reportType}
-                onChange={(event) => changeField("reportType", event.target.value)}
-                disabled={selectableTypes.length === 0}
+                value={exportForm.reportType}
+                onChange={(event) =>
+                  changeExportField("reportType", event.target.value)
+                }
               >
-                {selectableTypes.map((type) => (
+                {availableTypes.map((type) => (
                   <option key={type} value={type}>
                     {REPORT_TYPES[type]?.title ?? type}
                   </option>
                 ))}
               </select>
-              {REPORT_TYPES[form.reportType] && (
-                <p className="mt-1 text-xs text-neutral-600">
-                  {REPORT_TYPES[form.reportType].description}
-                </p>
-              )}
             </div>
 
             <div className="form-group">
-              <label className="form-label">Frequency *</label>
+              <label className="form-label">Period *</label>
               <select
                 className="select"
                 required
-                value={form.frequency}
-                onChange={(event) => changeField("frequency", event.target.value)}
+                value={exportForm.window}
+                onChange={(event) =>
+                  changeExportField("window", event.target.value)
+                }
               >
                 {FREQUENCIES.map((frequency) => (
                   <option key={frequency.value} value={frequency.value}>
                     {frequency.label}
                   </option>
                 ))}
+                <option value={CUSTOM_RANGE}>Custom range</option>
               </select>
             </div>
 
-            <label className="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                className="h-4 w-4 accent-primary-500"
-                checked={form.active}
-                onChange={(event) => changeField("active", event.target.checked)}
-              />
-              <span className="text-sm text-neutral-700">
-                Deliver automatically on schedule
-              </span>
-            </label>
-            {!form.active && (
-              <p className="text-xs text-neutral-600">
-                Paused subscriptions stay configured but won&apos;t be emailed
-                until re-enabled.
-              </p>
+            {exportForm.window === CUSTOM_RANGE && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="form-group">
+                  <label className="form-label">From *</label>
+                  <input
+                    type="date"
+                    className="input"
+                    required
+                    max={exportForm.to || today}
+                    value={exportForm.from}
+                    onChange={(event) =>
+                      changeExportField("from", event.target.value)
+                    }
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">To *</label>
+                  <input
+                    type="date"
+                    className="input"
+                    required
+                    min={exportForm.from || undefined}
+                    max={today}
+                    value={exportForm.to}
+                    onChange={(event) =>
+                      changeExportField("to", event.target.value)
+                    }
+                  />
+                </div>
+              </div>
             )}
 
-            <div className="flex gap-2">
-              <button
-                className="btn btn-primary flex-1"
-                disabled={saving || selectableTypes.length === 0}
-              >
-                {saving ? (
-                  <>
-                    <span className="spinner"></span>
-                    Saving...
-                  </>
-                ) : editingType ? (
-                  "Save Changes"
-                ) : (
-                  "Subscribe"
-                )}
-              </button>
-              {editingType && (
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={resetForm}
-                  disabled={saving}
-                >
-                  Cancel
-                </button>
+            <button
+              className="btn btn-primary w-full"
+              disabled={downloadingPanel}
+            >
+              {downloadingPanel ? (
+                <>
+                  <span className="spinner"></span>
+                  Preparing PDF...
+                </>
+              ) : (
+                "Download PDF"
               )}
-            </div>
-          </form>
+            </button>
+            {exportForm.window === CUSTOM_RANGE && (
+              <p className="text-xs text-neutral-600">
+                Custom ranges are limited to 366 days.
+              </p>
+            )}
+            </form>
+          </div>
         </div>
 
         <div>
@@ -301,7 +467,16 @@ export default function ReportPreferencesPage({ role = "operator" }) {
                   key={preference.id}
                   preference={preference}
                   sending={sending}
+                  downloading={downloadingCard}
                   onSendNow={sendNow}
+                  onDownloadPdf={() =>
+                    downloadPdf(
+                      preference.reportType,
+                      { period: preference.frequency },
+                      () => setDownloadingCard(preference.reportType),
+                      () => setDownloadingCard(null),
+                    )
+                  }
                   onEdit={startEdit}
                   onRemove={remove}
                 />

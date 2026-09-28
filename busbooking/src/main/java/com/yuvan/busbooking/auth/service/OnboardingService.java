@@ -13,12 +13,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Facade that exposes the onboarding orchestration API. It resolves the
- * {@link OnboardingStrategy} for the requested role via
- * {@link OnboardingStrategyFactory} and delegates the role-specific steps
- * (role assignment, wallet / operator provisioning) to it.
- */
 @Service
 public class OnboardingService {
 
@@ -38,12 +32,6 @@ public class OnboardingService {
         this.userDetailsService = userDetailsService;
     }
 
-    /**
-     * Complete user onboarding after Google OAuth.
-     * Updates profile, delegates the role-specific steps to the matching
-     * {@link OnboardingStrategy}, and marks onboarding complete.
-     * Returns a new JWT token with updated roles.
-     */
     @Transactional
     public LoginResponse completeOnboarding(OnboardingCompleteRequest request) {
         String userEmail = SecurityUtils.getCurrentUserEmail();

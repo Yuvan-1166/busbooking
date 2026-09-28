@@ -12,10 +12,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-/**
- * Self-service API for operators and admins to manage their recurring emailed
- * reports. All endpoints act on the authenticated user's own subscriptions.
- */
 @RestController
 @RequestMapping("/api/v1/report-preferences")
 public class ReportNotificationController {
@@ -26,7 +22,6 @@ public class ReportNotificationController {
         this.reportPreferenceService = reportPreferenceService;
     }
 
-    /** Lists the authenticated user's report subscriptions. */
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN','OPERATOR')")
     public List<ReportPreferenceResponse> getMyPreferences() {
@@ -34,7 +29,6 @@ public class ReportNotificationController {
                 SecurityUtils.getCurrentUserEmail());
     }
 
-    /** Opts in / updates the cadence of a report subscription. */
     @PutMapping
     @PreAuthorize("hasAnyRole('ADMIN','OPERATOR')")
     public ReportPreferenceResponse upsert(
@@ -44,7 +38,6 @@ public class ReportNotificationController {
                 SecurityUtils.getCurrentUserEmail(), request);
     }
 
-    /** Opts out: removes a report subscription entirely. */
     @DeleteMapping("/{reportType}")
     @PreAuthorize("hasAnyRole('ADMIN','OPERATOR')")
     public ResponseEntity<Void> remove(@PathVariable ReportType reportType) {
@@ -53,7 +46,6 @@ public class ReportNotificationController {
         return ResponseEntity.noContent().build();
     }
 
-    /** Delivers the report immediately, outside the recurring schedule. */
     @PostMapping("/{reportType}/send-now")
     @PreAuthorize("hasAnyRole('ADMIN','OPERATOR')")
     public ReportPreferenceResponse sendNow(@PathVariable ReportType reportType) {

@@ -33,13 +33,6 @@ public class TotpController {
         this.passwordEncoder = passwordEncoder;
     }
 
-    /**
-     * Generate TOTP secret and QR code for authenticated user
-     * Used when user wants to enable 2FA from their profile
-     * 
-     * POST /api/v1/auth/totp/setup
-     * Requires authentication
-     */
     @PostMapping("/setup")
     public TotpSetupResponse setupTotp() {
         // Get current authenticated user's email
@@ -51,12 +44,6 @@ public class TotpController {
         return totpService.generateTotpSecret(user);
     }
 
-    /**
-     * Verify TOTP code during initial setup and enable 2FA
-     * 
-     * POST /api/v1/auth/totp/verify-setup
-     * Requires authentication
-     */
     @PostMapping("/verify-setup")
     public MessageResponse verifySetup(@Valid @RequestBody TotpVerifySetupRequest request) {
         // Get current authenticated user's email
@@ -74,13 +61,6 @@ public class TotpController {
         return new MessageResponse("Two-factor authentication enabled successfully.");
     }
 
-    /**
-     * Disable TOTP for authenticated user
-     * Requires password confirmation for security
-     * 
-     * POST /api/v1/auth/totp/disable
-     * Requires authentication
-     */
     @PostMapping("/disable")
     public MessageResponse disableTotp(@Valid @RequestBody DisableTotpRequest request) {
         String email = SecurityUtils.getCurrentUserEmail();
@@ -102,12 +82,6 @@ public class TotpController {
         return new MessageResponse("Two-factor authentication has been disabled.");
     }
 
-    /**
-     * Generate backup codes for authenticated user
-     * 
-     * POST /api/v1/auth/totp/backup-codes/generate
-     * Requires authentication
-     */
     @PostMapping("/backup-codes/generate")
     @ResponseStatus(HttpStatus.CREATED)
     public BackupCodesResponse generateBackupCodes() {

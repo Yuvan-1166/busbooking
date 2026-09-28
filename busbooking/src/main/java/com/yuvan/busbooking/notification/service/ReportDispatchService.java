@@ -13,17 +13,10 @@ import com.yuvan.busbooking.notification.report.ReportGeneratorFactory;
 import com.yuvan.busbooking.notification.report.ReportPeriod;
 import com.yuvan.busbooking.notification.report.ReportPeriodResolver;
 import com.yuvan.busbooking.notification.repository.ReportDeliveryLogRepository;
-import com.yuvan.busbooking.operator.repository.OperatorRepository;
-import com.yuvan.busbooking.user.entity.RoleName;
-import com.yuvan.busbooking.user.entity.UserRole;
-import com.yuvan.busbooking.user.repository.UserRoleRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * Executes one report delivery: resolves the generator via the factory,
@@ -31,7 +24,7 @@ import java.util.stream.Collectors;
  *
  * <p>A subscriber without a linked operator profile cannot receive the operator
  * report; admins in that situation receive the platform report instead
- * (see {@link #effectiveReportType}). Delivery failures never propagate as
+ * (see {@link ReportEntitlementResolver}). Delivery failures never propagate as
  * exceptions — they are recorded as {@link ReportDeliveryStatus#FAILED} and
  * surfaced through {@link DispatchResult}, so the caller can opt to retry
  * without poisoning the surrounding transaction.</p>
@@ -45,28 +38,25 @@ public class ReportDispatchService {
 
     private final ReportGeneratorFactory generatorFactory;
     private final ReportPeriodResolver periodResolver;
+    private final ReportEntitlementResolver entitlementResolver;
     private final ReportEmailBuilder emailBuilder;
     private final ReportEmailSender emailSender;
     private final ReportDeliveryLogRepository logRepository;
-    private final OperatorRepository operatorRepository;
-    private final UserRoleRepository userRoleRepository;
 
     public ReportDispatchService(
             ReportGeneratorFactory generatorFactory,
             ReportPeriodResolver periodResolver,
+            ReportEntitlementResolver entitlementResolver,
             ReportEmailBuilder emailBuilder,
             ReportEmailSender emailSender,
-            ReportDeliveryLogRepository logRepository,
-            OperatorRepository operatorRepository,
-            UserRoleRepository userRoleRepository
+            ReportDeliveryLogRepository logRepository
     ) {
         this.generatorFactory = generatorFactory;
         this.periodResolver = periodResolver;
+        this.entitlementResolver = entitlementResolver;
         this.emailBuilder = emailBuilder;
         this.emailSender = emailSender;
         this.logRepository = logRepository;
-        this.operatorRepository = operatorRepository;
-        this.userRoleRepository = userRoleRepository;
     }
 
     /**
@@ -100,21 +90,8 @@ public class ReportDispatchService {
      * operator report, so they get the platform report instead.
      */
     private ReportType effectiveReportType(ReportPreference preference) {
-        if (preference.getReportType() != ReportType.OPERATOR_PERFORMANCE) {
-            return preference.getReportType();
-        }
-        if (operatorRepository.findByUserId(preference.getUser().getId()).isPresent()) {
-            return ReportType.OPERATOR_PERFORMANCE;
-        }
-        Set<RoleName> roles = userRoleRepository.findByUserIdWithRoles(preference.getUser().getId())
-                .stream()
-                .map(UserRole::getRole)
-                .map(role -> role.getName())
-                .collect(Collectors.toSet());
-        if (roles.contains(RoleName.ADMIN)) {
-            return ReportType.PLATFORM_SUMMARY;
-        }
-        return ReportType.OPERATOR_PERFORMANCE;
+        return entitlementResolver.effectiveReportType(
+                preference.getUser(), preference.getReportType());
     }
 
     private void record(ReportPreference preference, ReportType reportType,

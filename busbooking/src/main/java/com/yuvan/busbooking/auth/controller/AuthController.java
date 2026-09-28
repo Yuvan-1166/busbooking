@@ -49,10 +49,6 @@ public class AuthController {
         return authService.login(request);
     }
 
-    /**
-     * Verify TOTP code and complete login
-     * POST /api/v1/auth/login/verify-totp
-     */
     @PostMapping("/login/verify-totp")
     public LoginResponse verifyTotpAndLogin(
             @Valid @RequestBody TotpVerifyRequest request
@@ -60,13 +56,6 @@ public class AuthController {
         return authService.verifyTotpAndLogin(request);
     }
 
-    /**
-     * Initiates a password reset by sending an OTP to the requested destination
-     * on the requested channel. Silently succeeds even if the destination is not
-     * registered (prevents user enumeration).
-     *
-     * POST /api/v1/auth/forgot-password
-     */
     @PostMapping("/forgot-password")
     public ResetPasswordResponse forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request
@@ -74,11 +63,6 @@ public class AuthController {
         return authService.forgotPassword(request);
     }
 
-    /**
-     * Verifies the OTP and updates the user's password in one step.
-     *
-     * POST /api/v1/auth/reset-password
-     */
     @PostMapping("/reset-password")
     public ResetPasswordResponse resetPassword(
             @Valid @RequestBody ResetPasswordRequest request
@@ -86,14 +70,6 @@ public class AuthController {
         return authService.resetPassword(request);
     }
 
-    /**
-     * Completes user onboarding after Google OAuth.
-     * Assigns role, saves profile details, creates operator if needed.
-     * Returns new JWT token with updated roles.
-     *
-     * POST /api/v1/auth/onboarding/complete
-     * Requires authentication.
-     */
     @PostMapping("/onboarding/complete")
     public LoginResponse completeOnboarding(
             @Valid @RequestBody OnboardingCompleteRequest request

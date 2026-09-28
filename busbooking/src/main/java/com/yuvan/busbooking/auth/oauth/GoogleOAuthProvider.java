@@ -30,14 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * OAuth provider for Google sign-in.
- *
- * <p>Google's authorization step runs client-side (Google Identity popup), so
- * {@link #authorize()} is a no-op and the flow starts at {@link #handleCallback}
- * with the ID token the client received. Verifies the token, then creates or
- * updates the local user and issues a JWT.</p>
- */
+
 @Service
 @Slf4j
 public class GoogleOAuthProvider implements OAuthProvider {

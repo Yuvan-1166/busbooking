@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
 class ReportPeriodResolverTest {
 
@@ -33,5 +34,47 @@ class ReportPeriodResolverTest {
 
         assertThat(period.from()).isEqualTo(LocalDate.now().minusDays(30));
         assertThat(period.to()).isEqualTo(LocalDate.now());
+    }
+
+    @Test
+    void customKeepsTheRequestedWindow() {
+        LocalDate from = LocalDate.of(2026, 1, 1);
+        LocalDate to = LocalDate.of(2026, 3, 31);
+
+        ReportPeriod period = resolver.custom(from, to);
+
+        assertThat(period.from()).isEqualTo(from);
+        assertThat(period.to()).isEqualTo(to);
+    }
+
+    @Test
+    void customAcceptsASingleDay() {
+        LocalDate day = LocalDate.of(2026, 1, 1);
+
+        assertThat(resolver.custom(day, day)).isEqualTo(new ReportPeriod(day, day));
+    }
+
+    @Test
+    void customRejectsAMissingBound() {
+        LocalDate day = LocalDate.of(2026, 1, 1);
+
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> resolver.custom(day, null));
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> resolver.custom(null, day));
+    }
+
+    @Test
+    void customRejectsABackwardsWindow() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> resolver.custom(
+                        LocalDate.of(2026, 3, 31), LocalDate.of(2026, 1, 1)));
+    }
+
+    @Test
+    void customRejectsAWindowLongerThanTheCap() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> resolver.custom(
+                        LocalDate.of(2024, 1, 1), LocalDate.of(2026, 1, 1)));
     }
 }

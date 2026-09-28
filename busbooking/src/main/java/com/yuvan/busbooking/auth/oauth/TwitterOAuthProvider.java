@@ -39,15 +39,6 @@ import java.util.Base64;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * OAuth provider for Twitter (X) — OAuth 2.0 Authorization Code flow with PKCE.
- *
- * <p>Step 1 ({@link #authorize()}) generates a {@code code_verifier} and
- * {@code code_challenge}, persists the verifier in memory keyed by a random
- * {@code state} token, and returns the Twitter authorization URL. Step 2
- * ({@link #handleCallback}) validates the state, exchanges the code for tokens,
- * fetches the profile, and creates or updates the local user.</p>
- */
 @Service
 @Slf4j
 public class TwitterOAuthProvider implements OAuthProvider {
@@ -55,21 +46,13 @@ public class TwitterOAuthProvider implements OAuthProvider {
     private static final String PASSENGER = "PASSENGER";
     private static final String SCOPES = "tweet.read users.read offline.access";
 
-    /**
-     * How long (ms) a pending auth entry lives before it is considered stale.
-     */
     private static final long STATE_TTL_MS = 10 * 60 * 1000L; // 10 minutes
-
-    // ── configuration ─────────────────────────────────────────────────────────
-
     private final String clientId;
     private final String clientSecret;
     private final String redirectUri;
     private final String authUrl;
     private final String tokenUrl;
     private final String userInfoUrl;
-
-    // ── collaborators ──────────────────────────────────────────────────────────
 
     private final UserRepository userRepository;
     private final UserTwitterCredentialRepository twitterCredentialRepository;
@@ -80,9 +63,6 @@ public class TwitterOAuthProvider implements OAuthProvider {
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
 
-    // ── PKCE state store ───────────────────────────────────────────────────────
-
-    /** Maps {@code state} → {@link PendingAuth}. */
     private final Map<String, PendingAuth> pendingAuthStore = new ConcurrentHashMap<>();
 
     public TwitterOAuthProvider(
@@ -120,13 +100,6 @@ public class TwitterOAuthProvider implements OAuthProvider {
         return OAuthProviderType.TWITTER;
     }
 
-    // ── Step 1: build authorization URL ───────────────────────────────────────
-
-    /**
-     * Generates a PKCE {@code code_verifier} + {@code code_challenge}, stores the
-     * verifier against a random {@code state} token, and returns the Twitter
-     * authorization URL for the client to redirect the browser to.
-     */
     @Override
     public OAuthAuthorizeResponse authorize() {
         evictExpiredStates();
@@ -152,13 +125,6 @@ public class TwitterOAuthProvider implements OAuthProvider {
         return new OAuthAuthorizeResponse(OAuthProviderType.TWITTER, url, state);
     }
 
-    // ── Step 2: handle callback ────────────────────────────────────────────────
-
-    /**
-     * Validates the callback from Twitter, exchanges the authorization code for
-     * tokens, fetches the user's Twitter profile, then creates or updates the
-     * local user record and issues a JWT.
-     */
     @Override
     @Transactional
     public LoginResponse handleCallback(OAuthCallbackRequest request) {
@@ -177,9 +143,6 @@ public class TwitterOAuthProvider implements OAuthProvider {
         return createOrUpdateUser(userInfo, request.userType());
     }
 
-    // ── private helpers ────────────────────────────────────────────────────────
-
-    /** Validates state and returns the code_verifier; removes entry from store. */
     private String consumeState(String state) {
         if (state == null || state.isBlank()) {
             throw new IllegalArgumentException("State token is required");
@@ -194,7 +157,6 @@ public class TwitterOAuthProvider implements OAuthProvider {
         return pending.codeVerifier();
     }
 
-    /** Exchanges the authorization code for a Twitter access token via Basic auth. */
     private String exchangeCodeForToken(String code, String codeVerifier) {
         if (code == null || code.isBlank()) {
             throw new IllegalArgumentException("Authorization code is required");
@@ -355,21 +317,12 @@ public class TwitterOAuthProvider implements OAuthProvider {
         }
     }
 
-    // ── PKCE helpers ───────────────────────────────────────────────────────────
-
-    /**
-     * Generates a cryptographically random code verifier.
-     * Length 64 bytes → 86 Base64URL characters (well within 43-128 char limit).
-     */
     private String generateCodeVerifier() {
         byte[] bytes = new byte[64];
         new SecureRandom().nextBytes(bytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
-    /**
-     * Derives the PKCE S256 code challenge: {@code BASE64URL(SHA-256(ASCII(codeVerifier)))}.
-     */
     private String generateCodeChallenge(String codeVerifier) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -398,13 +351,6 @@ public class TwitterOAuthProvider implements OAuthProvider {
         pendingAuthStore.entrySet().removeIf(e -> now > e.getValue().expiresAt());
     }
 
-    // ── user helpers ───────────────────────────────────────────────────────────
-
-    /**
-     * Builds a synthetic email from the Twitter ID so we have a unique, stable
-     * email for the user record when Twitter API doesn't return real email
-     * (e.g., free tier API plans).
-     */
     private String buildSyntheticEmail(String twitterId) {
         return "twitter_" + twitterId + "@twitter.oauth.local";
     }
@@ -421,12 +367,8 @@ public class TwitterOAuthProvider implements OAuthProvider {
         return parts.length > 1 ? parts[1] : "";
     }
 
-    // ── inner records ──────────────────────────────────────────────────────────
-
-    /** Short-lived state entry holding the PKCE verifier and an expiry timestamp. */
     private record PendingAuth(String codeVerifier, long expiresAt) {}
 
-    /** Parsed Twitter user profile fields. */
     private record TwitterUserInfo(
             String twitterId,
             String username,
