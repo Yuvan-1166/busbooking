@@ -5,12 +5,6 @@ import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.entity.UserStatus;
 import org.springframework.stereotype.Component;
 
-/**
- * OTP flow for email verification during {@code REGISTRATION}.
- * <p>Eligible once the account exists but is not yet active — or while a
- * Twitter sign-up is still adding its email address. A successful
- * verification activates the account and completes onboarding.</p>
- */
 @Component
 public class RegistrationOtpFlow implements OtpFlow {
 

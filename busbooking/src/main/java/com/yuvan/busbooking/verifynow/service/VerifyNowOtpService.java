@@ -36,15 +36,7 @@ public class VerifyNowOtpService {
     
     private final MessageCentralConfig config;
     private final MessageCentralAuthService authService;
-    
-    /**
-     * Send OTP to the specified mobile number
-     * Uses query parameters: countryCode, flowType, mobileNumber
-     * 
-     * @param mobileNumber The mobile number to send OTP to (10 digits)
-     * @return OtpSendResponse containing verification ID and status
-     * @throws VerifyNowOtpException if OTP send operation fails
-     */
+
     public OtpSendResponse sendOtp(String mobileNumber) {
         logger.info("Sending OTP to mobile number: {}", maskMobileNumber(mobileNumber));
         
@@ -116,15 +108,6 @@ public class VerifyNowOtpService {
         }
     }
     
-    /**
-     * Validate OTP for the given verification ID
-     * Uses GET method with query parameters: verificationId, code
-     * 
-     * @param verificationId The verification ID received from sendOtp
-     * @param code The OTP code entered by user (4-6 digits)
-     * @return OtpValidateResponse containing validation status
-     * @throws VerifyNowOtpException if OTP validation fails
-     */
     public OtpValidateResponse validateOtp(String verificationId, String code) {
         logger.info("Validating OTP for verification ID: {}", verificationId);
         

@@ -11,10 +11,6 @@ import com.yuvan.busbooking.user.repository.UserRoleRepository;
 
 import org.springframework.stereotype.Service;
 
-/**
- * Onboarding strategy for operator users: replaces the temporary PASSENGER
- * role with OPERATOR and provisions the operator profile.
- */
 @Service
 public class OperatorOnboardingStrategy extends AbstractOnboardingStrategy {
 

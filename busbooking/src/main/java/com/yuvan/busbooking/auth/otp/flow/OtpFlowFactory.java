@@ -8,14 +8,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-/**
- * Registry-style factory that resolves an {@link OtpFlow} from its
- * {@link OtpPurpose}.
- *
- * <p>All {@link OtpFlow} beans are injected and indexed by purpose. Flows are
- * auto-registered — adding a new bean automatically makes it resolvable
- * here.</p>
- */
 @Service
 public class OtpFlowFactory {
 
@@ -29,13 +21,6 @@ public class OtpFlowFactory {
                 ));
     }
 
-    /**
-     * Resolves the flow implementation for the given purpose.
-     *
-     * @param purpose the desired purpose.
-     * @return the matching {@link OtpFlow}.
-     * @throws IllegalArgumentException if the purpose has no registered flow.
-     */
     public OtpFlow getFlow(OtpPurpose purpose) {
         OtpFlow flow = flows.get(purpose);
         if (flow == null) {

@@ -1,11 +1,9 @@
 package com.yuvan.busbooking.notification.report;
 
-import com.yuvan.busbooking.notification.entity.ReportFrequency;
 import com.yuvan.busbooking.notification.entity.ReportType;
 import com.yuvan.busbooking.user.entity.User;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDate;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;

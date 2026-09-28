@@ -31,13 +31,6 @@ public class EmailService {
         this.fromName = fromName;
     }
 
-    /**
-     * Sends an OTP verification email.
-     *
-     * @param toEmail   recipient email
-     * @param otp       6-digit plain-text OTP (stored hashed separately)
-     * @param expiryMin minutes until the OTP expires (shown in the email body)
-     */
     public void sendOtp(String toEmail, String otp, int expiryMin) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

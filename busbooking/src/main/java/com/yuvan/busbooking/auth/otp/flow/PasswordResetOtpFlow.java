@@ -5,11 +5,7 @@ import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.entity.UserStatus;
 import org.springframework.stereotype.Component;
 
-/**
- * OTP flow for {@code PASSWORD_RESET}.
- * <p>The user must be ACTIVE, and no post-verification mutation is applied —
- * the password update is handled separately by the caller.</p>
- */
+
 @Component
 public class PasswordResetOtpFlow implements OtpFlow {
 

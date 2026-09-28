@@ -27,7 +27,6 @@ import com.yuvan.busbooking.trip.entity.TripSeatStatus;
 import com.yuvan.busbooking.trip.entity.TripStatus;
 import com.yuvan.busbooking.trip.repository.TripRepository;
 import com.yuvan.busbooking.trip.repository.TripSeatRepository;
-import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.repository.UserRepository;
 
 import org.springframework.stereotype.Service;

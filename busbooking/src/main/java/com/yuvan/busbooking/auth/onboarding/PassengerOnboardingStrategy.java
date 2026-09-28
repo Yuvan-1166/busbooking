@@ -9,10 +9,6 @@ import com.yuvan.busbooking.wallet.service.WalletService;
 
 import org.springframework.stereotype.Service;
 
-/**
- * Onboarding strategy for passenger users: assigns the PASSENGER role and
- * provisions a wallet.
- */
 @Service
 public class PassengerOnboardingStrategy extends AbstractOnboardingStrategy {
 

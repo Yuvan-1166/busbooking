@@ -12,27 +12,15 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Repository for TOTP alternative OTP tracking
- */
 @Repository
 public interface TotpAlternativeOtpRepository extends JpaRepository<TotpAlternativeOtp, Long> {
     
     Optional<TotpAlternativeOtp> findById(Long id);
     
-    /**
-     * Find active (non-expired, non-verified) OTP by session ID
-     */
     Optional<TotpAlternativeOtp> findByIdAndStatusIn(Long id, List<OtpStatus> statuses);
     
-    /**
-     * Find OTP by verification ID from external service (e.g., VerifyNow)
-     */
     Optional<TotpAlternativeOtp> findByVerificationId(String verificationId);
     
-    /**
-     * Find recent OTP attempts for rate limiting
-     */
     @Query("SELECT otp FROM TotpAlternativeOtp otp WHERE otp.user.id = :userId AND otp.method = :method AND otp.createdAt > :since")
     List<TotpAlternativeOtp> findRecentOtpAttempts(
         @Param("userId") Long userId,
@@ -40,9 +28,6 @@ public interface TotpAlternativeOtpRepository extends JpaRepository<TotpAlternat
         @Param("since") LocalDateTime since
     );
     
-    /**
-     * Find failed verification attempts for rate limiting
-     */
     @Query("SELECT COUNT(otp) FROM TotpAlternativeOtp otp WHERE otp.user.id = :userId AND otp.status = 'FAILED' AND otp.createdAt > :since")
     long countFailedAttemptsSince(@Param("userId") Long userId, @Param("since") LocalDateTime since);
 }

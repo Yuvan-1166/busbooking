@@ -6,15 +6,10 @@ import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
-/**
- * Configuration for RestTemplate for Message Central API calls
- */
+
 @Configuration
 public class RestTemplateConfig {
     
-    /**
-     * Create a RestTemplate bean with custom timeout settings for Message Central API
-     */
     @Bean(name = "messageCentralRestTemplate")
     public RestTemplate messageCentralRestTemplate() {
         RestTemplate restTemplate = new RestTemplate(clientHttpRequestFactory());

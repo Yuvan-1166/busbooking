@@ -7,10 +7,6 @@ import com.yuvan.busbooking.user.entity.UserRole;
 import com.yuvan.busbooking.user.repository.RoleRepository;
 import com.yuvan.busbooking.user.repository.UserRoleRepository;
 
-/**
- * Base class for {@link OnboardingStrategy} implementations exposing the shared
- * role-assignment helpers used by every onboarding flow.
- */
 public abstract class AbstractOnboardingStrategy implements OnboardingStrategy {
 
     protected final RoleRepository roleRepository;
@@ -24,18 +20,12 @@ public abstract class AbstractOnboardingStrategy implements OnboardingStrategy {
         this.userRoleRepository = userRoleRepository;
     }
 
-    /**
-     * Removes every occurrence of the given role from the user.
-     */
     protected void removeRole(User user, RoleName roleName) {
         userRoleRepository.findByUserIdWithRoles(user.getId()).stream()
                 .filter(ur -> ur.getRole().getName().equals(roleName))
                 .forEach(userRoleRepository::delete);
     }
 
-    /**
-     * Assigns the given role to the user if they don't already have it.
-     */
     protected void ensureRole(User user, RoleName roleName) {
         boolean hasRole = userRoleRepository.findByUserIdWithRoles(user.getId()).stream()
                 .anyMatch(ur -> ur.getRole().getName().equals(roleName));

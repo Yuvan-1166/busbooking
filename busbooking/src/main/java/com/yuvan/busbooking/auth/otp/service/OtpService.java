@@ -29,17 +29,6 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-/**
- * The single OTP flow.
- *
- * <p>Every delivery method shares this one lifecycle — validate the
- * destination, check the user is eligible, supersede any previous code,
- * dispatch, then compare and mark verified. The two things that differ per
- * delivery method are delegated to the resolved {@link OtpChannel} (how the
- * code is sent and how the target is handled) and to the resolved
- * {@link OtpFlow} (why the code exists and what a successful verification
- * changes), so adding a channel never adds a code path here.</p>
- */
 @Service
 public class OtpService {
 
@@ -71,11 +60,6 @@ public class OtpService {
         this.maxAttempts = maxAttempts;
     }
 
-    /**
-     * Sends (or resends) a code to the requested destination on the requested
-     * channel, superseding any code still active for that destination and
-     * purpose.
-     */
     @Transactional
     public OtpVerifyResponse send(SendOtpRequest request) {
         OtpChannel channel = channelFactory.getChannel(request.resolvedChannel());
@@ -98,10 +82,6 @@ public class OtpService {
         );
     }
 
-    /**
-     * Confirms a submitted code and applies the side effects its purpose
-     * defines.
-     */
     @Transactional(noRollbackFor = OtpVerificationException.class)
     public OtpVerifyResponse confirm(VerifyOtpRequest request) {
         OtpChannel channel = channelFactory.getChannel(request.resolvedChannel());
@@ -132,11 +112,6 @@ public class OtpService {
         );
     }
 
-    /**
-     * Creates the record and hands the code to the channel. Locally issued
-     * channels get a freshly generated code; provider-managed channels get
-     * whatever reference the provider returns.
-     */
     private void dispatch(OtpChannel channel, OtpFlow flow, String target) {
         OtpVerification record = new OtpVerification();
         record.setTarget(target);
@@ -163,10 +138,6 @@ public class OtpService {
         otpRepository.save(record);
     }
 
-    /**
-     * Loads the latest record for the destination, channel and purpose and
-     * rejects it if it can no longer be used.
-     */
     private OtpVerification requireUsableRecord(
             OtpChannel channel,
             String target,
@@ -228,10 +199,6 @@ public class OtpService {
         otpRepository.save(record);
     }
 
-    /**
-     * Invalidates any code still active for this destination, channel and
-     * purpose so only the newest one can be used.
-     */
     private void supersedePrevious(
             OtpChannelType channelType,
             String target,
@@ -244,9 +211,6 @@ public class OtpService {
                 .ifPresent(this::expire);
     }
 
-    /**
-     * Resolves the account the destination belongs to.
-     */
     private User resolveOwner(OtpChannel channel, String target) {
         return channel.findOwner(target)
                 .or(() -> pendingIdentityOwner())
@@ -254,11 +218,6 @@ public class OtpService {
                         "No account found for " + channel.maskTarget(target)));
     }
 
-    /**
-     * A Twitter sign-up has no email on the account yet, so while the caller is
-     * authenticated as that Twitter identity the code is issued against it even
-     * though it is delivered to the address being added.
-     */
     private Optional<User> pendingIdentityOwner() {
         String currentUser = currentUserName();
         if (currentUser == null || !currentUser.startsWith("twitter")) {
