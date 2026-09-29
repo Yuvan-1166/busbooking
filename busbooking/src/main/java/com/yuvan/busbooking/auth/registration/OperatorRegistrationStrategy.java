@@ -14,10 +14,7 @@ import com.yuvan.busbooking.user.service.UserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Registration strategy for operator accounts: links the operator profile,
- * assigns the OPERATOR role, and provisions the active operator record.
- */
+
 @Service
 public class OperatorRegistrationStrategy extends AbstractRegistrationStrategy {
 

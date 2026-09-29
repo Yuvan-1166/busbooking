@@ -62,5 +62,5 @@ export function rememberRegisteredUser(user) {
 }
 
 export function hasRole(session, role) {
-  return Boolean(session?.roles?.includes(`ROLE_${role}`) || session?.roles?.includes(role))
+  return Boolean(session?.roles?.includes(role) || session?.roles?.includes(role))
 }

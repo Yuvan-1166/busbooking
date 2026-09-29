@@ -122,9 +122,9 @@ export default function TotpVerificationPage() {
       let userMessage = getErrorMessage(appError);
 
       if (appError.statusCode === 429) {
-        userMessage = 'Too many requests. Please wait before trying again.';
+        userMessage = userMessage || 'Too many requests. Please wait before trying again.';
       } else if (appError.statusCode === 400) {
-        userMessage = err.message || 'Unable to send OTP to this method.';
+        userMessage = userMessage || 'Unable to send OTP to this method.';
       }
 
       setError(userMessage);
@@ -170,9 +170,9 @@ export default function TotpVerificationPage() {
       let userMessage = getErrorMessage(appError);
 
       if (appError.statusCode === 400) {
-        userMessage = 'Invalid OTP code. Please check and try again.';
+        userMessage = userMessage || 'Invalid OTP code. Please check and try again.';
       } else if (appError.statusCode === 429) {
-        userMessage = 'Too many verification attempts. Please request a new OTP.';
+        userMessage = userMessage || 'Too many verification attempts. Please request a new OTP.';
       }
 
       setError(userMessage);
@@ -227,33 +227,28 @@ export default function TotpVerificationPage() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        
-        // Parse and handle specific TOTP verification errors
-        if (response.status === 400) {
-          if (errorData.message?.toLowerCase().includes("invalid")) {
-            throw new Error(
-              useBackupCode 
-                ? "Invalid backup code. Please check and try again."
-                : "Invalid 2FA code. Please check and try again."
-            );
-          } else if (errorData.message?.toLowerCase().includes("expired")) {
-            throw new Error("The backup code has expired or been used. Please use a different code.");
-          } else {
-            throw new Error(
-              useBackupCode 
-                ? "Invalid backup code. Please try again."
-                : "Invalid 2FA code. Please try again."
-            );
-          }
-        } else if (response.status === 401) {
-          throw new Error("Session expired. Please log in again.");
-        } else if (response.status === 429) {
-          throw new Error("Too many verification attempts. Please wait a few minutes before trying again.");
-        } else if (response.status === 404) {
-          throw new Error("Verification code not found. Please log in again.");
-        } else {
-          throw new Error(errorData.message || 'Verification failed. Please try again.');
+        let extractedMessage = errorData.message || errorData.errorMessage || errorData.error;
+        if (!extractedMessage && errorData.errors) {
+          extractedMessage = Array.isArray(errorData.errors)
+            ? errorData.errors.join(', ')
+            : Object.values(errorData.errors).join(', ');
         }
+        if (!extractedMessage) {
+          if (response.status === 400) {
+            extractedMessage = useBackupCode
+              ? "Invalid backup code. Please check and try again."
+              : "Invalid 2FA code. Please check and try again.";
+          } else if (response.status === 401) {
+            extractedMessage = "Session expired. Please log in again.";
+          } else if (response.status === 429) {
+            extractedMessage = "Too many verification attempts. Please wait a few minutes before trying again.";
+          } else if (response.status === 404) {
+            extractedMessage = "Verification code not found. Please log in again.";
+          } else {
+            extractedMessage = 'Verification failed. Please try again.';
+          }
+        }
+        throw new Error(extractedMessage);
       }
 
       const data = await response.json();

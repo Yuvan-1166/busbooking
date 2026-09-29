@@ -34,11 +34,11 @@ export default function DisableTotpModal({ isOpen, onClose, onConfirm }) {
 
       // Handle specific disable TOTP errors
       if (appError.statusCode === 401) {
-        userMessage = 'Incorrect password. Please try again.';
+        userMessage = userMessage || 'Incorrect password. Please try again.';
       } else if (appError.statusCode === 400) {
-        userMessage = 'Invalid request. Please try again.';
+        userMessage = userMessage || 'Invalid request. Please try again.';
       } else if (appError.statusCode === 429) {
-        userMessage = 'Too many attempts. Please wait a few minutes before trying again.';
+        userMessage = userMessage || 'Too many attempts. Please wait a few minutes before trying again.';
       } else if (appError.statusCode === 0) {
         userMessage = 'Connection error. Please check your internet and try again.';
       } else if (appError.statusCode === 408) {

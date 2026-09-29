@@ -15,10 +15,6 @@ import com.yuvan.busbooking.wallet.service.WalletService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Registration strategy for passenger accounts: assigns the PASSENGER role and
- * provisions the default wallet for every new passenger.
- */
 @Service
 public class PassengerRegistrationStrategy extends AbstractRegistrationStrategy {
 

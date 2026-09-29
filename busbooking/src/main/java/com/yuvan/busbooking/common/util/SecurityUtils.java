@@ -26,23 +26,18 @@ public final class SecurityUtils {
         return authentication.getName();
     }
 
-    /**
-     * Returns true if the current authenticated user has the given role.
-     * Spring prefixes role names with {@code ROLE_}, so pass e.g. {@code "OPERATOR"}.
-     */
     public static boolean hasRole(String roleName) {
 
-        Authentication authentication =
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication();
+        Authentication authentication = SecurityContextHolder
+                                        .getContext()
+                                        .getAuthentication();
 
         if (authentication == null ||
                 !authentication.isAuthenticated()) {
             return false;
         }
 
-        String prefixed = "ROLE_" + roleName;
+        String prefixed = roleName;
 
         return authentication.getAuthorities()
                 .stream()

@@ -7,7 +7,7 @@ import com.yuvan.busbooking.notification.entity.ReportType;
 import com.yuvan.busbooking.notification.service.ReportPreferenceService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import com.yuvan.busbooking.common.util.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

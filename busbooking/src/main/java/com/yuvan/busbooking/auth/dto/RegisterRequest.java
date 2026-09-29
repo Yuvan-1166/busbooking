@@ -4,6 +4,7 @@ import com.yuvan.busbooking.auth.registration.RegistrationType;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 public record RegisterRequest(
@@ -16,7 +17,10 @@ public record RegisterRequest(
         String email,
 
         @NotBlank
-        @Size(min = 8, max = 100)
+        @Pattern(
+                regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,100}$", 
+                message = "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character"
+        )
         String password,
 
         @NotBlank

@@ -1,5 +1,5 @@
 /**
- * Maps technical error messages to user-friendly messages
+ * Maps technical error messages to user-friendly messages while preserving clear backend messages
  * @param {string} errorMessage - The raw error message from API
  * @param {string} context - The context where error occurred (e.g., 'send-otp', 'verify-otp')
  * @returns {string} User-friendly error message
@@ -23,7 +23,20 @@ export function getUserFriendlyErrorMessage(errorMessage, context = '') {
     return 'You do not have permission to perform this action.'
   }
 
-  // Mobile verification specific errors
+  // If message is already a clean, meaningful message from the backend (no raw technical jargon), return it as is!
+  const isTechnical =
+    lowerError.includes('exception') ||
+    lowerError.includes('nullpointer') ||
+    lowerError.includes('undefined') ||
+    lowerError.includes('stacktrace') ||
+    lowerError.includes('sql') ||
+    lowerError.includes('error:');
+
+  if (!isTechnical && errorMessage.length < 300) {
+    return errorMessage
+  }
+
+  // Mobile verification specific errors for technical/unfriendly messages
   if (context === 'send-otp') {
     if (lowerError.includes('invalid') && lowerError.includes('mobile')) {
       return 'Invalid mobile number. Please enter a valid 10-digit number.'
@@ -68,7 +81,6 @@ export function getUserFriendlyErrorMessage(errorMessage, context = '') {
 
   // Validation errors
   if (lowerError.includes('validation') || lowerError.includes('invalid')) {
-    // Try to extract field-specific message
     if (lowerError.includes('mobile') || lowerError.includes('phone')) {
       return 'Invalid mobile number format. Please enter a valid 10-digit number.'
     }
@@ -91,15 +103,6 @@ export function getUserFriendlyErrorMessage(errorMessage, context = '') {
     return 'Request timed out. Please check your connection and try again.'
   }
 
-  // If message is already user-friendly (no technical jargon), return as is
-  if (!lowerError.includes('exception') && 
-      !lowerError.includes('null') && 
-      !lowerError.includes('undefined') &&
-      !lowerError.includes('error:') &&
-      errorMessage.length < 200) {
-    return errorMessage
-  }
-
   // Default fallback
   return 'An unexpected error occurred. Please try again later.'
 }
@@ -120,7 +123,7 @@ export function formatValidationErrors(errors) {
 
   if (typeof errors === 'object') {
     return Object.entries(errors)
-      .map(([field, message]) => `${field}: ${message}`)
+      .map(([field, message]) => `${field.charAt(0).toUpperCase() + field.slice(1)}: ${message}`)
       .join('. ')
   }
 

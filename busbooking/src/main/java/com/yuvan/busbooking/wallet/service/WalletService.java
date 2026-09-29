@@ -49,11 +49,6 @@ public class WalletService {
         return new WalletResponse(user.getId(), wallet.getBalance());
     }
 
-    /**
-     * Deduct {@code amount} from the wallet of {@code userId}.
-     * Throws {@link IllegalArgumentException} if balance is insufficient.
-     * Returns the wallet balance after deduction.
-     */
     @Transactional
     public BigDecimal deduct(Long userId, BigDecimal amount) {
         UserWallet wallet = walletRepository.findByUserId(userId)
@@ -72,10 +67,6 @@ public class WalletService {
         return wallet.getBalance();
     }
 
-    /**
-     * Add (refund) {@code amount} to the wallet of {@code userId}.
-     * Returns the wallet balance after refund.
-     */
     @Transactional
     public BigDecimal refund(Long userId, BigDecimal amount) {
         UserWallet wallet = walletRepository.findByUserId(userId)

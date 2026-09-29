@@ -88,13 +88,9 @@ export default function OnboardingPage() {
       let userMessage = getErrorMessage(appError);
       
       if (appError.statusCode === 400) {
-        if (err.message?.includes("already registered")) {
-          userMessage = "This email is already registered. Please use a different one.";
-        } else {
-          userMessage = "Invalid verification code. Please try again.";
-        }
+        userMessage = userMessage || "Invalid verification code. Please try again.";
       } else if (appError.statusCode === 404) {
-        userMessage = "Verification code expired. Please request a new one.";
+        userMessage = userMessage || "Verification code expired. Please request a new one.";
       }
 
       setError(userMessage);
@@ -155,7 +151,7 @@ export default function OnboardingPage() {
       let userMessage = getErrorMessage(appError);
 
       if (appError.statusCode === 400) {
-        userMessage = "Please fill all required fields.";
+        userMessage = userMessage || "Please fill all required fields.";
       }
 
       setError(userMessage);

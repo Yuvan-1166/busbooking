@@ -7,12 +7,6 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-/**
- * Audit trail for every report delivery attempt.
- *
- * <p>Failures are recorded with a sanitised error message so operators can
- * inspect delivery health without leaking SMTP internals.</p>
- */
 @Entity
 @Table(
         name = "report_delivery_logs",

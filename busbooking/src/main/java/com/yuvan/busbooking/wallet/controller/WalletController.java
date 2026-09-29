@@ -5,7 +5,7 @@ import com.yuvan.busbooking.wallet.dto.WalletUpdateRequest;
 import com.yuvan.busbooking.wallet.service.WalletService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import com.yuvan.busbooking.common.util.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

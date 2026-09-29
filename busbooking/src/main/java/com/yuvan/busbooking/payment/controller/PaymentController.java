@@ -8,7 +8,7 @@ import com.yuvan.busbooking.payment.dto.PaymentResponse;
 import com.yuvan.busbooking.payment.service.PaymentService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import com.yuvan.busbooking.common.util.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

@@ -46,12 +46,12 @@ export default function TotpSetupPage() {
 
       // Handle specific setup errors
       if (appError.statusCode === 400) {
-        userMessage = "Invalid setup request. Please try again.";
+        userMessage = userMessage || "Invalid setup request. Please try again.";
       } else if (appError.statusCode === 401) {
-        userMessage = "Session expired. Please log in again.";
+        userMessage = userMessage || "Session expired. Please log in again.";
         setTimeout(() => navigate('/login'), 2000);
       } else if (appError.statusCode === 409) {
-        userMessage = "2FA is already enabled for this account.";
+        userMessage = userMessage || "2FA is already enabled for this account.";
       } else if (appError.statusCode === 0) {
         userMessage = "Connection error. Please check your internet and try again.";
       } else if (appError.statusCode === 408) {
@@ -96,17 +96,13 @@ export default function TotpSetupPage() {
 
       // Handle specific verification errors
       if (appError.statusCode === 400) {
-        if (err.response?.data?.message?.toLowerCase().includes("invalid")) {
-          userMessage = "Invalid 2FA code. Please check and try again.";
-        } else {
-          userMessage = "The code you entered is incorrect. Please try again.";
-        }
+        userMessage = userMessage || "The code you entered is incorrect. Please try again.";
       } else if (appError.statusCode === 401) {
-        userMessage = "Session expired. Please log in again.";
+        userMessage = userMessage || "Session expired. Please log in again.";
       } else if (appError.statusCode === 409) {
-        userMessage = "2FA is already enabled. Please disable it first if you want to re-enable.";
+        userMessage = userMessage || "2FA is already enabled. Please disable it first if you want to re-enable.";
       } else if (appError.statusCode === 429) {
-        userMessage = "Too many verification attempts. Please wait a few minutes before trying again.";
+        userMessage = userMessage || "Too many verification attempts. Please wait a few minutes before trying again.";
       } else if (appError.statusCode === 0) {
         userMessage = "Connection error. Please check your internet and try again.";
       } else if (appError.statusCode === 408) {

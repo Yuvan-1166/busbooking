@@ -107,14 +107,17 @@ export default function AuthPage() {
         // Check if TOTP verification is required
         if (response && response.requiresTotp) {
           console.log("TOTP required, navigating to /totp/verify");
-          
+
           // Store in sessionStorage as backup
-          sessionStorage.setItem('totp_verify_temp_token', response.tempToken);
-          sessionStorage.setItem('totp_verify_user_id', response.userId.toString());
-          
+          sessionStorage.setItem("totp_verify_temp_token", response.tempToken);
+          sessionStorage.setItem(
+            "totp_verify_user_id",
+            response.userId.toString(),
+          );
+
           // Clear submitting state before navigating
           setSubmitting(false);
-          
+
           navigate("/totp/verify", {
             state: {
               tempToken: response.tempToken,
@@ -152,8 +155,12 @@ export default function AuthPage() {
       if (mode === "login") {
         if (appError.statusCode === 401) {
           // Check if it's an unverified email scenario
-          if (submitError.message?.toLowerCase().includes("not verified") ||
-              submitError.response?.data?.message?.toLowerCase().includes("not verified")) {
+          if (
+            submitError.message?.toLowerCase().includes("not verified") ||
+            submitError.response?.data?.message
+              ?.toLowerCase()
+              .includes("not verified")
+          ) {
             // Account not verified → go to verify screen
             setPendingEmail(form.email);
             setOtpChannel("EMAIL");
@@ -167,25 +174,37 @@ export default function AuthPage() {
             return;
           }
           // Invalid credentials
-          userMessage = "Invalid email or password. Please try again.";
+          userMessage =
+            userMessage || "Invalid email or password. Please try again.";
         } else if (appError.statusCode === 403) {
-          userMessage = "Your account has been disabled. Please contact support.";
+          userMessage =
+            userMessage ||
+            "Your account has been disabled. Please contact support.";
         } else if (appError.statusCode === 429) {
-          userMessage = "Too many login attempts. Please try again in a few minutes.";
+          userMessage =
+            userMessage ||
+            "Too many login attempts. Please try again in a few minutes.";
         } else if (appError.statusCode === 0) {
-          userMessage = "Connection error. Please check your internet and try again.";
+          userMessage =
+            "Connection error. Please check your internet and try again.";
         }
       }
       // Handle specific auth errors for registration
       else if (mode === "register") {
         if (appError.statusCode === 409) {
-          userMessage = `This email is already registered as a ${registrationType}. Please sign in or use a different email.`;
+          userMessage =
+            userMessage ||
+            `This email is already registered as a ${registrationType}. Please sign in or use a different email.`;
         } else if (appError.statusCode === 403) {
-          userMessage = "Registration is currently unavailable. Please try again later.";
+          userMessage =
+            userMessage ||
+            "Registration is currently unavailable. Please try again later.";
         } else if (appError.statusCode === 400) {
-          userMessage = "Please check your input and try again.";
+          userMessage = userMessage || "Please check your input and try again.";
         } else if (appError.statusCode === 429) {
-          userMessage = "Too many registration attempts. Please try again later.";
+          userMessage =
+            userMessage ||
+            "Too many registration attempts. Please try again later.";
         }
       }
 
@@ -235,21 +254,22 @@ export default function AuthPage() {
 
       // Handle specific OTP verification errors
       if (appError.statusCode === 400) {
-        if (otpError.response?.data?.message?.toLowerCase().includes("invalid")) {
-          userMessage = "The verification code is invalid. Please check and try again.";
-        } else if (otpError.response?.data?.message?.toLowerCase().includes("expired")) {
-          userMessage = "The verification code has expired. Please request a new one.";
-        } else {
-          userMessage = "Invalid verification code. Please try again.";
-        }
+        userMessage =
+          userMessage || "Invalid verification code. Please try again.";
       } else if (appError.statusCode === 404) {
-        userMessage = "Verification code not found or has expired. Please request a new one.";
+        userMessage =
+          userMessage ||
+          "Verification code not found or has expired. Please request a new one.";
       } else if (appError.statusCode === 429) {
-        userMessage = "Too many verification attempts. Please wait before trying again.";
+        userMessage =
+          userMessage ||
+          "Too many verification attempts. Please wait before trying again.";
       } else if (appError.statusCode === 0) {
-        userMessage = "Connection error. Please check your internet and try again.";
+        userMessage =
+          "Connection error. Please check your internet and try again.";
       } else if (appError.statusCode === 408) {
-        userMessage = "Request timeout. Please check your connection and try again.";
+        userMessage =
+          "Request timeout. Please check your connection and try again.";
       }
 
       setError(userMessage);
@@ -286,19 +306,27 @@ export default function AuthPage() {
       // Handle specific resend OTP errors
       if (appError.statusCode === 429) {
         userMessage =
+          userMessage ||
           "Too many requests. Please wait a few minutes before requesting another code.";
       } else if (appError.statusCode === 404) {
-        userMessage = mobile
-          ? "No account found for that mobile number. Please check the number or use email."
-          : "Email not found in system. Please register first.";
+        userMessage =
+          userMessage ||
+          (mobile
+            ? "No account found for that mobile number. Please check the number or use email."
+            : "Email not found in system. Please register first.");
       } else if (appError.statusCode === 400) {
-        userMessage = "Cannot send verification code. Please try again.";
+        userMessage =
+          userMessage || "Cannot send verification code. Please try again.";
       } else if (appError.statusCode === 502) {
-        userMessage = "We could not reach the delivery service. Please try again.";
+        userMessage =
+          userMessage ||
+          "We could not reach the delivery service. Please try again.";
       } else if (appError.statusCode === 0) {
-        userMessage = "Connection error. Please check your internet and try again.";
+        userMessage =
+          "Connection error. Please check your internet and try again.";
       } else if (appError.statusCode === 408) {
-        userMessage = "Request timeout. Please check your connection and try again.";
+        userMessage =
+          "Request timeout. Please check your connection and try again.";
       }
 
       setError(userMessage);
@@ -323,7 +351,9 @@ export default function AuthPage() {
     setError("");
     setMessage("");
     const target =
-      channelById(channel).inputType === "tel" ? digitsOnly(smsTarget) : pendingEmail;
+      channelById(channel).inputType === "tel"
+        ? digitsOnly(smsTarget)
+        : pendingEmail;
     if (isValidDestination(channel, target)) sendOtpTo(channel, target);
   };
 
@@ -378,17 +408,21 @@ export default function AuthPage() {
       if (appError.statusCode === 400) {
         if (googleError.message?.includes("No credential")) {
           userMessage = "Google authentication failed. Please try again.";
-        } else if (googleError.response?.data?.message?.toLowerCase().includes("invalid")) {
-          userMessage = "Invalid Google credential. Please try again.";
         } else {
-          userMessage = "Google authentication error. Please try again.";
+          userMessage =
+            userMessage || "Google authentication error. Please try again.";
         }
       } else if (appError.statusCode === 401) {
-        userMessage = "Google authentication failed. Please try again or use email/password.";
+        userMessage =
+          userMessage ||
+          "Google authentication failed. Please try again or use email/password.";
       } else if (appError.statusCode === 409) {
-        userMessage = "This Google account is already linked. Please sign in.";
+        userMessage =
+          userMessage ||
+          "This Google account is already linked. Please sign in.";
       } else if (appError.statusCode === 0) {
-        userMessage = "Connection error. Please check your internet and try again.";
+        userMessage =
+          "Connection error. Please check your internet and try again.";
       } else if (appError.statusCode === 408) {
         userMessage = "Google authentication took too long. Please try again.";
       }
@@ -421,7 +455,8 @@ export default function AuthPage() {
       // Persist state and userType so TwitterCallback can read them after redirect
       sessionStorage.setItem(STATE_KEY, state);
       // Pass current registrationType as PASSENGER / OPERATOR
-      const userType = registrationType === "operator" ? "OPERATOR" : "PASSENGER";
+      const userType =
+        registrationType === "operator" ? "OPERATOR" : "PASSENGER";
       sessionStorage.setItem(USER_TYPE_KEY, userType);
 
       // Redirect the browser to Twitter's authorization page
@@ -431,11 +466,16 @@ export default function AuthPage() {
       let userMessage = getErrorMessage(appError);
 
       if (appError.statusCode === 0) {
-        userMessage = "Connection error. Please check your internet and try again.";
+        userMessage =
+          "Connection error. Please check your internet and try again.";
       } else if (appError.statusCode === 500) {
-        userMessage = "Twitter sign-in is temporarily unavailable. Please try again later.";
+        userMessage =
+          userMessage ||
+          "Twitter sign-in is temporarily unavailable. Please try again later.";
       } else {
-        userMessage = "Twitter sign-in failed. Please try again or use email/password.";
+        userMessage =
+          userMessage ||
+          "Twitter sign-in failed. Please try again or use email/password.";
       }
 
       setError(userMessage);
@@ -452,12 +492,12 @@ export default function AuthPage() {
         <div className="mb-2 text-center">
           <div className="mx-auto mb-1 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary-500 to-primary-600 text-white shadow-lg">
             <svg className="h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M4 6h16v2H4zm0 5h16v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6zm2-7h12a2 2 0 012 2v1H4V6a2 2 0 012-2z"/>
-              <circle cx="6" cy="19" r="1"/>
-              <circle cx="18" cy="19" r="1"/>
-              <rect x="7" y="8" width="2" height="2" rx="0.5"/>
-              <rect x="11" y="8" width="2" height="2" rx="0.5"/>
-              <rect x="15" y="8" width="2" height="2" rx="0.5"/>
+              <path d="M4 6h16v2H4zm0 5h16v6a2 2 0 01-2 2H6a2 2 0 01-2-2v-6zm2-7h12a2 2 0 012 2v1H4V6a2 2 0 012-2z" />
+              <circle cx="6" cy="19" r="1" />
+              <circle cx="18" cy="19" r="1" />
+              <rect x="7" y="8" width="2" height="2" rx="0.5" />
+              <rect x="11" y="8" width="2" height="2" rx="0.5" />
+              <rect x="15" y="8" width="2" height="2" rx="0.5" />
             </svg>
           </div>
           <div className="mb-1">
@@ -513,12 +553,26 @@ export default function AuthPage() {
               onClick={() => switchRegistrationType("passenger")}
             >
               <div className="flex items-center gap-2">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-md ${registrationType === "passenger" ? "bg-primary-500 text-white" : "bg-neutral-100 text-neutral-600"}`}>
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-md ${registrationType === "passenger" ? "bg-primary-500 text-white" : "bg-neutral-100 text-neutral-600"}`}
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
                   </svg>
                 </div>
-                <strong className="text-base font-semibold text-neutral-900">Passenger</strong>
+                <strong className="text-base font-semibold text-neutral-900">
+                  Passenger
+                </strong>
               </div>
               <span className="text-xs leading-relaxed text-neutral-600">
                 Search and book bus tickets
@@ -530,12 +584,26 @@ export default function AuthPage() {
               onClick={() => switchRegistrationType("operator")}
             >
               <div className="flex items-center gap-2">
-                <div className={`flex h-8 w-8 items-center justify-center rounded-md ${registrationType === "operator" ? "bg-primary-500 text-white" : "bg-neutral-100 text-neutral-600"}`}>
-                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-md ${registrationType === "operator" ? "bg-primary-500 text-white" : "bg-neutral-100 text-neutral-600"}`}
+                >
+                  <svg
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
                   </svg>
                 </div>
-                <strong className="text-base font-semibold text-neutral-900">Operator</strong>
+                <strong className="text-base font-semibold text-neutral-900">
+                  Operator
+                </strong>
               </div>
               <span className="text-xs leading-relaxed text-neutral-600">
                 Manage buses and schedules
@@ -573,7 +641,8 @@ export default function AuthPage() {
                 disabled={resending || submitting}
                 channels={OTP_CHANNELS.map((option) => {
                   const mobile = option.inputType === "tel";
-                  const unavailable = mobile && !isValidDestination(option.id, smsTarget);
+                  const unavailable =
+                    mobile && !isValidDestination(option.id, smsTarget);
                   return {
                     ...option,
                     label: `${option.label}${
@@ -663,9 +732,7 @@ export default function AuthPage() {
                 type="button"
                 className="btn-ghost text-sm"
                 onClick={resendOtp}
-                disabled={
-                  resending || submitting || !canSendToSelectedChannel
-                }
+                disabled={resending || submitting || !canSendToSelectedChannel}
               >
                 {resending
                   ? "Sending…"
@@ -738,7 +805,16 @@ export default function AuthPage() {
                 required
                 type="password"
                 name="password"
-                minLength={mode === "register" ? 8 : undefined}
+                pattern={
+                  mode === "register"
+                    ? "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&]).{8,}$"
+                    : undefined
+                }
+                title={
+                  mode === "register"
+                    ? "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character."
+                    : undefined
+                }
                 value={form.password}
                 onChange={updateField}
                 autoComplete={
@@ -746,7 +822,13 @@ export default function AuthPage() {
                 }
               />
               {mode === "register" && (
-                <p className="form-hint">At least 8 characters</p>
+                <div>
+                  <p className="form-hint">At least 8 characters,</p>
+                  <p className="form-hint">
+                    One Upper case and One Lower case,
+                  </p>
+                  <p className="form-hint">One Special character</p>
+                </div>
               )}
             </div>
             {mode === "register" && (
@@ -777,7 +859,8 @@ export default function AuthPage() {
                 </div>
                 <div className="form-group">
                   <label className="form-label">
-                    Registration number <span className="text-error-500">*</span>
+                    Registration number{" "}
+                    <span className="text-error-500">*</span>
                   </label>
                   <input
                     className="input"

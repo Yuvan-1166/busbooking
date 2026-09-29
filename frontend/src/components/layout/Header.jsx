@@ -9,9 +9,9 @@ export default function Header({ email, firstName, lastName, roles }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const location = useLocation()
   
-  const isPassenger = roles?.includes('ROLE_PASSENGER') || roles?.includes('PASSENGER')
-  const isAdmin = roles?.includes('ROLE_ADMIN') || roles?.includes('ADMIN')
-  const isOperator = roles?.includes('ROLE_OPERATOR') || roles?.includes('OPERATOR')
+  const isPassenger = roles?.includes('PASSENGER')
+  const isAdmin = roles?.includes('ADMIN')
+  const isOperator = roles?.includes('OPERATOR')
   
   const workspacePath = isAdmin ? '/admin' : '/operator'
   const roleLabel = roles?.[0]?.replace('ROLE_', '') || 'USER'

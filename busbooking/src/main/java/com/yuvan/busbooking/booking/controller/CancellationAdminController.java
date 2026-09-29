@@ -5,7 +5,7 @@ import com.yuvan.busbooking.booking.dto.CancellationUpdateRequest;
 import com.yuvan.busbooking.booking.service.CancellationService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
+import com.yuvan.busbooking.common.util.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

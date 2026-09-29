@@ -80,9 +80,9 @@ export default function TotpAlternativesModal({
       let userMessage = getErrorMessage(appError);
 
       if (appError.statusCode === 429) {
-        userMessage = 'Too many requests. Please wait before trying again.';
+        userMessage = userMessage || 'Too many requests. Please wait before trying again.';
       } else if (appError.statusCode === 400) {
-        userMessage = err.message || 'Unable to send OTP to this method.';
+        userMessage = userMessage || 'Unable to send OTP to this method.';
       }
 
       setError(userMessage);
@@ -127,9 +127,9 @@ export default function TotpAlternativesModal({
       let userMessage = getErrorMessage(appError);
 
       if (appError.statusCode === 400) {
-        userMessage = 'Invalid OTP code. Please check and try again.';
+        userMessage = userMessage || 'Invalid OTP code. Please check and try again.';
       } else if (appError.statusCode === 429) {
-        userMessage = 'Too many verification attempts. Please request a new OTP.';
+        userMessage = userMessage || 'Too many verification attempts. Please request a new OTP.';
       }
 
       setError(userMessage);

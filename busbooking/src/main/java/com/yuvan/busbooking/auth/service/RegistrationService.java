@@ -6,11 +6,6 @@ import com.yuvan.busbooking.auth.registration.RegistrationStrategy;
 import com.yuvan.busbooking.auth.registration.RegistrationStrategyFactory;
 import org.springframework.stereotype.Service;
 
-/**
- * Facade that exposes the unified account-registration API. It resolves the
- * {@link RegistrationStrategy} for the requested {@code userType} via
- * {@link RegistrationStrategyFactory} and delegates the flow to it.
- */
 @Service
 public class RegistrationService {
 

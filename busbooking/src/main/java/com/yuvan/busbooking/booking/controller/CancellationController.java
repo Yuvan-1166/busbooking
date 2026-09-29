@@ -1,6 +1,6 @@
 package com.yuvan.busbooking.booking.controller;
 
-import org.springframework.security.access.prepost.PreAuthorize;
+import com.yuvan.busbooking.common.util.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import com.yuvan.busbooking.booking.dto.BookingCancellationRequest;

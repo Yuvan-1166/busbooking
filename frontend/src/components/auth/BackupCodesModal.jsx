@@ -30,11 +30,11 @@ export default function BackupCodesModal({ isOpen, codes, onClose, onGenerate })
       let userMessage = getErrorMessage(appError);
 
       if (appError.statusCode === 401) {
-        userMessage = 'Session expired. Please log in again.';
+        userMessage = userMessage || 'Session expired. Please log in again.';
       } else if (appError.statusCode === 400) {
-        userMessage = 'Cannot generate backup codes. Please try again.';
+        userMessage = userMessage || 'Cannot generate backup codes. Please try again.';
       } else if (appError.statusCode === 429) {
-        userMessage = 'Too many requests. Please wait before trying again.';
+        userMessage = userMessage || 'Too many requests. Please wait before trying again.';
       } else if (appError.statusCode === 0) {
         userMessage = 'Connection error. Please check your internet and try again.';
       } else if (appError.statusCode === 408) {

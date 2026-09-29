@@ -22,18 +22,27 @@ async function throwIfFailed(response) {
     const contentType = response.headers.get('content-type')
     if (contentType?.includes('application/json')) {
       errorData = await response.json()
-      // Handle different error response formats
-      if (errorData.message) {
+      // Handle different error response formats, extracting the most specific message
+      if (errorData.errors) {
+        let validationMsg = ''
+        if (Array.isArray(errorData.errors)) {
+          validationMsg = errorData.errors.join(', ')
+        } else if (typeof errorData.errors === 'object') {
+          validationMsg = Object.entries(errorData.errors)
+            .map(([field, msg]) => `${field.charAt(0).toUpperCase() + field.slice(1)}: ${msg}`)
+            .join(', ')
+        }
+        if (validationMsg) {
+          errorMessage = errorData.message && !errorData.message.toLowerCase().includes('validation failed')
+            ? `${errorData.message}: ${validationMsg}`
+            : validationMsg
+        } else if (errorData.message) {
+          errorMessage = errorData.message
+        }
+      } else if (errorData.message) {
         errorMessage = errorData.message
       } else if (errorData.errorMessage) {
         errorMessage = errorData.errorMessage
-      } else if (errorData.errors) {
-        // Handle validation errors
-        if (Array.isArray(errorData.errors)) {
-          errorMessage = errorData.errors.join(', ')
-        } else if (typeof errorData.errors === 'object') {
-          errorMessage = Object.values(errorData.errors).join(', ')
-        }
       } else if (errorData.error) {
         errorMessage = errorData.error
       }
@@ -48,6 +57,8 @@ async function throwIfFailed(response) {
 
   // Create error object that includes status code for proper error handling
   const error = new Error(errorMessage)
+  error.status = response.status
+  error.statusCode = response.status
   error.response = {
     status: response.status,
     data: errorData || { message: errorMessage }

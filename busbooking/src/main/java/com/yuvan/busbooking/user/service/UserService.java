@@ -200,23 +200,6 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
-    /**
-     * Verifies email OTP for Twitter OAuth users and updates their account email.
-     * 
-     * <p>Flow:</p>
-     * <ol>
-     *   <li>User provides email + OTP received in onboarding</li>
-     *   <li>Verify OTP matches the email</li>
-     *   <li>Check email isn't already registered</li>
-     *   <li>Update user's email and clear twitterEmailPending flag</li>
-     *   <li>Generate a NEW JWT with the new email in the subject claim</li>
-     *   <li>Return the JWT and updated user data</li>
-     * </ol>
-     *
-     * @param request {@link VerifyTwitterEmailRequest} with email and OTP
-     * @return {@link VerifyTwitterEmailResponse} with new JWT and user data
-     * @throws IllegalArgumentException if email is already taken or OTP is invalid
-     */
     public VerifyTwitterEmailResponse verifyTwitterEmail(VerifyTwitterEmailRequest request) {
         // Get current authenticated user
         String currentEmail = SecurityUtils.getCurrentUserEmail();
