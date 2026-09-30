@@ -20,7 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/api/v1/reports")
+@RequestMapping("/reports")
 public class ReportExportController {
 
     private final ReportExportService reportExportService;

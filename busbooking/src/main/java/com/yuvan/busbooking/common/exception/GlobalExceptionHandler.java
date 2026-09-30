@@ -75,7 +75,7 @@ public class GlobalExceptionHandler {
                 .body(Map.of(
                         "timestamp", LocalDateTime.now(),
                         "status", 401,
-                        "message", "Invalid email or password. Please try again."
+                        "message", "Invalid email or password. Please try again." + ex.getMessage()
                 ));
     }
 

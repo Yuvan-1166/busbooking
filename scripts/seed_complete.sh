@@ -33,7 +33,7 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # Configuration
 ###############################################################################
 
-API_BASE_URL="${API_BASE_URL:-http://localhost:8080/api/v1}"
+API_BASE_URL="${API_BASE_URL:-http://localhost:8080}"
 ENV_FILE="${ENV_FILE:-"$SCRIPT_DIR/.env"}"
 
 SEED_PREFIX="${SEED_PREFIX:-synthetic}"

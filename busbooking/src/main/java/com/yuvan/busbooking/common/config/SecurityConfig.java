@@ -60,30 +60,30 @@ public class SecurityConfig {
 
                         // Public auth endpoints (registration, login, verification, password reset)
                         .requestMatchers(
-"/api/v1/health",
-                        "/api/v1/auth/register",
-                        "/api/v1/auth/login",
-                                "/api/v1/auth/login/verify-totp",
-                                "/api/v1/auth/totp-alternative/send",
-                                "/api/v1/auth/totp-alternative/verify",
-                                "/api/v1/auth/verify/send",
-                                "/api/v1/auth/verify/confirm",
-                                "/api/v1/auth/forgot-password",
-                                "/api/v1/auth/reset-password",
+"/health",
+                        "/auth/register",
+                        "/auth/login",
+                                "/auth/login/verify-totp",
+                                "/auth/totp-alternative/send",
+                                "/auth/totp-alternative/verify",
+                                "/auth/verify/send",
+                                "/auth/verify/confirm",
+                                "/auth/forgot-password",
+                                "/auth/reset-password",
                                 // Unified OAuth 2.0 endpoints (Google, Twitter, …)
-                                "/api/v1/auth/oauth/authorize",
-                                "/api/v1/auth/oauth/callback",
+                                "/auth/oauth/authorize",
+                                "/auth/oauth/callback",
                                 // Razorpay webhook (signature validated server-side)
-                                "/api/v1/payments/webhook/razorpay"
+                                "/payments/webhook/razorpay"
                         ).permitAll()
 
                         // Authenticated endpoints (onboarding, TOTP management)
                         .requestMatchers(
-                                "/api/v1/auth/onboarding/complete",
-                                "/api/v1/auth/totp/setup",
-                                "/api/v1/auth/totp/verify-setup",
-                                "/api/v1/auth/totp/disable",
-                                "/api/v1/auth/totp/backup-codes/generate"
+                                "/auth/onboarding/complete",
+                                "/auth/totp/setup",
+                                "/auth/totp/verify-setup",
+                                "/auth/totp/disable",
+                                "/auth/totp/backup-codes/generate"
                         ).authenticated()
 
                         // Everything else requires authentication

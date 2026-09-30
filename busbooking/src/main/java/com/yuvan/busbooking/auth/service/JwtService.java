@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.stream.Collectors;
+import io.jsonwebtoken.io.Decoders;
 
 @Service
 public class JwtService {
@@ -23,7 +24,7 @@ public class JwtService {
             @Value("${app.jwt.expiration-ms}") long expirationMs
     ) {
         this.secretKey = Keys.hmacShaKeyFor(
-                io.jsonwebtoken.io.Decoders.BASE64.decode(secret)
+                Decoders.BASE64.decode(secret)
         );
         this.expirationMs = expirationMs;
     }
@@ -77,13 +78,6 @@ public class JwtService {
                 .expiration(expiration)
                 .signWith(secretKey)
                 .compact();
-    }
-
-    /**
-     * Extract username from temporary token
-     */
-    public String extractUsernameFromTempToken(String token) {
-        return extractUsername(token);
     }
 
     public String extractUsername(String token) {

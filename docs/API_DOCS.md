@@ -7,7 +7,7 @@
 ## Auth Endpoints
 
 
-### POST /api/v1/auth/register
+### POST /auth/register
 **Purpose:** Register a new passenger or operator account (unified endpoint, dispatched by `userType` via registration strategies) \
 **Access:** Public \
 **Request Body:**
@@ -50,7 +50,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/auth/reset-password
+### POST /auth/reset-password
 **Purpose:** Verify OTP and update user's password \
 **Access:** Public \
 **Request Body:**
@@ -73,7 +73,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/auth/forgot-password
+### POST /auth/forgot-password
 **Purpose:** Sends an OTP to the registered user's email to reset Password
 **Access:** Public
 **Request Body:**
@@ -94,7 +94,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/auth/oauth/authorize
+### POST /auth/oauth/authorize
 **Purpose:** Step 1 of unified OAuth sign-in. Generates the provider's authorization URL (and CSRF state). Clients with client-side authorization (e.g. Google) can skip the redirect and go straight to the callback.
 **Access:** Public
 **Request Body:**
@@ -111,7 +111,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/auth/oauth/callback
+### POST /auth/oauth/callback
 **Purpose:** Step 2 of unified OAuth sign-in. Validates the provider callback, creates or updates the user, and issues a JWT. Provider-specific fields are interpreted per provider:
 - `GOOGLE` expects `idToken`
 - `TWITTER` expects `code` and `state`
@@ -135,7 +135,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/auth/login
+### POST /auth/login
 **Purpose:** Authenticate user with email and password
 **Access:** Public
 **Request Body:**
@@ -153,7 +153,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/auth/login/verify-totp
+### POST /auth/login/verify-totp
 **Purpose:** Verify TOTP code and complete login
 **Access:** Public
 **Request Body:**
@@ -173,7 +173,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/auth/onboarding/complete
+### POST /auth/onboarding/complete
 **Purpose:** Completes user onboarding after Google OAuth (assigns role, saves profile, creates operator if needed)
 **Access:** Authenticated
 **Request Body:**
@@ -195,7 +195,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/auth/totp-alternative/send
+### POST /auth/totp-alternative/send
 **Purpose:** Send alternative OTP during TOTP login (SMS, Email, etc.)
 **Access:** Public
 **Request Body:**
@@ -213,7 +213,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/auth/totp-alternative/verify
+### POST /auth/totp-alternative/verify
 **Purpose:** Verify alternative OTP code and authenticate user
 **Access:** Public
 **Request Body:**
@@ -232,7 +232,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/auth/totp/backup-codes/generate
+### POST /auth/totp/backup-codes/generate
 **Purpose:** Generate backup codes for authenticated user
 **Access:** Authenticated
 **Request Body:** Empty
@@ -247,7 +247,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/auth/totp/disable
+### POST /auth/totp/disable
 **Purpose:** Disable TOTP 2FA (requires password confirmation)
 **Access:** Authenticated
 **Request Body:**
@@ -262,7 +262,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/auth/totp/setup
+### POST /auth/totp/setup
 **Purpose:** Generate TOTP secret and QR code for enabling 2FA
 **Access:** Authenticated
 **Request Body:** Empty
@@ -277,7 +277,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/auth/totp/verify-setup
+### POST /auth/totp/verify-setup
 **Purpose:** Verify TOTP code during initial setup and enable 2FA
 **Access:** Authenticated
 **Request Body:**
@@ -292,7 +292,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/auth/verify/confirm
+### POST /auth/verify/confirm
 **Purpose:** Confirm 6-digit OTP and activate user account
 **Access:** Public
 **Request Body:**
@@ -308,7 +308,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/auth/verify/send
+### POST /auth/verify/send
 **Purpose:** Send 6-digit OTP for email verification to pending user
 **Access:** Public
 **Request Body:**
@@ -325,7 +325,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ## Booking Endpoints
 
-### POST /api/v1/bookings
+### POST /bookings
 **Purpose:** Create a new booking
 **Access:** Authenticated (PASSENGER role)
 **Request Body:**
@@ -348,7 +348,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/bookings/{bookingId}
+### GET /bookings/{bookingId}
 **Purpose:** Get booking details by ID
 **Access:** Authenticated (PASSENGER role)
 **Path Parameters:**
@@ -369,7 +369,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/bookings/{bookingId}/cancel
+### POST /bookings/{bookingId}/cancel
 **Purpose:** Cancel a booking
 **Access:** Authenticated (PASSENGER role)
 **Path Parameters:**
@@ -392,7 +392,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ## Bus Endpoints
 
-### POST /api/v1/buses
+### POST /buses
 **Purpose:** Create a new bus
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Request Body:**
@@ -416,7 +416,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/buses
+### GET /buses
 **Purpose:** Get all buses
 **Access:** Authenticated
 **Query Parameters:** None
@@ -436,7 +436,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/buses/{id}
+### GET /buses/{id}
 **Purpose:** Get bus details by ID
 **Access:** Authenticated
 **Path Parameters:**
@@ -456,7 +456,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/buses/operator/{operatorId}
+### GET /buses/operator/{operatorId}
 **Purpose:** Get all buses for an operator
 **Access:** Authenticated
 **Path Parameters:**
@@ -477,7 +477,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### PUT /api/v1/buses/{id}
+### PUT /buses/{id}
 **Purpose:** Update bus details
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Path Parameters:**
@@ -500,7 +500,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### DELETE /api/v1/buses/{id}
+### DELETE /buses/{id}
 **Purpose:** Delete a bus
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Path Parameters:**
@@ -512,7 +512,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ## Location Endpoints
 
-### POST /api/v1/locations
+### POST /locations
 **Purpose:** Create a new location
 **Access:** Authenticated (ADMIN role)
 **Request Body:**
@@ -536,7 +536,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/locations
+### GET /locations
 **Purpose:** Get all locations
 **Access:** Authenticated
 **Query Parameters:** None
@@ -555,7 +555,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/locations/{id}
+### GET /locations/{id}
 **Purpose:** Get location details by ID
 **Access:** Authenticated
 **Path Parameters:**
@@ -575,7 +575,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### PUT /api/v1/locations/{id}
+### PUT /locations/{id}
 **Purpose:** Update location details
 **Access:** Authenticated (ADMIN role)
 **Path Parameters:**
@@ -599,7 +599,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### DELETE /api/v1/locations/{id}
+### DELETE /locations/{id}
 **Purpose:** Delete a location
 **Access:** Authenticated (ADMIN role)
 **Path Parameters:**
@@ -611,7 +611,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ## Operator Endpoints
 
-### POST /api/v1/operators
+### POST /operators
 **Purpose:** Create a new operator
 **Access:** Authenticated (ADMIN role)
 **Request Body:**
@@ -634,7 +634,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/operators
+### GET /operators
 **Purpose:** Get all operators
 **Access:** Authenticated
 **Query Parameters:** None
@@ -653,7 +653,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/operators/{id}
+### GET /operators/{id}
 **Purpose:** Get operator details by ID
 **Access:** Authenticated
 **Path Parameters:**
@@ -672,7 +672,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### PUT /api/v1/operators/{id}
+### PUT /operators/{id}
 **Purpose:** Update operator details
 **Access:** Authenticated (ADMIN role)
 **Path Parameters:**
@@ -694,7 +694,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### DELETE /api/v1/operators/{id}
+### DELETE /operators/{id}
 **Purpose:** Delete an operator
 **Access:** Authenticated (ADMIN role)
 **Path Parameters:**
@@ -706,7 +706,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ## Payment Endpoints
 
-### POST /api/v1/payments
+### POST /payments
 **Purpose:** Process a payment
 **Access:** Authenticated (PASSENGER role)
 **Request Body:**
@@ -731,7 +731,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ## Route Endpoints
 
-### POST /api/v1/routes
+### POST /routes
 **Purpose:** Create a new route
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Request Body:**
@@ -755,7 +755,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/routes
+### GET /routes
 **Purpose:** Get all routes
 **Access:** Authenticated
 **Query Parameters:** None
@@ -775,7 +775,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/routes/{id}
+### GET /routes/{id}
 **Purpose:** Get route details by ID
 **Access:** Authenticated
 **Path Parameters:**
@@ -795,7 +795,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### PUT /api/v1/routes/{id}
+### PUT /routes/{id}
 **Purpose:** Update route details
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Path Parameters:**
@@ -817,7 +817,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### DELETE /api/v1/routes/{id}
+### DELETE /routes/{id}
 **Purpose:** Delete a route
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Path Parameters:**
@@ -829,7 +829,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ## Route Stop Endpoints
 
-### POST /api/v1/route-stops
+### POST /route-stops
 **Purpose:** Create a new route stop
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Request Body:**
@@ -853,7 +853,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/route-stops/{id}
+### GET /route-stops/{id}
 **Purpose:** Get route stop details by ID
 **Access:** Authenticated
 **Path Parameters:**
@@ -873,7 +873,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/route-stops/route/{routeId}
+### GET /route-stops/route/{routeId}
 **Purpose:** Get all stops for a route
 **Access:** Authenticated
 **Path Parameters:**
@@ -895,7 +895,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### PUT /api/v1/route-stops/{id}
+### PUT /route-stops/{id}
 **Purpose:** Update route stop details
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Path Parameters:**
@@ -919,7 +919,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### DELETE /api/v1/route-stops/{id}
+### DELETE /route-stops/{id}
 **Purpose:** Delete a route stop
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Path Parameters:**
@@ -931,7 +931,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ## Schedule Endpoints
 
-### POST /api/v1/schedules
+### POST /schedules
 **Purpose:** Create a new schedule
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Request Body:**
@@ -957,7 +957,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/schedules
+### GET /schedules
 **Purpose:** Get all schedules
 **Access:** Authenticated
 **Query Parameters:** None
@@ -978,7 +978,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/schedules/{id}
+### GET /schedules/{id}
 **Purpose:** Get schedule details by ID
 **Access:** Authenticated
 **Path Parameters:**
@@ -999,7 +999,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/schedules/bus/{busId}
+### GET /schedules/bus/{busId}
 **Purpose:** Get all schedules for a bus
 **Access:** Authenticated
 **Path Parameters:**
@@ -1021,7 +1021,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/schedules/route/{routeId}
+### GET /schedules/route/{routeId}
 **Purpose:** Get all schedules for a route
 **Access:** Authenticated
 **Path Parameters:**
@@ -1043,7 +1043,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### PUT /api/v1/schedules/{id}
+### PUT /schedules/{id}
 **Purpose:** Update schedule details
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Path Parameters:**
@@ -1066,7 +1066,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### DELETE /api/v1/schedules/{id}
+### DELETE /schedules/{id}
 **Purpose:** Delete a schedule
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Path Parameters:**
@@ -1078,7 +1078,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ## Seat Endpoints
 
-### POST /api/v1/seats
+### POST /seats
 **Purpose:** Create a new seat in a bus
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Request Body:**
@@ -1098,7 +1098,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/seats/{id}
+### GET /seats/{id}
 **Purpose:** Get seat details by ID
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Path Parameters:**
@@ -1116,7 +1116,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/seats/bus/{busId}
+### GET /seats/bus/{busId}
 **Purpose:** Get all seats for a bus
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Path Parameters:**
@@ -1136,7 +1136,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### PUT /api/v1/seats/{id}
+### PUT /seats/{id}
 **Purpose:** Update seat details
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Path Parameters:**
@@ -1157,7 +1157,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### DELETE /api/v1/seats/{id}
+### DELETE /seats/{id}
 **Purpose:** Delete a seat
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Path Parameters:**
@@ -1169,7 +1169,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ## Seat Hold Endpoints
 
-### POST /api/v1/seat-holds
+### POST /seat-holds
 **Purpose:** Hold multiple seats for a trip
 **Access:** Authenticated (PASSENGER role)
 **Request Body:**
@@ -1194,7 +1194,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ## Ticket Endpoints
 
-### POST /api/v1/tickets/booking/{bookingId}
+### POST /tickets/booking/{bookingId}
 **Purpose:** Generate ticket for a completed booking
 **Access:** Authenticated (PASSENGER role)
 **Path Parameters:**
@@ -1216,7 +1216,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/tickets/booking
+### GET /tickets/booking
 **Purpose:** Get all tickets for authenticated user
 **Access:** Authenticated (ADMIN or PASSENGER role)
 **Query Parameters:** None
@@ -1236,7 +1236,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/tickets/booking/{bookingId}
+### GET /tickets/booking/{bookingId}
 **Purpose:** Get ticket by booking ID
 **Access:** Authenticated (ADMIN or PASSENGER role)
 **Path Parameters:**
@@ -1257,7 +1257,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/tickets/{ticketNumber}
+### GET /tickets/{ticketNumber}
 **Purpose:** Get ticket by ticket number
 **Access:** Authenticated (ADMIN or PASSENGER role)
 **Path Parameters:**
@@ -1280,7 +1280,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ## Trip Endpoints
 
-### POST /api/v1/trips
+### POST /trips
 **Purpose:** Create a new trip
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Request Body:**
@@ -1309,7 +1309,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/trips/bulk
+### POST /trips/bulk
 **Purpose:** Create multiple trips in bulk
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Request Body:**
@@ -1330,7 +1330,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/trips
+### GET /trips
 **Purpose:** Get all trips
 **Access:** Public
 **Query Parameters:** None
@@ -1351,7 +1351,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/trips/{id}
+### GET /trips/{id}
 **Purpose:** Get trip details by ID
 **Access:** Public
 **Path Parameters:**
@@ -1374,7 +1374,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/trips/bus/{busId}
+### GET /trips/bus/{busId}
 **Purpose:** Get all trips for a bus
 **Access:** Public
 **Path Parameters:**
@@ -1396,7 +1396,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/trips/route/{routeId}
+### GET /trips/route/{routeId}
 **Purpose:** Get trips for a route on a specific date
 **Access:** Public
 **Path Parameters:**
@@ -1420,7 +1420,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### PUT /api/v1/trips/{id}
+### PUT /trips/{id}
 **Purpose:** Update trip details
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Path Parameters:**
@@ -1446,7 +1446,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### DELETE /api/v1/trips/{id}
+### DELETE /trips/{id}
 **Purpose:** Delete a trip
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Path Parameters:**
@@ -1456,7 +1456,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/trips/{id}/cancel
+### POST /trips/{id}/cancel
 **Purpose:** Cancel a trip and refund all passengers
 **Access:** Authenticated (ADMIN or OPERATOR role)
 **Path Parameters:**
@@ -1470,7 +1470,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ## Trip Seat Endpoints
 
-### GET /api/v1/trip-seats/{id}
+### GET /trip-seats/{id}
 **Purpose:** Get trip seat details by ID
 **Access:** Authenticated
 **Path Parameters:**
@@ -1491,7 +1491,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/trip-seats/trip/{tripId}
+### GET /trip-seats/trip/{tripId}
 **Purpose:** Get all seats for a trip
 **Access:** Authenticated
 **Path Parameters:**
@@ -1516,7 +1516,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ## User Endpoints
 
-### POST /api/v1/users
+### POST /users
 **Purpose:** Create a new user (ADMIN only)
 **Access:** Authenticated (ADMIN role)
 **Request Body:**
@@ -1541,7 +1541,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/users
+### GET /users
 **Purpose:** Get all users
 **Access:** Authenticated (ADMIN role)
 **Query Parameters:** None
@@ -1561,7 +1561,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/users/{id}
+### GET /users/{id}
 **Purpose:** Get user details by ID
 **Access:** Authenticated (ADMIN role)
 **Path Parameters:**
@@ -1581,7 +1581,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### GET /api/v1/users/me
+### GET /users/me
 **Purpose:** Get authenticated user's profile
 **Access:** Authenticated
 **Query Parameters:** None
@@ -1600,7 +1600,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### PUT /api/v1/users/{id}
+### PUT /users/{id}
 **Purpose:** Update user details (ADMIN only)
 **Access:** Authenticated (ADMIN role)
 **Path Parameters:**
@@ -1624,7 +1624,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### PUT /api/v1/users/me
+### PUT /users/me
 **Purpose:** Update authenticated user's profile
 **Access:** Authenticated
 **Request Body:**
@@ -1645,7 +1645,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### DELETE /api/v1/users/{id}
+### DELETE /users/{id}
 **Purpose:** Delete a user
 **Access:** Authenticated (ADMIN role)
 **Path Parameters:**
@@ -1655,7 +1655,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/users/me/verify-mobile
+### POST /users/me/verify-mobile
 **Purpose:** Verify mobile number of authenticated user
 **Access:** Authenticated
 **Request Body:** Empty
@@ -1675,7 +1675,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ## VerifyNow Endpoints
 
-### POST /api/v1/verifynow/send-otp
+### POST /verifynow/send-otp
 **Purpose:** Send OTP to mobile number using VerifyNow service
 **Access:** Authenticated
 **Request Body:**
@@ -1695,7 +1695,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ---
 
-### POST /api/v1/verifynow/validate-otp
+### POST /verifynow/validate-otp
 **Purpose:** Validate OTP received from VerifyNow service
 **Access:** Authenticated
 **Request Body:**
@@ -1719,7 +1719,7 @@ For an operator account, `userType` is `"OPERATOR"` and the operator-specific fi
 
 ## Wallet Endpoints
 
-### GET /api/v1/wallet
+### GET /wallet
 **Purpose:** Get wallet balance of authenticated passenger
 **Access:** Authenticated (PASSENGER role)
 **Query Parameters:** None

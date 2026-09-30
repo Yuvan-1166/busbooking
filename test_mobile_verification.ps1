@@ -23,7 +23,7 @@ Write-Host $body1
 Write-Host ""
 
 try {
-    $response1 = Invoke-RestMethod -Uri "$baseUrl/api/v1/auth/totp-alternative/send" `
+    $response1 = Invoke-RestMethod -Uri "$baseUrl/auth/totp-alternative/send" `
         -Method Post `
         -ContentType "application/json" `
         -Body $body1 `
@@ -57,7 +57,7 @@ Write-Host $body2
 Write-Host ""
 
 try {
-    $response2 = Invoke-RestMethod -Uri "$baseUrl/api/v1/auth/totp-alternative/send" `
+    $response2 = Invoke-RestMethod -Uri "$baseUrl/auth/totp-alternative/send" `
         -Method Post `
         -ContentType "application/json" `
         -Body $body2 `
@@ -91,7 +91,7 @@ Write-Host $body3
 Write-Host ""
 
 try {
-    $response3 = Invoke-RestMethod -Uri "$baseUrl/api/v1/auth/totp-alternative/send" `
+    $response3 = Invoke-RestMethod -Uri "$baseUrl/auth/totp-alternative/send" `
         -Method Post `
         -ContentType "application/json" `
         -Body $body3 `

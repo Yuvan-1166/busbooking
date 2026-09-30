@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/cancellations")
+@RequestMapping("/cancellations")
 public class CancellationAdminController {
 
     private final CancellationService cancellationService;

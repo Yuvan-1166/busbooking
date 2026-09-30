@@ -1,7 +1,7 @@
 # Test script to verify login error handling
 # Make sure the backend is running on http://localhost:8080
 
-$BASE_URL = "http://localhost:8080/api/v1"
+$BASE_URL = "http://localhost:8080"
 
 # Colors for output
 $GREEN = "Green"

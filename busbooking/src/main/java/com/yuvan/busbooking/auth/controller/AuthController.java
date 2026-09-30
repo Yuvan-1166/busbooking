@@ -13,11 +13,14 @@ import com.yuvan.busbooking.auth.service.AuthService;
 import com.yuvan.busbooking.auth.service.OnboardingService;
 import com.yuvan.busbooking.auth.service.RegistrationService;
 import jakarta.validation.Valid;
+
+import javax.naming.AuthenticationException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/auth")
+@RequestMapping("/auth")
 public class AuthController {
 
     private final AuthService authService;
@@ -45,7 +48,7 @@ public class AuthController {
     @PostMapping("/login")
     public LoginResponse login(
             @Valid @RequestBody LoginRequest request
-    ) {
+    ) throws AuthenticationException {
         return authService.login(request);
     }
 

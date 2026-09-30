@@ -13,27 +13,9 @@ import com.yuvan.busbooking.user.entity.User;
  */
 public interface AlternativeOtpChannel {
 
-    /**
-     * @return the alternative method this channel implements.
-     */
     TotpAlternativeType getType();
 
-    /**
-     * Sends an OTP to the user via this channel and persists a tracking record.
-     *
-     * @param user      the user requesting the OTP.
-     * @param ipAddress optional IP address for audit.
-     * @param userAgent optional user agent for audit.
-     * @return response with masked recipient and session ID.
-     */
     TotpAlternativeOtpResponse send(User user, String ipAddress, String userAgent);
 
-    /**
-     * Validates the submitted code against the given OTP record.
-     *
-     * @param otp  the persisted OTP session record.
-     * @param code the code entered by the user.
-     * @return {@code true} if the code is valid for this channel.
-     */
     boolean verify(TotpAlternativeOtp otp, String code);
 }

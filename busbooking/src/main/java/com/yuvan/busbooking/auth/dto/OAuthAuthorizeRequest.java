@@ -4,7 +4,7 @@ import com.yuvan.busbooking.auth.oauth.OAuthProviderType;
 import jakarta.validation.constraints.NotNull;
 
 /**
- * Request body for {@code POST /api/v1/auth/oauth/authorize}.
+ * Request body for {@code POST /auth/oauth/authorize}.
  *
  * @param provider The OAuth identity provider to start the flow for.
  */

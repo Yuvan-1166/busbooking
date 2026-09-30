@@ -17,14 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Service for managing TOTP alternative authentication methods.
- * <p>
- * Acts as a facade over the {@link AlternativeOtpChannel} strategies, providing
- * the channel-agnostic orchestration: rate limiting, session ownership checks,
- * expiry/attempt guardrails and status transitions.
- * </p>
- */
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -40,16 +33,6 @@ public class TotpAlternativeService {
     @Value("${totp.alternative.rate-limit-minutes:15}")
     private int rateLimitMinutes;
 
-    /**
-     * Send alternative OTP to user via specified method.
-     *
-     * @param user      User entity
-     * @param method    Alternative method (SMS, EMAIL, etc.)
-     * @param ipAddress Optional IP address for audit
-     * @param userAgent Optional user agent for audit
-     * @return Response with masked recipient and session ID
-     * @throws IllegalArgumentException if method not supported or user doesn't have required contact info
-     */
     public TotpAlternativeOtpResponse sendAlternativeOtp(
             User user,
             TotpAlternativeType method,
@@ -63,16 +46,6 @@ public class TotpAlternativeService {
         return channelFactory.getChannel(method).send(user, ipAddress, userAgent);
     }
 
-    /**
-     * Verify alternative OTP code.
-     *
-     * @param user      User entity
-     * @param sessionId OTP session ID from send response
-     * @param code      OTP code entered by user
-     * @param ipAddress Optional IP address for audit
-     * @param userAgent Optional user agent for audit
-     * @return true if verification successful, false otherwise
-     */
     public boolean verifyAlternativeOtp(
             User user,
             Long sessionId,

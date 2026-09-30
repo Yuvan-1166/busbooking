@@ -16,7 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/auth/totp")
+@RequestMapping("/auth/totp")
 public class TotpController {
 
     private final TotpService totpService;

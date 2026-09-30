@@ -10,13 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-/**
- * Shared formatting and analytics access for report generators.
- *
- * <p>Aggregation itself is delegated to {@link AnalyticsService}, which runs
- * single-pass, batch-loading queries (grouping joined records by key with
- * {@code IN} lookups) rather than per-row trips to the database.</p>
- */
+
 public abstract class AbstractReportGenerator implements ReportGenerator {
 
     /** Indian locale groups digits with commas and renders rupees nicely. */

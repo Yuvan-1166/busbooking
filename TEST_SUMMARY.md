@@ -31,7 +31,7 @@ The fix implements JWT regeneration on email verification:
 1. Frontend shows OnboardingPage with email verification form
 2. User enters real email (e.g., user@example.com)
 3. User receives and enters OTP
-4. Frontend calls POST /api/v1/users/me/verify-twitter-email
+4. Frontend calls POST /users/me/verify-twitter-email
 5. Backend:
    - Finds user by current email (twitter_<id>@twitter.oauth.local)
    - Verifies OTP

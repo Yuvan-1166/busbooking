@@ -3,7 +3,7 @@
 set -euo pipefail
 
 BASE_URL="${BASE_URL:-http://localhost:8080}"
-API="${BASE_URL}/api/v1"
+API="${BASE_URL}"
 
 # Database settings are only needed for assigning ADMIN to the first user.
 DB_NAME="${DB_NAME:-bus_booking}"

@@ -29,6 +29,7 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 
@@ -367,6 +368,10 @@ public class TotpService {
             // Remove quotes and trim
             codes[i] = parts[i].trim().replaceAll("^\"|\"$", "");
         }
+
+        // String[] codes = Arrays.stream(content.split(","))
+        //                     .map(s -> s.substring(1, s.length()-1))
+        //                     .toArray(String[]::new);
         return codes;
     }
 }

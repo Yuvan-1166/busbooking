@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/v1/auth/oauth")
+@RequestMapping("/auth/oauth")
 public class OAuthController {
 
     private final OAuthService oauthService;

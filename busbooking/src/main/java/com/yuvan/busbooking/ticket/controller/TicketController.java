@@ -13,7 +13,7 @@ import com.yuvan.busbooking.common.util.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/tickets")
+@RequestMapping("/tickets")
 public class TicketController {
 
     private final TicketService ticketService;

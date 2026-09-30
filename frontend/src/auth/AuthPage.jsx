@@ -101,7 +101,12 @@ export default function AuthPage() {
     try {
       if (mode === "login") {
         console.log("=== LOGIN START ===");
-        const response = await login(form);
+        const encodedForm = {
+          ...form,
+          password: btoa(form.password),
+        };
+
+        const response = await login(encodedForm);
         console.log("Login response:", response);
 
         // Check if TOTP verification is required

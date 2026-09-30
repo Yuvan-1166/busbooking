@@ -19,7 +19,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/auth/totp-alternative")
+@RequestMapping("/auth/totp-alternative")
 @RequiredArgsConstructor
 @Slf4j
 public class TotpAlternativeController {

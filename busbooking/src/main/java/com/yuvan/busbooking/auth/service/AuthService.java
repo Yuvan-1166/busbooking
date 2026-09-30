@@ -17,9 +17,14 @@ import com.yuvan.busbooking.common.exception.ResourceNotFoundException;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.repository.UserRepository;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Base64.Decoder;
+
 import javax.naming.AuthenticationException;
 
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -59,28 +64,17 @@ public class AuthService {
         this.customUserDetailsService = customUserDetailsService;
     }
 
-    public LoginResponse login(LoginRequest request) {
+    public LoginResponse login(LoginRequest request) throws AuthenticationException {
 
-        // User user = userRepository.findByEmail(request.email())
-        //             .orElseThrow(
-        //                 () -> new IllegalArgumentException("User not found")
-        //             );
-        
-        // if(!passwordEncoder.matches(request.password(), user.getPasswordHash()))
-        //     throw new AuthenticationException();
-        // UserDetails userDeatails = userDetailsService.loadUserByUserName(user.getEmail());
-
-        Authentication authentication =
-                authenticationManager.authenticate(
-                        new UsernamePasswordAuthenticationToken(
-                                request.email(),
-                                request.password()
-                        )
-                );
-
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                    .orElseThrow(
+                        () -> new IllegalArgumentException("User not found")
+                    );
+        String decodedPassword = new String(Base64.getDecoder().decode(request.password()), StandardCharsets.UTF_8);
+        if(!passwordEncoder.matches(decodedPassword, user.getPasswordHash())){
+            throw new BadCredentialsException("Invalid Creds");
+        }
+        UserDetails userDetails = customUserDetailsService.loadUserByUsername(user.getEmail());
 
         // Check if user has TOTP enabled
         if (user.getTotpEnabled()) {
@@ -101,7 +95,7 @@ public class AuthService {
             throw new IllegalArgumentException("Invalid or expired temporary token");
         }
 
-        String email = jwtService.extractUsernameFromTempToken(request.tempToken());
+        String email = jwtService.extractUsername(request.tempToken());
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 

@@ -12,7 +12,7 @@
 #   ./seed.sh
 #
 # Optional:
-#   API_BASE_URL=http://localhost:8080/api/v1 ./seed.sh
+#   API_BASE_URL=http://localhost:8080 ./seed.sh
 #   PASSENGER_COUNT=50 OPERATOR_COUNT=8 ./seed.sh
 #
 # The script is restart-safe:
@@ -39,7 +39,7 @@ IFS=$'\n\t'
 # Configuration
 ###############################################################################
 
-API_BASE_URL="${API_BASE_URL:-http://localhost:8080/api/v1}"
+API_BASE_URL="${API_BASE_URL:-http://localhost:8080}"
 ENV_FILE="${ENV_FILE:-.env}"
 
 PASSENGER_COUNT="${PASSENGER_COUNT:-30}" # 30

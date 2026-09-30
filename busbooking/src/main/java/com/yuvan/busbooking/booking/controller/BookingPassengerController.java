@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/booking-passengers")
+@RequestMapping("/booking-passengers")
 @PreAuthorize("hasRole('ADMIN')")
 public class BookingPassengerController {
 

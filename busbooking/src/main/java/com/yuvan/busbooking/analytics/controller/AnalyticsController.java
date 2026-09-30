@@ -20,7 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDate;
 
 @RestController
-@RequestMapping("/api/v1/analytics")
+@RequestMapping("/analytics")
 public class AnalyticsController {
 
     private final AnalyticsService analyticsService;

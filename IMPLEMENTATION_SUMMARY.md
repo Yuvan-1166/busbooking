@@ -93,7 +93,7 @@ Changes:
 ### What Happens (Request/Response Flow)
 
 ```
-1. Frontend: POST /api/v1/users/me/verify-twitter-email
+1. Frontend: POST /users/me/verify-twitter-email
    - Header: Authorization: Bearer <old JWT with synthetic email>
    - Body: { email: "user@example.com", otp: "123456" }
 

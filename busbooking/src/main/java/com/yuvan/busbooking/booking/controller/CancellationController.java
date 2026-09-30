@@ -13,7 +13,7 @@ import com.yuvan.busbooking.user.service.UserService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/v1/bookings")
+@RequestMapping("/bookings")
 public class CancellationController {
 
     private final CancellationService cancellationService;

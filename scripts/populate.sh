@@ -25,13 +25,13 @@
 #   ./seed-data.sh
 #
 # Optional:
-#   BASE_URL=http://localhost:8080/api/v1 ./seed-data.sh
+#   BASE_URL=http://localhost:8080 ./seed-data.sh
 #
 # ============================================================
 
 set -u
 
-BASE_URL="${BASE_URL:-http://localhost:8080/api/v1}"
+BASE_URL="${BASE_URL:-http://localhost:8080}"
 
 # ------------------------------------------------------------
 # Configuration

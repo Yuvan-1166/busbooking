@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/users")
 public class UserController {
 
     private final UserService userService;
@@ -99,7 +99,7 @@ public class UserController {
      * This endpoint validates the OTP, saves the verified email, and returns a NEW JWT
      * with the verified email in the subject claim. The frontend must replace its session.
      *
-     * POST /api/v1/users/me/verify-twitter-email
+     * POST /users/me/verify-twitter-email
      * Requires authentication.
      */
     @PostMapping("/me/verify-twitter-email")

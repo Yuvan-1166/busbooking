@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
-@RequestMapping("/api/v1/seat-templates")
+@RequestMapping("/seat-templates")
 @CrossOrigin(origins = "*")
 @Slf4j
 public class SeatTemplateController {

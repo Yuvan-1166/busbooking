@@ -86,139 +86,139 @@ src/main/java/com/yuvan/busbooking/
 
 ## Auth
 
-- POST /api/v1/auth/register
-- POST /api/v1/auth/reset-password
-- POST /api/v1/auth/forgot-password
-- POST /api/v1/auth/oauth/authorize
-- POST /api/v1/auth/oauth/callback
-- POST /api/v1/auth/login
-- POST /api/v1/auth/login/verify-totp
-- POST /api/v1/auth/onboarding/complete
-- POST /api/v1/auth/totp-alternative/send
-- POST /api/v1/auth/totp-alternative/verify
-- POST /api/v1/auth/totp/backup-codes/generate
-- POST /api/v1/auth/totp/disable
-- POST /api/v1/auth/totp/setup
-- POST /api/v1/auth/totp/verify-setup
-- POST /api/v1/auth/verify/confirm
-- POST /api/v1/auth/verify/send
+- POST /auth/register
+- POST /auth/reset-password
+- POST /auth/forgot-password
+- POST /auth/oauth/authorize
+- POST /auth/oauth/callback
+- POST /auth/login
+- POST /auth/login/verify-totp
+- POST /auth/onboarding/complete
+- POST /auth/totp-alternative/send
+- POST /auth/totp-alternative/verify
+- POST /auth/totp/backup-codes/generate
+- POST /auth/totp/disable
+- POST /auth/totp/setup
+- POST /auth/totp/verify-setup
+- POST /auth/verify/confirm
+- POST /auth/verify/send
 
 ## Bookings
 
-- POST /api/v1/bookings
-- GET /api/v1/bookings/{bookingId}
-- POST /api/v1/bookings/{bookingId}/cancel
+- POST /bookings
+- GET /bookings/{bookingId}
+- POST /bookings/{bookingId}/cancel
 
 ## Buses
 
-- POST /api/v1/buses
-- GET /api/v1/buses
-- GET /api/v1/buses/{id}
-- GET /api/v1/buses/operator/{operatorId}
-- PUT /api/v1/buses/{id}
-- DELETE /api/v1/buses/{id}
+- POST /buses
+- GET /buses
+- GET /buses/{id}
+- GET /buses/operator/{operatorId}
+- PUT /buses/{id}
+- DELETE /buses/{id}
 
 ## Locations
 
-- POST /api/v1/locations
-- GET /api/v1/locations
-- GET /api/v1/locations/{id}
-- PUT /api/v1/locations/{id}
-- DELETE /api/v1/locations/{id}
+- POST /locations
+- GET /locations
+- GET /locations/{id}
+- PUT /locations/{id}
+- DELETE /locations/{id}
 
 ## Operators
 
-- POST /api/v1/operators
-- GET /api/v1/operators
-- GET /api/v1/operators/{id}
-- PUT /api/v1/operators/{id}
-- DELETE /api/v1/operators/{id}
+- POST /operators
+- GET /operators
+- GET /operators/{id}
+- PUT /operators/{id}
+- DELETE /operators/{id}
 
 ## Payments
 
-- POST /api/v1/payments
+- POST /payments
 
 ## Routes
 
-- POST /api/v1/routes
-- GET /api/v1/routes
-- GET /api/v1/routes/{id}
-- PUT /api/v1/routes/{id}
-- DELETE /api/v1/routes/{id}
+- POST /routes
+- GET /routes
+- GET /routes/{id}
+- PUT /routes/{id}
+- DELETE /routes/{id}
 
 ## Route Stops
 
-- POST /api/v1/route-stops
-- GET /api/v1/route-stops/{id}
-- GET /api/v1/route-stops/route/{routeId}
-- PUT /api/v1/route-stops/{id}
-- DELETE /api/v1/route-stops/{id}
+- POST /route-stops
+- GET /route-stops/{id}
+- GET /route-stops/route/{routeId}
+- PUT /route-stops/{id}
+- DELETE /route-stops/{id}
 
 ## Schedules
 
-- POST /api/v1/schedules
-- GET /api/v1/schedules
-- GET /api/v1/schedules/{id}
-- GET /api/v1/schedules/bus/{busId}
-- GET /api/v1/schedules/route/{routeId}
-- PUT /api/v1/schedules/{id}
-- DELETE /api/v1/schedules/{id}
+- POST /schedules
+- GET /schedules
+- GET /schedules/{id}
+- GET /schedules/bus/{busId}
+- GET /schedules/route/{routeId}
+- PUT /schedules/{id}
+- DELETE /schedules/{id}
 
 ## Seats
 
-- POST /api/v1/seats
-- GET /api/v1/seats/{id}
-- GET /api/v1/seats/bus/{busId}
-- PUT /api/v1/seats/{id}
-- DELETE /api/v1/seats/{id}
+- POST /seats
+- GET /seats/{id}
+- GET /seats/bus/{busId}
+- PUT /seats/{id}
+- DELETE /seats/{id}
 
 ## Seat Holds
 
-- POST /api/v1/seat-holds
+- POST /seat-holds
 
 ## Tickets
 
-- POST /api/v1/tickets/booking/{bookingId}
-- GET /api/v1/tickets/booking
-- GET /api/v1/tickets/booking/{bookingId}
-- GET /api/v1/tickets/{ticketNumber}
+- POST /tickets/booking/{bookingId}
+- GET /tickets/booking
+- GET /tickets/booking/{bookingId}
+- GET /tickets/{ticketNumber}
 
 ## Trips
 
-- POST /api/v1/trips
-- POST /api/v1/trips/bulk
-- GET /api/v1/trips
-- GET /api/v1/trips/{id}
-- GET /api/v1/trips/bus/{busId}
-- GET /api/v1/trips/route/{routeId}
-- PUT /api/v1/trips/{id}
-- DELETE /api/v1/trips/{id}
-- POST /api/v1/trips/{id}/cancel
+- POST /trips
+- POST /trips/bulk
+- GET /trips
+- GET /trips/{id}
+- GET /trips/bus/{busId}
+- GET /trips/route/{routeId}
+- PUT /trips/{id}
+- DELETE /trips/{id}
+- POST /trips/{id}/cancel
 
 ## Trip Seats
 
-- GET /api/v1/trip-seats/{id}
-- GET /api/v1/trip-seats/trip/{tripId}
+- GET /trip-seats/{id}
+- GET /trip-seats/trip/{tripId}
 
 ## Users
 
-- POST /api/v1/users
-- GET /api/v1/users
-- GET /api/v1/users/{id}
-- GET /api/v1/users/me
-- PUT /api/v1/users/{id}
-- PUT /api/v1/users/me
-- DELETE /api/v1/users/{id}
-- POST /api/v1/users/me/verify-mobile
+- POST /users
+- GET /users
+- GET /users/{id}
+- GET /users/me
+- PUT /users/{id}
+- PUT /users/me
+- DELETE /users/{id}
+- POST /users/me/verify-mobile
 
 ## VerifyNow
 
-- POST /api/v1/verifynow/send-otp
-- POST /api/v1/verifynow/validate-otp
+- POST /verifynow/send-otp
+- POST /verifynow/validate-otp
 
 ## Wallet
 
-- GET /api/v1/wallet
+- GET /wallet
 
 
 ## DB Designs

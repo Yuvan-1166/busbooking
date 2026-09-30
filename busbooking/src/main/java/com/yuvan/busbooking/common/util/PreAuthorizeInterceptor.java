@@ -1,21 +1,40 @@
 package com.yuvan.busbooking.common.util;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerInterceptor;
+
 import java.nio.file.AccessDeniedException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import org.aspectj.lang.annotation.Aspect;
-import org.aspectj.lang.annotation.Before;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
-
-@Aspect 
 @Component
-public class PreAuthorizeAspect {
+public class PreAuthorizeInterceptor implements HandlerInterceptor {
 
-    @Before("@annotation(preAuthorize)")
-    public void authorize(PreAuthorize preAuthorize) throws AccessDeniedException {
+    @Override
+    public boolean preHandle(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Object handler
+    ) throws AccessDeniedException {
+
+        
+        if (!(handler instanceof HandlerMethod handlerMethod)) {
+            return true;
+        }
+
+        PreAuthorize preAuthorize =
+                handlerMethod.getMethodAnnotation(PreAuthorize.class);
+
+        if (preAuthorize == null) {
+            return true;
+        }
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         
         if(!preAuthorize.value().isEmpty()) {
@@ -44,6 +63,8 @@ public class PreAuthorizeAspect {
                     throw new IllegalArgumentException();
             }
         }
+
+        return true;
     }
 
     private void isAuthenticated(Authentication authentication) throws AccessDeniedException {
@@ -74,8 +95,9 @@ public class PreAuthorizeAspect {
             || exp.startsWith("hasAnyRole")
         
         ) {
+            exp = exp.replace(" ", "");
             methodArgs.add(exp.substring(0, exp.indexOf('(')));
-            String[] args = exp.replace(" ", "").substring(exp.indexOf('(')+1, exp.indexOf(')')).split(",");
+            String[] args = exp.substring(exp.indexOf('(')+1, exp.indexOf(')')).split(",");
             if(args.length > 0 && !args[0].isEmpty()) {
                 methodArgs.addAll(
                     Arrays.stream(args)

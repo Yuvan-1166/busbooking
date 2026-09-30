@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/route-stops")
+@RequestMapping("/route-stops")
 public class RouteStopController {
 
     private final RouteStopService routeStopService;
