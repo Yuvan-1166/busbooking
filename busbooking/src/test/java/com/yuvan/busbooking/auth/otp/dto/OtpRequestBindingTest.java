@@ -35,10 +35,14 @@ class OtpRequestBindingTest {
         assertThat(request.resolvedChannel()).isEqualTo(OtpChannelType.MOBILE);
     }
 
+    /**
+     * The `otp` field is Base64-decoded on the way in, the same way the api
+     * layer encodes it on the way out.
+     */
     @Test
     void readsLegacyEmailPayloadOnConfirm() throws Exception {
         VerifyOtpRequest request = objectMapper.readValue(
-                "{\"email\":\"rider@example.com\",\"otp\":\"123456\"}",
+                "{\"email\":\"rider@example.com\",\"otp\":\"MTIzNDU2\"}",
                 VerifyOtpRequest.class);
 
         assertThat(request.target()).isEqualTo("rider@example.com");

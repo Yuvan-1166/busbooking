@@ -117,8 +117,7 @@ class OtpServiceTest {
     void providerManagedChannelStoresTheProviderReferenceInsteadOfACode() {
         givenChannel(OtpChannelType.MOBILE, MOBILE, true);
         givenOwner(MOBILE);
-        when(flowFactory.getFlow(OtpPurpose.PASSWORD_RESET)).thenReturn(flow);
-        when(flow.getPurpose()).thenReturn(OtpPurpose.PASSWORD_RESET);
+        givenPasswordResetFlow();
         when(channel.dispatch(any(OtpDispatchCommand.class)))
                 .thenReturn(OtpDispatch.external(PROVIDER_REFERENCE));
 
@@ -156,11 +155,12 @@ class OtpServiceTest {
     void providerManagedConfirmAsksTheChannelAndAppliesTheFlow() {
         givenChannel(OtpChannelType.MOBILE, MOBILE, true);
         givenOwner(MOBILE);
-        when(flowFactory.getFlow(OtpPurpose.PASSWORD_RESET)).thenReturn(flow);
+        givenPasswordResetFlow();
 
         OtpVerification record = activeRecord(MOBILE, OtpChannelType.MOBILE);
         record.setExternalReference(PROVIDER_REFERENCE);
         givenStoredRecord(MOBILE, OtpChannelType.MOBILE, OtpPurpose.PASSWORD_RESET, record);
+        when(channel.confirmCode(PROVIDER_REFERENCE, "482913")).thenReturn(true);
 
         otpService.confirm(new VerifyOtpRequest(
                 MOBILE, "482913", OtpChannelType.MOBILE, OtpPurpose.PASSWORD_RESET));
@@ -173,19 +173,20 @@ class OtpServiceTest {
     }
 
     @Test
-    void locallyIssuedConfirmComparesAgainstTheStoredHash() {
+    void locallyIssuedConfirmAcceptsTheCodeWhenTheChannelMatchesTheHash() {
         givenChannel(OtpChannelType.EMAIL, EMAIL, false);
         givenOwner(EMAIL);
-        when(flowFactory.getFlow(OtpPurpose.REGISTRATION)).thenReturn(flow);
+        givenRegistrationFlow();
 
         OtpVerification record = activeRecord(EMAIL, OtpChannelType.EMAIL);
         record.setOtpHash("hashed-code");
         givenStoredRecord(EMAIL, OtpChannelType.EMAIL, OtpPurpose.REGISTRATION, record);
-        when(passwordEncoder.matches("123456", "hashed-code")).thenReturn(true);
+        when(channel.confirmCode("123456", "hashed-code")).thenReturn(true);
 
         otpService.confirm(new VerifyOtpRequest(EMAIL, "123456", null, null));
 
         assertThat(record.getStatus()).isEqualTo(OtpStatus.VERIFIED);
+        assertThat(record.getAttempts()).isZero();
         verify(flow).applyPostVerification(user);
     }
 
@@ -196,7 +197,7 @@ class OtpServiceTest {
         OtpVerification record = activeRecord(EMAIL, OtpChannelType.EMAIL);
         record.setOtpHash("hashed-code");
         givenStoredRecord(EMAIL, OtpChannelType.EMAIL, OtpPurpose.REGISTRATION, record);
-        when(passwordEncoder.matches("000000", "hashed-code")).thenReturn(false);
+        when(channel.confirmCode("000000", "hashed-code")).thenReturn(false);
 
         assertThatThrownBy(() -> otpService.confirm(
                 new VerifyOtpRequest(EMAIL, "000000", null, null)))
@@ -208,9 +209,35 @@ class OtpServiceTest {
         verify(flow, never()).applyPostVerification(any());
     }
 
+    /**
+     * Channels are allowed to reject a code by throwing instead of returning
+     * false, and a rejection still has to use up an attempt — otherwise a wrong
+     * code could be guessed until the record simply expires.
+     */
+    @Test
+    void aCodeTheChannelThrowsOnStillUsesUpAnAttempt() {
+        givenChannel(OtpChannelType.MOBILE, MOBILE, true);
+        givenRegistrationFlow();
+
+        OtpVerification record = activeRecord(MOBILE, OtpChannelType.MOBILE);
+        record.setExternalReference(PROVIDER_REFERENCE);
+        givenStoredRecord(MOBILE, OtpChannelType.MOBILE, OtpPurpose.REGISTRATION, record);
+        when(channel.confirmCode(PROVIDER_REFERENCE, "111111"))
+                .thenThrow(new OtpVerificationException("Incorrect code. Please try again."));
+
+        assertThatThrownBy(() -> otpService.confirm(new VerifyOtpRequest(
+                MOBILE, "111111", OtpChannelType.MOBILE, OtpPurpose.REGISTRATION)))
+                .isInstanceOf(OtpVerificationException.class)
+                .hasMessage("Incorrect code. 4 attempts remaining.");
+
+        assertThat(record.getAttempts()).isEqualTo(1);
+        assertThat(record.getStatus()).isEqualTo(OtpStatus.ACTIVE);
+    }
+
     @Test
     void rejectsADestinationTheChannelCannotDeliverTo() {
         when(channelFactory.getChannel(OtpChannelType.EMAIL)).thenReturn(channel);
+        givenRegistrationFlow();
         when(channel.normalizeTarget("not-an-email")).thenReturn("not-an-email");
         doThrow(new IllegalArgumentException("Enter a valid email address."))
                 .when(channel).validateTarget("not-an-email");
@@ -221,6 +248,44 @@ class OtpServiceTest {
                 .hasMessage("Enter a valid email address.");
 
         verify(otpRepository, never()).save(any(OtpVerification.class));
+    }
+
+    /**
+     * A phone number is only proven by a code that reaches the phone, so the
+     * MOBILE_VERIFICATION flow must refuse an email channel instead of trusting
+     * whatever pairing the request asks for.
+     */
+    @Test
+    void refusesToSendAMobileVerificationOverEmail() {
+        givenChannel(OtpChannelType.EMAIL, EMAIL, false);
+        givenOwner(EMAIL);
+        when(flowFactory.getFlow(OtpPurpose.MOBILE_VERIFICATION)).thenReturn(flow);
+        when(flow.getPurpose()).thenReturn(OtpPurpose.MOBILE_VERIFICATION);
+        when(flow.supportsChannel(OtpChannelType.EMAIL)).thenReturn(false);
+
+        assertThatThrownBy(() -> otpService.send(new SendOtpRequest(
+                EMAIL, OtpChannelType.EMAIL, OtpPurpose.MOBILE_VERIFICATION)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("cannot be completed over");
+
+        verify(channel, never()).dispatch(any(OtpDispatchCommand.class));
+        verify(otpRepository, never()).save(any(OtpVerification.class));
+    }
+
+    @Test
+    void refusesToConfirmAMobileVerificationOverEmail() {
+        givenChannel(OtpChannelType.EMAIL, EMAIL, false);
+        givenOwner(EMAIL);
+        when(flowFactory.getFlow(OtpPurpose.MOBILE_VERIFICATION)).thenReturn(flow);
+        when(flow.supportsChannel(OtpChannelType.EMAIL)).thenReturn(false);
+
+        assertThatThrownBy(() -> otpService.confirm(new VerifyOtpRequest(
+                EMAIL, "123456", OtpChannelType.EMAIL, OtpPurpose.MOBILE_VERIFICATION)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("cannot be completed over");
+
+        verify(flow, never()).applyPostVerification(any());
+        verify(userRepository, never()).save(any(User.class));
     }
 
     private void givenChannel(
@@ -239,8 +304,20 @@ class OtpServiceTest {
     }
 
     private void givenRegistrationFlow() {
-        when(flowFactory.getFlow(OtpPurpose.REGISTRATION)).thenReturn(flow);
-        when(flow.getPurpose()).thenReturn(OtpPurpose.REGISTRATION);
+        givenCompatibleFlow(OtpPurpose.REGISTRATION);
+    }
+
+    private void givenPasswordResetFlow() {
+        givenCompatibleFlow(OtpPurpose.PASSWORD_RESET);
+    }
+
+    /**
+     * A plain mock answers {@code false} for the default method, which would
+     * read as "this flow refuses every channel".
+     */
+    private void givenCompatibleFlow(OtpPurpose purpose) {
+        when(flowFactory.getFlow(purpose)).thenReturn(flow);
+        when(flow.supportsChannel(any(OtpChannelType.class))).thenReturn(true);
     }
 
     private void givenStoredRecord(

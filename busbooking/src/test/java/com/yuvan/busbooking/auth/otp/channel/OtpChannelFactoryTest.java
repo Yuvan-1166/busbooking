@@ -77,7 +77,8 @@ class OtpChannelFactoryTest {
             }
 
             @Override
-            public void confirmCode(String externalReference, String submittedCode) {
+            public boolean confirmCode(String externalReference, String submittedCode) {
+                return true;
             }
 
             @Override

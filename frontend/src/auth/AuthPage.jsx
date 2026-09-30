@@ -101,12 +101,8 @@ export default function AuthPage() {
     try {
       if (mode === "login") {
         console.log("=== LOGIN START ===");
-        const encodedForm = {
-          ...form,
-          password: btoa(form.password),
-        };
-
-        const response = await login(encodedForm);
+        // The password is Base64-encoded by the api layer.
+        const response = await login(form);
         console.log("Login response:", response);
 
         // Check if TOTP verification is required

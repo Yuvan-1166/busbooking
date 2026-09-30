@@ -1,3 +1,5 @@
+import { encodeSecret } from './utils/base64'
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
 
 function authHeaders(extra = {}) {
@@ -109,30 +111,31 @@ function fileNameFrom(contentDisposition) {
 }
 
 export const api = {
-  login: (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify(credentials) }),
-  register: (userType, details) => request('/auth/register', { method: 'POST', body: JSON.stringify({ userType, ...details }) }),
+  login: (credentials) => request('/auth/login', { method: 'POST', body: JSON.stringify({ ...credentials, password: encodeSecret(credentials.password) }) }),
+  register: (userType, details) => request('/auth/register', { method: 'POST', body: JSON.stringify({ userType, ...details, password: encodeSecret(details.password) }) }),
+  verifyTotpLogin: (tempToken, totpCode, extra = {}) => request('/auth/login/verify-totp', { method: 'POST', body: JSON.stringify({ tempToken, totpCode: encodeSecret(totpCode), ...extra }) }),
   // Unified OAuth (Google, Twitter, …) – provider selected in the request body
   oauthAuthorize: (provider, userType = 'PASSENGER') => request('/auth/oauth/authorize', { method: 'POST', body: JSON.stringify({ provider, userType }) }),
   oauthCallback: (payload) => request('/auth/oauth/callback', { method: 'POST', body: JSON.stringify(payload) }),
-  verifyTwitterEmail: (email, otp) => request('/users/me/verify-twitter-email', { method: 'POST', body: JSON.stringify({ email, otp }) }),
+  verifyTwitterEmail: (email, otp) => request('/users/me/verify-twitter-email', { method: 'POST', body: JSON.stringify({ email, otp: encodeSecret(otp) }) }),
   completeOnboarding: (payload) => request('/auth/onboarding/complete', { method: 'POST', body: JSON.stringify(payload) }),
   // Unified OTP endpoints: the channel decides how `target` is read, validated
   // and delivered to, so no per-delivery-method endpoint is needed.
   sendOtp: (target, { channel = 'EMAIL', purpose = 'REGISTRATION' } = {}) =>
     request('/auth/verify/send', { method: 'POST', body: JSON.stringify({ target, channel, purpose }) }),
   verifyOtp: (target, otp, { channel = 'EMAIL', purpose = 'REGISTRATION' } = {}) =>
-    request('/auth/verify/confirm', { method: 'POST', body: JSON.stringify({ target, otp, channel, purpose }) }),
+    request('/auth/verify/confirm', { method: 'POST', body: JSON.stringify({ target, otp: encodeSecret(otp), channel, purpose }) }),
   forgotPassword: (target, channel = 'EMAIL') =>
     request('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ target, channel }) }),
   resetPassword: (target, otp, newPassword, channel = 'EMAIL') =>
-    request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ target, otp, newPassword, channel }) }),
+    request('/auth/reset-password', { method: 'POST', body: JSON.stringify({ target, otp: encodeSecret(otp), newPassword: encodeSecret(newPassword), channel }) }),
   setupTotp: () => request('/auth/totp/setup', { method: 'POST' }),
-  verifyTotpSetup: (totpCode) => request('/auth/totp/verify-setup', { method: 'POST', body: JSON.stringify({ totpCode }) }),
-  disableTotp: (data) => request('/auth/totp/disable', { method: 'POST', body: JSON.stringify(data) }),
+  verifyTotpSetup: (totpCode) => request('/auth/totp/verify-setup', { method: 'POST', body: JSON.stringify({ totpCode: encodeSecret(totpCode) }) }),
+  disableTotp: (data) => request('/auth/totp/disable', { method: 'POST', body: JSON.stringify({ ...data, password: encodeSecret(data.password) }) }),
   generateBackupCodes: () => request('/auth/totp/backup-codes/generate', { method: 'POST' }),
   // TOTP Alternative OTP methods (SMS, Email, etc.)
   sendTotpAlternativeOtp: (method, tempToken) => request('/auth/totp-alternative/send', { method: 'POST', body: JSON.stringify({ method, tempToken }) }),
-  verifyTotpAlternativeOtp: (tempToken, sessionId, code) => request('/auth/totp-alternative/verify', { method: 'POST', body: JSON.stringify({ tempToken, sessionId, code }) }),
+  verifyTotpAlternativeOtp: (tempToken, sessionId, code) => request('/auth/totp-alternative/verify', { method: 'POST', body: JSON.stringify({ tempToken, sessionId, code: encodeSecret(code) }) }),
   getLocations: () => request('/locations'),
   getRoutes: () => request('/routes'),
   getRouteStops: (routeId) => request(`/route-stops/route/${routeId}`),
@@ -187,12 +190,9 @@ export const api = {
   createRoute: (payload) => request('/routes', { method: 'POST', body: JSON.stringify(payload) }),
   updateRoute: (routeId, payload) => request(`/routes/${routeId}`, { method: 'PUT', body: JSON.stringify(payload) }),
   deleteRoute: (routeId) => request(`/routes/${routeId}`, { method: 'DELETE' }),
-  // Verifying the phone number on the profile is not part of the unified OTP
-  // flow (it flips user.mobileVerified rather than verifying the account), so
-  // it keeps using the Message Central endpoints directly.
-  sendMobileOtp: (mobileNumber) => request('/verifynow/send-otp', { method: 'POST', body: JSON.stringify({ mobileNumber }) }),
-  validateMobileOtp: (verificationId, mobileNumber, code) => request('/verifynow/validate-otp', { method: 'POST', body: JSON.stringify({ verificationId, mobileNumber, code }) }),
-  updateMobileVerificationStatus: () => request('/users/me/verify-mobile', { method: 'POST' }),
+  // Verifying the phone number on the profile goes through the unified OTP
+  // endpoints with channel: 'MOBILE' and purpose: 'MOBILE_VERIFICATION', so the
+  // flag is only set once a code sent to that number is actually confirmed.
   getAnalytics: (from, to, operatorId) => {
     const params = new URLSearchParams()
     if (from) params.set('from', from)

@@ -14,15 +14,7 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-/**
- * SMS delivery channel backed by the Message Central VerifyNow API.
- *
- * <p>VerifyNow generates the code and validates it, so this channel is
- * provider-managed: it stores the returned verification id as the external
- * reference and delegates the code check back to VerifyNow. Accounts are
- * looked up by the last ten digits of their phone number, so numbers stored
- * with or without a country code both resolve.</p>
- */
+
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -105,7 +97,7 @@ public class MobileOtpChannel implements OtpChannel {
     }
 
     @Override
-    public void confirmCode(String externalReference, String submittedCode) {
+    public boolean confirmCode(String externalReference, String submittedCode) {
         if (externalReference == null || externalReference.isBlank()) {
             throw new OtpVerificationException(
                     "This verification request is no longer valid. Please request a new code.");
@@ -122,6 +114,7 @@ public class MobileOtpChannel implements OtpChannel {
         if (!completed) {
             throw new OtpVerificationException("Incorrect code. Please try again.");
         }
+        return true;
     }
 
     @Override

@@ -64,6 +64,7 @@ public class OtpService {
     public OtpVerifyResponse send(SendOtpRequest request) {
         OtpChannel channel = channelFactory.getChannel(request.resolvedChannel());
         OtpFlow flow = flowFactory.getFlow(request.resolvedPurpose());
+        requireCompatibleChannel(flow, channel);
 
         String target = channel.normalizeTarget(request.target());
         channel.validateTarget(target);
@@ -86,22 +87,22 @@ public class OtpService {
     public OtpVerifyResponse confirm(VerifyOtpRequest request) {
         OtpChannel channel = channelFactory.getChannel(request.resolvedChannel());
         OtpPurpose purpose = request.resolvedPurpose();
+        OtpFlow flow = flowFactory.getFlow(purpose);
+        requireCompatibleChannel(flow, channel);
 
         String target = channel.normalizeTarget(request.target());
         channel.validateTarget(target);
 
         OtpVerification record = requireUsableRecord(channel, target, purpose);
 
-        if (channel.isProviderManaged()) {
-            channel.confirmCode(record.getExternalReference(), request.otp());
-        } else if (!passwordEncoder.matches(request.otp(), record.getOtpHash())) {
+        if (!codeMatches(channel, record, request.otp())) {
             registerFailedAttempt(record);
         }
 
         markVerified(record);
 
         User user = resolveOwner(channel, target);
-        flowFactory.getFlow(purpose).applyPostVerification(user);
+        flow.applyPostVerification(user);
         userRepository.save(user);
 
         return OtpVerifyResponse.of(
@@ -110,6 +111,28 @@ public class OtpService {
                 purpose,
                 expiryMinutes
         );
+    }
+
+    private void requireCompatibleChannel(OtpFlow flow, OtpChannel channel) {
+        if (!flow.supportsChannel(channel.getType())) {
+            throw new IllegalArgumentException(
+                    "This verification cannot be completed over "
+                            + channel.label() + ".");
+        }
+    }
+
+    private boolean codeMatches(
+            OtpChannel channel,
+            OtpVerification record,
+            String submittedCode
+    ) {
+        try {
+            return channel.isProviderManaged()
+                    ? channel.confirmCode(record.getExternalReference(), submittedCode)
+                    : channel.confirmCode(submittedCode, record.getOtpHash());
+        } catch (OtpVerificationException e) {
+            return false;
+        }
     }
 
     private void dispatch(OtpChannel channel, OtpFlow flow, String target) {

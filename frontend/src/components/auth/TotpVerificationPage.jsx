@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthContext';
 import { api } from '../../api';
-import { parseApiError, getErrorMessage } from '../../utils/errorHandler';
+import { parseApiError, getErrorMessage, parseTotpError } from '../../utils/errorHandler';
 
 export default function TotpVerificationPage() {
   console.log("=== TotpVerificationPage RENDER ===");
@@ -212,46 +212,11 @@ export default function TotpVerificationPage() {
     setMessage('');
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || ''}/auth/login/verify-totp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tempToken,
-          totpCode: code,
-          ipAddress: null,
-          userAgent: navigator.userAgent,
-        }),
+      // The TOTP code is Base64-encoded by the api layer.
+      const data = await api.verifyTotpLogin(tempToken, code, {
+        ipAddress: null,
+        userAgent: navigator.userAgent,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        let extractedMessage = errorData.message || errorData.errorMessage || errorData.error;
-        if (!extractedMessage && errorData.errors) {
-          extractedMessage = Array.isArray(errorData.errors)
-            ? errorData.errors.join(', ')
-            : Object.values(errorData.errors).join(', ');
-        }
-        if (!extractedMessage) {
-          if (response.status === 400) {
-            extractedMessage = useBackupCode
-              ? "Invalid backup code. Please check and try again."
-              : "Invalid 2FA code. Please check and try again.";
-          } else if (response.status === 401) {
-            extractedMessage = "Session expired. Please log in again.";
-          } else if (response.status === 429) {
-            extractedMessage = "Too many verification attempts. Please wait a few minutes before trying again.";
-          } else if (response.status === 404) {
-            extractedMessage = "Verification code not found. Please log in again.";
-          } else {
-            extractedMessage = 'Verification failed. Please try again.';
-          }
-        }
-        throw new Error(extractedMessage);
-      }
-
-      const data = await response.json();
 
       // Clear sessionStorage
       sessionStorage.removeItem('totp_verify_temp_token');
@@ -261,9 +226,9 @@ export default function TotpVerificationPage() {
       login(data.accessToken);
       navigate('/');
     } catch (err) {
-      const errorMessage = err.message || 'Verification failed. Please try again.';
-      setError(errorMessage);
-      console.error("TOTP verification error:", err);
+      const appError = parseTotpError(err, useBackupCode ? 'backup-code' : 'login-verify');
+      setError(getErrorMessage(appError));
+      console.error("TOTP verification error:", appError);
       
       // Clear input on error
       if (useBackupCode) {

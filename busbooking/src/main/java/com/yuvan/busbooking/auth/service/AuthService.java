@@ -17,16 +17,10 @@ import com.yuvan.busbooking.common.exception.ResourceNotFoundException;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.repository.UserRepository;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.Base64.Decoder;
 
 import javax.naming.AuthenticationException;
 
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -36,7 +30,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final OtpService otpService;
     private final OtpChannelFactory otpChannelFactory;
@@ -46,7 +39,6 @@ public class AuthService {
 
     public AuthService(
             UserRepository userRepository,
-            AuthenticationManager authenticationManager,
             JwtService jwtService,
             OtpService otpService,
             OtpChannelFactory otpChannelFactory,
@@ -55,7 +47,6 @@ public class AuthService {
             CustomUserDetailsService customUserDetailsService
     ) {
         this.userRepository = userRepository;
-        this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.otpService = otpService;
         this.otpChannelFactory = otpChannelFactory;
@@ -70,8 +61,7 @@ public class AuthService {
                     .orElseThrow(
                         () -> new IllegalArgumentException("User not found")
                     );
-        String decodedPassword = new String(Base64.getDecoder().decode(request.password()), StandardCharsets.UTF_8);
-        if(!passwordEncoder.matches(decodedPassword, user.getPasswordHash())){
+        if(!passwordEncoder.matches(request.password(), user.getPasswordHash())){
             throw new BadCredentialsException("Invalid Creds");
         }
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(user.getEmail());
@@ -157,7 +147,8 @@ public class AuthService {
             // Don't reveal whether the destination exists or not
         }
         return new ResetPasswordResponse(
-                "If an account exists for that destination, a reset code has been sent.");
+                "If an account exists for that destination, a reset code has been sent."
+            );
     }
 
     @Transactional(noRollbackFor = OtpVerificationException.class)

@@ -4,6 +4,7 @@ import { api } from "../../api";
 import { useAuth } from "../../auth/AuthContext";
 import DisableTotpModal from "../../components/auth/DisableTotpModal";
 import { getUserFriendlyErrorMessage } from "../../utils/errorMessages";
+import { OTP_PURPOSE, isValidDestination, nationalNumber } from "../../utils/otpChannel";
 import { LoadingPage } from "../common/Loading";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -143,7 +144,6 @@ export default function ProfilePage({ onLogout }) {
 
   // Mobile verification state
   const [mobileVerified, setMobileVerified] = useState(false);
-  const [mobileVerificationId, setMobileVerificationId] = useState("");
   const [mobileOtp, setMobileOtp] = useState("");
   const [mobileOtpSent, setMobileOtpSent] = useState(false);
   const [mobileOtpLoading, setMobileOtpLoading] = useState(false);
@@ -259,7 +259,7 @@ export default function ProfilePage({ onLogout }) {
     setMobileOtpError("");
     setMobileOtpSuccess("");
 
-    if (!user.phone || user.phone.length !== 10) {
+    if (!isValidDestination("MOBILE", user.phone)) {
       setMobileOtpError(
         "Please add a valid 10-digit mobile number to your profile first.",
       );
@@ -270,17 +270,17 @@ export default function ProfilePage({ onLogout }) {
 
     try {
       // Extract only digits from phone (remove any country code or formatting)
-      const cleanPhone = user.phone.replace(/\D/g, "").slice(-10);
+      const cleanPhone = nationalNumber(user.phone);
 
-      const response = await api.sendMobileOtp(cleanPhone);
+      const response = await api.sendOtp(cleanPhone, {
+        channel: "MOBILE",
+        purpose: OTP_PURPOSE.MOBILE_VERIFICATION,
+      });
 
-      if (response.success && response.data?.data?.verificationId) {
-        setMobileVerificationId(response.data.data.verificationId);
-        setMobileOtpSent(true);
-        setMobileOtpSuccess("OTP sent successfully to your mobile number.");
-      } else {
-        setMobileOtpError("Failed to send OTP. Please try again.");
-      }
+      setMobileOtpSent(true);
+      setMobileOtpSuccess(
+        response?.message ?? "OTP sent successfully to your mobile number.",
+      );
     } catch (err) {
       const friendlyMessage = getUserFriendlyErrorMessage(
         err.message,
@@ -306,38 +306,23 @@ export default function ProfilePage({ onLogout }) {
     setMobileOtpLoading(true);
 
     try {
-      const cleanPhone = user.phone.replace(/\D/g, "").slice(-10);
+      const cleanPhone = nationalNumber(user.phone);
 
-      const validateResponse = await api.validateMobileOtp(
-        mobileVerificationId,
-        cleanPhone,
-        mobileOtp,
-      );
+      // Confirming marks the number verified on the account, so the flag is
+      // persisted by the server rather than by a follow-up request.
+      await api.verifyOtp(cleanPhone, mobileOtp.trim(), {
+        channel: "MOBILE",
+        purpose: OTP_PURPOSE.MOBILE_VERIFICATION,
+      });
 
-      if (validateResponse.success && validateResponse.data?.valid) {
-        // Update user verification status in backend
-        try {
-          await api.updateMobileVerificationStatus();
+      setMobileVerified(true);
+      setMobileOtpSuccess("Mobile number verified successfully!");
+      setMobileOtpSent(false);
+      setMobileOtp("");
 
-          setMobileVerified(true);
-          setMobileOtpSuccess("Mobile number verified successfully!");
-          setMobileOtpSent(false);
-          setMobileOtp("");
-          setMobileVerificationId("");
-
-          // Reload user data to get updated verification status
-          const updatedUser = await api.getCurrentUser();
-          setUser(updatedUser);
-        } catch (updateErr) {
-          const friendlyMessage = getUserFriendlyErrorMessage(
-            updateErr.message,
-            "update-verification",
-          );
-          setMobileOtpError(friendlyMessage);
-        }
-      } else {
-        setMobileOtpError("Invalid OTP. Please try again.");
-      }
+      // Reload user data to get updated verification status
+      const updatedUser = await api.getCurrentUser();
+      setUser(updatedUser);
     } catch (err) {
       const friendlyMessage = getUserFriendlyErrorMessage(
         err.message,

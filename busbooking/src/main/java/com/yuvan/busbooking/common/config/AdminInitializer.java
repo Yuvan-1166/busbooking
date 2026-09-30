@@ -32,7 +32,7 @@ public class AdminInitializer {
         Dotenv dotenv = Dotenv.load();
         return args -> {
             if(!userRepository.existsByEmail(dotenv.get("ADMIN_USERNAME"))){
-                User user = userService.createUser(
+                User user = userService.create(
                     new UserRequest(dotenv.get("ADMIN_USERNAME"), dotenv.get("ADMIN_PASSWORD"), "Admin", "User", "+91 00000 00000", UserStatus.ACTIVE)
                 );
 

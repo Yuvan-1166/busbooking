@@ -6,11 +6,13 @@ import com.yuvan.busbooking.common.util.Base64Deserializer;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-public record LoginRequest(
-        @NotBlank @Email 
+
+public record VerifyEmailRequest(
+        @Email(message = "Invalid email address")
+        @NotBlank(message = "Email is required")
         String email,
 
-        @NotBlank 
-        @JsonDeserialize(using = Base64Deserializer.class)
-        String password
+        @NotBlank(message = "OTP is required")
+        @JsonDeserialize (using = Base64Deserializer.class)
+        String otp
 ) {}

@@ -3,30 +3,32 @@ package com.yuvan.busbooking.auth.otp.channel;
 import com.yuvan.busbooking.auth.entity.OtpPurpose;
 import com.yuvan.busbooking.auth.otp.exception.OtpDeliveryException;
 import com.yuvan.busbooking.auth.service.EmailService;
+import com.yuvan.busbooking.common.exception.OtpVerificationException;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
+
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.util.Locale;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
-/**
- * Email delivery channel backed by SMTP.
- *
- * <p>The code is generated and hashed by the OTP service, so the channel only
- * has to pick the template that matches the purpose and hand the code to
- * {@link EmailService}. Accounts are looked up by email address.</p>
- */
+
 @Component
-@RequiredArgsConstructor
 public class EmailOtpChannel implements OtpChannel {
 
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
     private final EmailService emailService;
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+
+    public EmailOtpChannel(EmailService emailService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.emailService = emailService;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
 
     @Override
     public OtpChannelType getType() {
@@ -90,9 +92,12 @@ public class EmailOtpChannel implements OtpChannel {
     }
 
     @Override
-    public void confirmCode(String externalReference, String submittedCode) {
-        throw new UnsupportedOperationException(
-                "Email codes are verified by the OTP service, not by the channel.");
+    public boolean confirmCode(String otpCode, String otpHash) {
+        if(!(passwordEncoder.matches(otpCode, otpHash))) {
+            throw new OtpVerificationException(
+                    "Invalid OTP, check your inbox for most recent mail");
+        }
+        return true;
     }
 
     @Override

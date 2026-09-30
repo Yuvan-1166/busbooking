@@ -1,7 +1,7 @@
 package com.yuvan.busbooking.user.service;
 
-import com.yuvan.busbooking.auth.dto.VerifyTwitterEmailRequest;
-import com.yuvan.busbooking.auth.dto.VerifyTwitterEmailResponse;
+import com.yuvan.busbooking.auth.dto.VerifyEmailRequest;
+import com.yuvan.busbooking.auth.dto.VerifyEmailResponse;
 import com.yuvan.busbooking.auth.entity.OtpPurpose;
 import com.yuvan.busbooking.auth.service.JwtService;
 import com.yuvan.busbooking.auth.otp.dto.VerifyOtpRequest;
@@ -46,7 +46,7 @@ public class UserService {
         this.userDetailsService = userDetailsService;
     }
 
-    public UserResponse create(UserRequest request) {
+    public User create(UserRequest request) {
 
         if (userRepository.existsByEmail(request.email())) {
             throw new IllegalArgumentException("Email already exists");
@@ -55,28 +55,7 @@ public class UserService {
         User user = new User();
 
         user.setEmail(request.email());
-        user.setPasswordHash(passwordEncoder.encode(request.password()));
-        user.setFirstName(request.firstName());
-        user.setLastName(request.lastName());
-        user.setPhone(request.phone());
-        user.setStatus(
-                request.status() != null
-                        ? request.status()
-                        : UserStatus.ACTIVE
-        );
 
-        return toResponse(userRepository.save(user));
-    }
-
-    public User createUser(UserRequest request) {
-
-        if (userRepository.existsByEmail(request.email())) {
-            throw new IllegalArgumentException("Email already exists");
-        }
-
-        User user = new User();
-
-        user.setEmail(request.email());
         user.setPasswordHash(passwordEncoder.encode(request.password()));
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
@@ -200,7 +179,7 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
-    public VerifyTwitterEmailResponse verifyTwitterEmail(VerifyTwitterEmailRequest request) {
+    public VerifyEmailResponse verifyEmail(VerifyEmailRequest request) {
         // Get current authenticated user
         String currentEmail = SecurityUtils.getCurrentUserEmail();
         User user = userRepository.findByEmail(currentEmail)
@@ -229,7 +208,7 @@ public class UserService {
         UserDetails userDetails = userDetailsService.loadUserByUsername(updated.getEmail());
         String newAccessToken = jwtService.generateToken(userDetails);
 
-        return new VerifyTwitterEmailResponse(
+        return new VerifyEmailResponse(
                 newAccessToken,
                 "Bearer",
                 3600L,
@@ -262,39 +241,4 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    /**
-     * Mark user's mobile number as verified
-     */
-    public UserResponse verifyMobile(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "User not found: " + userId
-                        )
-                );
-
-        user.setMobileVerified(true);
-        user.setMobileVerifiedAt(java.time.LocalDateTime.now());
-        
-        return toResponse(userRepository.save(user));
-    }
-
-    /**
-     * Mark current user's mobile number as verified
-     */
-    public UserResponse verifyMobile() {
-        String email = SecurityUtils.getCurrentUserEmail();
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException(
-                                "User not found: " + email
-                        )
-                );
-
-        user.setMobileVerified(true);
-        user.setMobileVerifiedAt(java.time.LocalDateTime.now());
-        
-        return toResponse(userRepository.save(user));
-    }
-    
 }

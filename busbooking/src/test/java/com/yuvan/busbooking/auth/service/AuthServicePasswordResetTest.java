@@ -68,7 +68,6 @@ class AuthServicePasswordResetTest {
         authService = new AuthService(
                 userRepository,
                 null,
-                null,
                 otpService,
                 otpChannelFactory,
                 passwordEncoder,

@@ -20,7 +20,7 @@ public abstract class AbstractRegistrationStrategy implements RegistrationStrate
     }
 
     protected User createPendingUser(RegisterRequest request) {
-        return userService.createUser(new UserRequest(
+        return userService.create(new UserRequest(
                 request.email(),
                 request.password(),
                 request.firstName(),

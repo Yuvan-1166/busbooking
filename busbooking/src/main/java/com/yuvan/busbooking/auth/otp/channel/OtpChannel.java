@@ -20,7 +20,7 @@ public interface OtpChannel {
 
     OtpDispatch dispatch(OtpDispatchCommand command);
 
-    void confirmCode(String externalReference, String submittedCode);
+    boolean confirmCode(String externalReference, String submittedCode);
 
     Optional<User> findOwner(String target);
 }
