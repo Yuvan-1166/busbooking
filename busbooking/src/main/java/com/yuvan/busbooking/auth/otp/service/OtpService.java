@@ -68,10 +68,10 @@ public class OtpService {
 
         String target = channel.normalizeTarget(request.target());
         channel.validateTarget(target);
+        User user = resolveOwner(channel,target);
+        flow.validateForSend(user);
 
-        flow.validateForSend(resolveOwner(channel, target));
-
-        supersedePrevious(channel.getType(), target, flow.getPurpose());
+        suppressedPrevious(channel.getType(), target, flow.getPurpose());
 
         dispatch(channel, flow, target);
 
@@ -222,7 +222,7 @@ public class OtpService {
         otpRepository.save(record);
     }
 
-    private void supersedePrevious(
+    private void suppressedPrevious(
             OtpChannelType channelType,
             String target,
             OtpPurpose purpose

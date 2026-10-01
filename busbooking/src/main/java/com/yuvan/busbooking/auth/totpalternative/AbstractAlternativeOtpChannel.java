@@ -23,23 +23,16 @@ public abstract class AbstractAlternativeOtpChannel implements AlternativeOtpCha
     @Value("${totp.alternative.otp.ttl:300}") // 5 minutes default
     protected int otpTtlSeconds;
 
-    /**
-     * Generates a random 6-digit OTP code.
-     */
     protected String generateOtpCode() {
+
         return String.valueOf(100000 + RANDOM.nextInt(900000));
     }
 
-    /**
-     * Hashes an OTP code for secure storage.
-     */
     protected String generateOtpHash(String code) {
+
         return passwordEncoder.encode(code);
     }
 
-    /**
-     * Masks a mobile number for logging/display.
-     */
     protected String maskMobileNumber(String mobileNumber) {
         if (mobileNumber == null || mobileNumber.length() < 4) {
             return "****";
@@ -47,9 +40,7 @@ public abstract class AbstractAlternativeOtpChannel implements AlternativeOtpCha
         return "****" + mobileNumber.substring(Math.max(0, mobileNumber.length() - 4));
     }
 
-    /**
-     * Masks an email address for logging/display.
-     */
+
     protected String maskEmail(String email) {
         if (email == null || !email.contains("@")) {
             return "****";
@@ -62,9 +53,6 @@ public abstract class AbstractAlternativeOtpChannel implements AlternativeOtpCha
         return localPart + "@" + email.substring(atIndex + 1);
     }
 
-    /**
-     * Builds the standard send response for a persisted OTP session.
-     */
     protected TotpAlternativeOtpResponse buildSendResponse(
             TotpAlternativeOtp savedOtp,
             String message,

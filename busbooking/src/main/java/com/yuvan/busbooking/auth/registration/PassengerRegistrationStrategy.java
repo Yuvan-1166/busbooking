@@ -12,9 +12,11 @@ import com.yuvan.busbooking.user.repository.UserRoleRepository;
 import com.yuvan.busbooking.user.service.UserService;
 import com.yuvan.busbooking.wallet.service.WalletService;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 public class PassengerRegistrationStrategy extends AbstractRegistrationStrategy {
 
@@ -60,6 +62,8 @@ public class PassengerRegistrationStrategy extends AbstractRegistrationStrategy 
         walletService.createWallet(user);
 
         sendVerificationOtp(user);
+
+        log.info("{} User Created as Passenger", request.email());
 
         return new RegisterResponse(
                 user.getId(),

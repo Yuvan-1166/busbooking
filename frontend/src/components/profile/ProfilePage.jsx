@@ -259,6 +259,9 @@ export default function ProfilePage({ onLogout }) {
     setMobileOtpError("");
     setMobileOtpSuccess("");
 
+    
+      console.log("Mobile OTP Verification");
+
     if (!isValidDestination("MOBILE", user.phone)) {
       setMobileOtpError(
         "Please add a valid 10-digit mobile number to your profile first.",
@@ -276,6 +279,9 @@ export default function ProfilePage({ onLogout }) {
         channel: "MOBILE",
         purpose: OTP_PURPOSE.MOBILE_VERIFICATION,
       });
+
+
+      console.log(response);
 
       setMobileOtpSent(true);
       setMobileOtpSuccess(

@@ -20,12 +20,14 @@ import com.yuvan.busbooking.user.repository.UserRepository;
 
 import javax.naming.AuthenticationException;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 public class AuthService {
 
@@ -75,6 +77,9 @@ public class AuthService {
 
         // User doesn't have 2FA - return full token immediately
         String token = jwtService.generateToken(userDetails);
+
+        log.info("{} User Logged In", request.email());
+
         return new LoginResponse(token, "Bearer", 3600L);
     }
 
@@ -116,6 +121,7 @@ public class AuthService {
                 request.ipAddress(),
                 request.userAgent()
             );
+            log.info("{} TOTP Verification Failed");
             throw new IllegalArgumentException("Invalid verification code");
         }
 
@@ -132,6 +138,8 @@ public class AuthService {
         UserDetails userDetails = customUserDetailsService.loadUserByUsername(email);
         String fullToken = jwtService.generateToken(userDetails);
 
+        log.info("{} TOTP Verification Successfule", email);
+
         return new LoginResponse(fullToken, "Bearer", 3600L);
     }
 
@@ -146,6 +154,9 @@ public class AuthService {
         } catch (Exception ignored) {
             // Don't reveal whether the destination exists or not
         }
+
+        log.info("Initialized Forgot Password");
+
         return new ResetPasswordResponse(
                 "If an account exists for that destination, a reset code has been sent."
             );

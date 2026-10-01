@@ -11,10 +11,11 @@ import com.yuvan.busbooking.operator.service.OperatorService;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.service.UserService;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
+@Slf4j
 @Service
 public class OperatorRegistrationStrategy extends AbstractRegistrationStrategy {
 
@@ -70,6 +71,8 @@ public class OperatorRegistrationStrategy extends AbstractRegistrationStrategy {
                 ));
 
         sendVerificationOtp(user);
+
+        log.info("{} User Created as Operator", request.email());
 
         return new RegisterResponse(
                 user.getId(),

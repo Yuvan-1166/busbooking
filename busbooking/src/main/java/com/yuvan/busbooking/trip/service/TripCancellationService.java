@@ -79,7 +79,6 @@ public class TripCancellationService {
         tripRepository.save(trip);
     }
 
-    @Transactional
     private void refundBooking(Booking booking, String cancellationReason) {
         try {
             // Mark booking as cancelled
@@ -106,7 +105,6 @@ public class TripCancellationService {
         }
     }
 
-    @Transactional
     private void releaseSeatsByTrip(Long tripId) {
         List<TripSeat> tripSeats = tripSeatRepository.findByTripId(tripId);
         for (TripSeat tripSeat : tripSeats) {

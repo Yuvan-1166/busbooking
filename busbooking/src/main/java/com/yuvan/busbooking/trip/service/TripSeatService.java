@@ -11,6 +11,8 @@ import com.yuvan.busbooking.trip.entity.TripSeat;
 import com.yuvan.busbooking.trip.entity.TripSeatStatus;
 import com.yuvan.busbooking.trip.repository.TripRepository;
 import com.yuvan.busbooking.trip.repository.TripSeatRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +36,7 @@ public class TripSeatService {
         this.seatRepository = seatRepository;
     }
 
+    @Cacheable(value = "trip_seats", key = "#tripId")
     @Transactional(readOnly = true)
     public List<TripSeatResponse> getSeatsByTrip(Long tripId) {
         return tripSeatRepository.findByTripId(tripId)
@@ -42,6 +45,7 @@ public class TripSeatService {
                 .toList();
     }
 
+    @Cacheable(value = "trip_seats", key = "#id")
     @Transactional(readOnly = true)
     public TripSeatResponse getTripSeat(Long id) {
         TripSeat tripSeat = tripSeatRepository.findById(id)
@@ -54,6 +58,7 @@ public class TripSeatService {
         return toResponse(tripSeat);
     }
 
+    @Cacheable(value = "trip_seats", key = "'all'")
     @Transactional(readOnly = true)
     public List<TripSeatResponse> findAll() {
         return tripSeatRepository.findAll()
@@ -62,6 +67,7 @@ public class TripSeatService {
                 .toList();
     }
 
+    @Transactional
     public TripSeatResponse create(TripSeatRequest request) {
 
         if (tripSeatRepository.existsByTripIdAndSeatId(
@@ -98,6 +104,8 @@ public class TripSeatService {
         return toResponse(tripSeatRepository.save(tripSeat));
     }
 
+    @CacheEvict(value = "trip_seats", key = "#id")
+    @Transactional
     public TripSeatResponse update(
             Long id,
             TripSeatRequest request
@@ -134,6 +142,8 @@ public class TripSeatService {
         return toResponse(tripSeatRepository.save(tripSeat));
     }
 
+    @CacheEvict(value = "trip_seats", key = "#id")
+    @Transactional
     public void delete(Long id) {
 
         if (!tripSeatRepository.existsById(id)) {
