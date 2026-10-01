@@ -3,6 +3,7 @@ package com.yuvan.busbooking.auth.otp.channel;
 import com.yuvan.busbooking.auth.entity.OtpPurpose;
 import com.yuvan.busbooking.auth.otp.exception.OtpDeliveryException;
 import com.yuvan.busbooking.auth.service.EmailService;
+import com.yuvan.busbooking.auth.service.EmailVerificationTokenService;
 import com.yuvan.busbooking.common.exception.OtpVerificationException;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.repository.UserRepository;
@@ -18,14 +19,22 @@ import java.util.regex.Pattern;
 @Component
 public class EmailOtpChannel implements OtpChannel {
 
-    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    private static final Pattern EMAIL_PATTERN =
+            Pattern.compile("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
 
     private final EmailService emailService;
+    private final EmailVerificationTokenService tokenService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public EmailOtpChannel(EmailService emailService, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public EmailOtpChannel(
+            EmailService emailService,
+            EmailVerificationTokenService tokenService,
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder
+    ) {
         this.emailService = emailService;
+        this.tokenService = tokenService;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -81,6 +90,10 @@ public class EmailOtpChannel implements OtpChannel {
             if (command.purpose() == OtpPurpose.PASSWORD_RESET) {
                 emailService.sendPasswordResetOtp(
                         command.target(), command.code(), command.expiryMinutes());
+            } else if (command.purpose() == OtpPurpose.REGISTRATION) {
+                String verificationLink = tokenService.buildVerificationLink(command.target());
+                emailService.sendRegistrationOtpWithLink(
+                        command.target(), command.code(), command.expiryMinutes(), verificationLink);
             } else {
                 emailService.sendOtp(
                         command.target(), command.code(), command.expiryMinutes());
@@ -93,7 +106,7 @@ public class EmailOtpChannel implements OtpChannel {
 
     @Override
     public boolean confirmCode(String otpCode, String otpHash) {
-        if(!(passwordEncoder.matches(otpCode, otpHash))) {
+        if (!(passwordEncoder.matches(otpCode, otpHash))) {
             throw new OtpVerificationException(
                     "Invalid OTP, check your inbox for most recent mail");
         }

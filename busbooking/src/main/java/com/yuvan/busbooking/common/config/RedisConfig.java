@@ -15,7 +15,6 @@ public class RedisConfig {
 
         GenericJacksonJsonRedisSerializer serializer =
                 GenericJacksonJsonRedisSerializer.builder()
-                        .enableUnsafeDefaultTyping()
                         .build();
 
         return RedisCacheConfiguration.defaultCacheConfig()
@@ -30,4 +29,5 @@ public class RedisConfig {
                         )
                 );
     }
+
 }

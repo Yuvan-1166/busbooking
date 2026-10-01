@@ -82,6 +82,7 @@ public class SecurityConfig {
                                 // Razorpay webhook (signature validated server-side)
                                 "/payments/webhook/razorpay"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, "/auth/verify/email").permitAll()
 
                         // Authenticated endpoints (onboarding, TOTP management)
                         .requestMatchers(
