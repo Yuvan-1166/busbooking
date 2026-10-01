@@ -36,7 +36,7 @@ public class TripSeatService {
         this.seatRepository = seatRepository;
     }
 
-    @Cacheable(value = "trip_seats", key = "#tripId")
+    @Cacheable(value = "trip_seats_by_trip_id", key = "#tripId")
     @Transactional(readOnly = true)
     public List<TripSeatResponse> getSeatsByTrip(Long tripId) {
         return tripSeatRepository.findByTripId(tripId)
@@ -45,7 +45,7 @@ public class TripSeatService {
                 .toList();
     }
 
-    @Cacheable(value = "trip_seats", key = "#id")
+    @Cacheable(value = "trip_seats_by_id", key = "#id")
     @Transactional(readOnly = true)
     public TripSeatResponse getTripSeat(Long id) {
         TripSeat tripSeat = tripSeatRepository.findById(id)
@@ -104,7 +104,7 @@ public class TripSeatService {
         return toResponse(tripSeatRepository.save(tripSeat));
     }
 
-    @CacheEvict(value = "trip_seats", key = "#id")
+    @CacheEvict(value = "trip_seats_by_id", key = "#id")
     @Transactional
     public TripSeatResponse update(
             Long id,
@@ -142,7 +142,7 @@ public class TripSeatService {
         return toResponse(tripSeatRepository.save(tripSeat));
     }
 
-    @CacheEvict(value = "trip_seats", key = "#id")
+    @CacheEvict(value = "trip_seats_by_id", key = "#id")
     @Transactional
     public void delete(Long id) {
 

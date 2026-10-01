@@ -8,6 +8,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +19,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
+@Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
@@ -58,7 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             email = jwtService.extractUsername(token);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error extracting username from JWT token", e);
             filterChain.doFilter(request, response);
             return;
         }
@@ -82,10 +84,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 
             } catch (Exception e) {
-                e.printStackTrace();
+                log.error("Error setting authentication context for user: {}", email, e);
                 // Don't rethrow - continue filter chain so proper error handling can occur
             }
-        } else {
         }
 
         filterChain.doFilter(request, response);

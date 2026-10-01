@@ -7,6 +7,7 @@ import com.yuvan.busbooking.user.dto.UserResponse;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.service.UserService;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import com.yuvan.busbooking.common.util.PreAuthorize;
@@ -16,6 +17,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/users")
+@Slf4j
 public class UserController {
 
     private final UserService userService;

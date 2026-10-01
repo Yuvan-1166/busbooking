@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!-- Import Spring Boot default logback configuration -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    
+    <!-- Define properties -->
+    <property name="LOG_DIR" value="logs"/>
+    <property name="LOG_FILE_NAME" value="busbooking"/>
+    <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+    <property name="LOG_FILE_MAX_SIZE" value="10MB"/>
+    <property name="LOG_FILE_MAX_HISTORY" value="30"/>
+    <property name="CONSOLE_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
+    
+    <!-- Console Appender for console output -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <target>System.out</target>
+        <encoder>
+            <pattern>${CONSOLE_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+    
+    <!-- Rolling File Appender for ALL logs -->
+    <appender name="FILE_ALL" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/${LOG_FILE_NAME}-all.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/archive/${LOG_FILE_NAME}-all-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${LOG_FILE_MAX_SIZE}</maxFileSize>
+            <maxHistory>${LOG_FILE_MAX_HISTORY}</maxHistory>
+            <totalSizeCap>300MB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+    
+    <!-- Rolling File Appender for APPLICATION logs (business logic) -->
+    <appender name="FILE_APP" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/${LOG_FILE_NAME}-app.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/archive/${LOG_FILE_NAME}-app-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${LOG_FILE_MAX_SIZE}</maxFileSize>
+            <maxHistory>${LOG_FILE_MAX_HISTORY}</maxHistory>
+            <totalSizeCap>300MB</totalSizeCap>
+        </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+    </appender>
+    
+    <!-- Rolling File Appender for REQUEST/RESPONSE logs -->
+    <appender name="FILE_REQUEST" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/${LOG_FILE_NAME}-request.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/archive/${LOG_FILE_NAME}-request-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${LOG_FILE_MAX_SIZE}</maxFileSize>
+            <maxHistory>${LOG_FILE_MAX_HISTORY}</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+    </appender>
+    
+    <!-- Rolling File Appender for ERROR logs -->
+    <appender name="FILE_ERROR" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_DIR}/${LOG_FILE_NAME}-error.log</file>
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_DIR}/archive/${LOG_FILE_NAME}-error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <maxFileSize>${LOG_FILE_MAX_SIZE}</maxFileSize>
+            <maxHistory>${LOG_FILE_MAX_HISTORY}</maxHistory>
+            <totalSizeCap>200MB</totalSizeCap>
+        </rollingPolicy>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+    </appender>
+    
+    <!-- Logger configurations -->
+    <!-- Request/Response logging -->
+    <logger name="com.yuvan.busbooking.common.logging" level="DEBUG" additivity="false">
+        <appender-ref ref="FILE_REQUEST"/>
+        <appender-ref ref="FILE_ALL"/>
+    </logger>
+    
+    <!-- Application logging -->
+    <logger name="com.yuvan.busbooking" level="DEBUG" additivity="false">
+        <appender-ref ref="FILE_APP"/>
+        <appender-ref ref="FILE_ERROR"/>
+        <appender-ref ref="FILE_ALL"/>
+    </logger>
+    
+    <!-- Spring Framework logging -->
+    <logger name="org.springframework" level="WARN" additivity="false">
+        <appender-ref ref="FILE_ALL"/>
+        <appender-ref ref="FILE_ERROR"/>
+    </logger>
+    
+    <!-- Hibernate logging -->
+    <logger name="org.hibernate" level="WARN" additivity="false">
+        <appender-ref ref="FILE_ALL"/>
+    </logger>
+    
+    <!-- Spring Security logging -->
+    <logger name="org.springframework.security" level="INFO" additivity="false">
+        <appender-ref ref="FILE_APP"/>
+        <appender-ref ref="FILE_ALL"/>
+    </logger>
+    
+    <!-- Root Logger - FILE + CONSOLE OUTPUT -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="FILE_ALL"/>
+        <appender-ref ref="FILE_ERROR"/>
+    </root>
+    
+    <!-- Spring profiles for different environments -->
+    <springProfile name="dev">
+        <logger name="com.yuvan.busbooking" level="DEBUG"/>
+        <logger name="org.springframework" level="DEBUG"/>
+    </springProfile>
+    
+    <springProfile name="prod">
+        <logger name="com.yuvan.busbooking" level="INFO"/>
+        <logger name="org.springframework" level="WARN"/>
+    </springProfile>
+</configuration>

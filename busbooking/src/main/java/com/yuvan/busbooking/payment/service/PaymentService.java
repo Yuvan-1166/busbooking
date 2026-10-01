@@ -35,8 +35,7 @@ import com.yuvan.busbooking.trip.entity.TripSeat;
 import com.yuvan.busbooking.trip.entity.TripSeatStatus;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.repository.UserRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,9 +55,8 @@ import static com.yuvan.busbooking.payment.gateway.PaymentGateway.METADATA_PAYME
 import static com.yuvan.busbooking.payment.gateway.PaymentGateway.METADATA_WALLET_BALANCE;
 
 @Service
+@Slf4j
 public class PaymentService {
-
-    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
     /** Razorpay webhook events that represent a successfully captured payment. */
     private static final Set<String> CAPTURE_EVENTS = Set.of(

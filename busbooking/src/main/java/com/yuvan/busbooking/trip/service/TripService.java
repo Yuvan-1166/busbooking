@@ -21,6 +21,7 @@ import com.yuvan.busbooking.user.entity.RoleName;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.repository.UserRepository;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +32,7 @@ import java.util.Objects;
 
 @Service
 @Transactional
+@Slf4j
 public class TripService {
 
     private static final List<TripStatus> ACTIVE_STATUSES = List.of(

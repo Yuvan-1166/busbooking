@@ -23,6 +23,7 @@ import com.yuvan.busbooking.trip.entity.TripSeatStatus;
 import com.yuvan.busbooking.trip.repository.TripRepository;
 import com.yuvan.busbooking.user.entity.User;
 import com.yuvan.busbooking.user.repository.UserRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +35,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Service
+@Slf4j
 public class BookingService {
 
     private final BookingRepository bookingRepository;
